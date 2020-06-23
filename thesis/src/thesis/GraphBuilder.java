@@ -5,6 +5,9 @@ import com.wolfram.jlink.*;
 public class GraphBuilder {
 
 	public static void main(String[] args) {
+		
+		System.out.println("Running");
+		
 		KernelLink ml = null;
         try {
         	String jLinkDir = "/usr/local/Wolfram/Mathematica/12.1/SystemFiles/Links/JLink";
@@ -20,32 +23,16 @@ public class GraphBuilder {
             // when it is launched.
             ml.discardAnswer();
 
-            ml.evaluate("<<MyPackage.m");
-            ml.discardAnswer();
-
-            ml.evaluate("2+2");
+            ml.evaluate("Solve(x + ((y * 100) + (z * 10000)) = 100 && x 10 & y < 10 && z < 3000, {x,y,z}, Integers)");
+         
             ml.waitForAnswer();
-
             int result = ml.getInteger();
-            System.out.println("2 + 2 = " + result);
+            
+            System.out.println(result);
 
-            // Here's how to send the same input, but not as a string:
-            ml.putFunction("EvaluatePacket", 1);
-            ml.putFunction("Plus", 2);
-            ml.put(3);
-            ml.put(3);
-            ml.endPacket();
-            ml.waitForAnswer();
-            result = ml.getInteger();
-            System.out.println("3 + 3 = " + result);
-
-            // If you want the result back as a string, use evaluateToInputForm
-            // or evaluateToOutputForm. The second arg for either is the
-            // requested page width for formatting the string. Pass 0 for
-            // PageWidth->Infinity. These methods get the result in one
-            // step--no need to call waitForAnswer.
-            String strResult = ml.evaluateToOutputForm("4+4", 0);
-            System.out.println("4 + 4 = " + strResult);
+            
+            
+            
 
         } catch (MathLinkException e) {
             System.out.println("MathLinkException occurred: " + e.getMessage());
