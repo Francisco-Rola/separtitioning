@@ -44,7 +44,7 @@ public class GraphBuilder {
 		}
 		
 		variableList = variableList.substring(0, variableList.length() - 2);
-		System.out.println(variableList + "}");
+		// System.out.println(variableList + "}");
 		return variableList + "}";
 	}
 	
@@ -65,8 +65,8 @@ public class GraphBuilder {
 						//compute intersection between rhos given the phis
 						String rhoQuery = rhoV.substring(3) + " == " + rhoGV.substring(3);
 						String phiQuery = phiV + " && " + phiGV;
-						findVariables(rhoV, rhoGV);
-						String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", {warehouse_id}, Integers]";
+						String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
+								+ findVariables(rhoV, rhoGV) + ",  Integers]";
 						System.out.println(query);
 						String result = link.evaluateToOutputForm(query, 0);
 						System.out.println(result);
@@ -97,6 +97,7 @@ public class GraphBuilder {
 					GraphVertex gv = new GraphVertex(sigma);
 					vertices.add(gv);
 					System.out.println("First vertex added successfully");
+					continue;
 				}
 				logicalAdd(v, link);
 			}

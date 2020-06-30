@@ -18,6 +18,7 @@ public class MathematicaHandler {
 		        	String jLinkDir = "/usr/local/Wolfram/Mathematica/12.1/SystemFiles/Links/JLink";
 		            System.setProperty("com.wolfram.jlink.libdir", jLinkDir);
 		            ml = MathLinkFactory.createKernelLink("-linkmode launch -linkname 'math -mathlink'");
+		            ml.discardAnswer();
 		            return ml;
 		        } catch (MathLinkException e) {
 		            System.out.println("Fatal error opening link: " + e.getMessage());
