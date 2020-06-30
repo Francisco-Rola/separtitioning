@@ -11,8 +11,14 @@ public class VertexSigma implements Predicate<Integer>{
 	
 	private ArrayList<String> phis = new ArrayList<>();
 	private ArrayList<String> rhos = new ArrayList<>();
-
 	
+	public ArrayList<String> getPhis() {
+		return this.phis;
+	}
+	
+	public ArrayList<String> getRhos() {
+		return this.rhos;
+	}
 	
 	public VertexSigma(ArrayList<String> phis, ArrayList<String> rhos) {
 		this.phis = phis;

@@ -5,13 +5,15 @@ import java.io.*;
 
 public class Parser {
 
-	public static ArrayList<Vertex> vertices = new ArrayList<>();
+	private static ArrayList<Vertex> vertices = new ArrayList<>();
 
-	public Parser(String file) throws IOException {
-		FileReader input = new FileReader(file);
-		BufferedReader bufRead = new BufferedReader(input);
-		String line = null;
-		buildVertices(bufRead, line);
+	public Parser(String[] files) throws IOException {
+		for (String file : files) {
+			FileReader input = new FileReader(file);
+			BufferedReader bufRead = new BufferedReader(input);
+			String line = null;
+			buildVertices(bufRead, line);
+		}
 	}
 
 	private void buildVertices(BufferedReader file, String line) throws IOException {
@@ -59,11 +61,16 @@ public class Parser {
 
 		}
 	}
+	
+	public static ArrayList<Vertex> getVertices() {
+		return vertices;
+	}
 
 	public static void main(String[] args) {
 		try {
 			//Parser p = new Parser("delivery_final_.txt");
-			Parser p = new Parser("payment_final.txt");
+			String[] files = {"payment_final.txt", "new_order_final.txt"};
+			Parser p = new Parser(files);
 			int vertexCount = 0;
 			for(Vertex vertex : vertices) {
 				vertexCount++;

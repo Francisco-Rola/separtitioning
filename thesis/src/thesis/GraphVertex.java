@@ -8,8 +8,12 @@ public class GraphVertex {
 	
 	private VertexSigma sigma;
 	
-	public GraphVertex(ArrayList<String> phis, ArrayList<String> readSet, ArrayList<String> writeSet) {
-		
+	public GraphVertex(VertexSigma sigma) {
+		this.sigma = sigma;	
+	}
+	
+	public VertexSigma getSigma() {
+		return sigma;
 	}
 
 }

@@ -1,12 +1,68 @@
 package thesis;
 
+import java.io.IOException;
+import java.util.ArrayList;
+
 import com.wolfram.jlink.*;
 
 public class GraphBuilder {
+	
+	private static ArrayList<GraphVertex> vertices = new ArrayList<>();
+	
+	private boolean logicalAdd(Vertex v) {
+		// need to compare newly added vertex to every exisiting vertex
+		for (GraphVertex gv: vertices) {
+			// compare rhos of v and gv that access the same table
+			for (String rhoV: v.getRhos()) {
+				for (String rhoGV: gv.getSigma().getRhos()) {
+					// check if the rhos are related to the same table
+					if (rhoV.charAt(0) == rhoGV.charAt(0)) {
+						//compute intersection between rhos given the phis
+						
+					}
+					continue;
+				}
+			}
+		}
+		return false;
+	}
 
 	public static void main(String[] args) {
 		
-		System.out.println("Running");
+		System.out.println("Running graph builder");
+		
+		try {
+			String[] files = {"payment_final.txt", "new_order_final.txt"};
+			Parser p = new Parser(files);
+			
+			// After obtaining vertices from SE need to make them disjoint
+			ArrayList<Vertex> seVertices = Parser.getVertices();
+			
+			boolean isFirst = true;
+			
+			for (Vertex v: seVertices) {
+				if (isFirst) {
+					// first vertex doesn't need subtracting
+					isFirst = false;
+					VertexSigma sigma = new VertexSigma(v.getPhis(), v.getRhos());
+					GraphVertex gv = new GraphVertex(sigma);
+					vertices.add(gv);
+					System.out.println("First vertex added successfully");
+				}
+				// need to perform logical subtraction to avoid overlapping vertices
+				
+				
+			}
+			
+			
+			
+			
+			
+		} catch (IOException e1) {
+			System.out.println("Unable to parse through SE files");
+			e1.printStackTrace();
+		}
+		
 		
 		KernelLink ml = null;
         try {
@@ -22,15 +78,10 @@ public class GraphBuilder {
             // Get rid of the initial InputNamePacket the kernel will send
             // when it is launched.
             ml.discardAnswer();
-
-            ml.evaluate("Solve(x + ((y * 100) + (z * 10000)) = 100 && x 10 & y < 10 && z < 3000, {x,y,z}, Integers)");
+            
+            System.out.println("Mathematica operations concluded!");
+          
          
-            ml.waitForAnswer();
-            int result = ml.getInteger();
-            
-            System.out.println(result);
-
-            
             
             
 
