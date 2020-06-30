@@ -9,30 +9,39 @@ import com.wolfram.jlink.MathLinkException;
 
 public class VertexSigma implements Predicate<Integer>{
 	
-	private ArrayList<String> phis = new ArrayList<>();
-	private ArrayList<String> rhos = new ArrayList<>();
+	private HashSet<String> phis = new HashSet<>();
+	private HashSet<String> rhos = new HashSet<>();
 	
-	public ArrayList<String> getPhis() {
+	public HashSet<String> getPhis() {
 		return this.phis;
 	}
 	
-	public ArrayList<String> getRhos() {
+	public HashSet<String> getRhos() {
 		return this.rhos;
 	}
 	
-	public VertexSigma(ArrayList<String> phis, ArrayList<String> rhos) {
+	public VertexSigma(HashSet<String> phis, HashSet<String> rhos) {
 		this.phis = phis;
 		this.rhos = rhos;
+	}
+	
+	private String buildPhi() {
+		String finalPhi = "";
+		boolean isFirst = true;
+		for (String phi: phis) {
+			if (!isFirst) {
+				finalPhi += " && ";
+			}
+			finalPhi += phi;
+			isFirst = false;
+		}
+		return finalPhi;
 	}
 	
 	@Override
 	public boolean test(Integer t) {
 		// build an expression from all the phis combined, obtain vertex domain
-		String finalPhi = "";
-		for (int i = 0; i < phis.size(); i++) {
-			if (i != 0) finalPhi += " && ";
-			finalPhi += phis.get(i);
-		}
+		String finalPhi = buildPhi();
 
 		// obtain a mathematica handler to perform operations
 		KernelLink link = MathematicaHandler.getInstance();

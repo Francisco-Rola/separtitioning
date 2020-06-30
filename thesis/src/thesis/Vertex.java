@@ -4,9 +4,9 @@ import java.util.*;
 
 public class Vertex {
 	
-	private ArrayList<String> phis = new ArrayList<>();
-	private ArrayList<String> readSet = new ArrayList<>();
-	private ArrayList<String> writeSet = new ArrayList<>();
+	private HashSet<String> phis = new HashSet<>();
+	private HashSet<String> readSet = new HashSet<>();
+	private HashSet<String> writeSet = new HashSet<>();
 	
 	public Vertex() {
 		// TODO fix me, defaults phis for payment and new order
@@ -23,12 +23,12 @@ public class Vertex {
 		writeSet.add(formula);
 	}
 	
-	public ArrayList<String> getPhis() {
+	public HashSet<String> getPhis() {
 		return this.phis;
 	}
 	
-	public ArrayList<String> getRhos() {
-		ArrayList<String> rhos = new ArrayList<>();
+	public HashSet<String> getRhos() {
+		HashSet<String> rhos = new HashSet<>();
 		rhos.addAll(readSet);
 		rhos.addAll(writeSet);
 		return rhos;
