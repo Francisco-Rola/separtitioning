@@ -1,6 +1,8 @@
 package thesis;
 
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.*;
 
 import com.wolfram.jlink.KernelLink;
@@ -9,83 +11,66 @@ import com.wolfram.jlink.MathLinkException;
 
 public class VertexSigma implements Predicate<Integer>{
 	
-	private HashSet<String> phis = new HashSet<>();
-	private HashSet<String> rhos = new HashSet<>();
+	private HashMap<String, String> rhos = new HashMap<>();
 	
-	public HashSet<String> getPhis() {
-		return this.phis;
+	
+	public String getPhi(String rho) {
+		return rhos.get(rho);
 	}
 	
-	public HashSet<String> getRhos() {
+	public void updatePhi(String rho, String phi) {
+		String newPhi = rhos.get(rho) + " && !(" + phi + ")";
+		rhos.put(rho, newPhi);
+	}
+	
+	public HashMap<String, String> getRhos() {
 		return this.rhos;
 	}
 	
-	public VertexSigma(HashSet<String> phis, HashSet<String> rhos) {
-		this.phis = phis;
-		this.rhos = rhos;
+	public VertexSigma(HashSet<String> rhos) {
+		for (String rho: rhos) {
+			HashSet<String> variables = findVariables(rho);
+			String phi = "";
+			for (String variable : variables) {
+				switch(variable) {
+					case "district_id":
+						phi += "0 <= district_id < 10 && ";
+						break;
+					case "warehouse_id":
+						phi += "0 <= warehouse_id < 10 && ";
+						break;
+					case "customer_id":
+						phi += "0 <= client_id < 100 && ";
+						break;
+					case "ol_supply_w_id":
+						phi += "0 <= ol_supply_w_id < 10";
+						break;
+					case "ol_i_id":
+						phi += "0 <= ol_i_id < 10";
+						break;
+					default:
+						System.out.println("Missing case -> " + variable);
+						break;
+				}
+			}
+			phi = phi.substring(0, phi.length() - 4);
+			this.rhos.put(rho, phi);
+		}
 	}
 	
-	private String buildPhi() {
-		String finalPhi = "";
-		boolean isFirst = true;
-		for (String phi: phis) {
-			if (!isFirst) {
-				finalPhi += " && ";
-			}
-			finalPhi += phi;
-			isFirst = false;
+	private static HashSet<String> findVariables(String rho) {
+		HashSet<String> variables = new HashSet<>();
+		Matcher m = Pattern.compile("\\w+_id").matcher(rho);
+		while(m.find()) {
+			variables.add(rho.substring(m.start(), m.end()));
+			//System.out.println(rho1.substring(m.start(), m.end()));
 		}
-		return finalPhi;
+		return variables;
 	}
+	
 	
 	@Override
-	public boolean test(Integer t) {
-		// build an expression from all the phis combined, obtain vertex domain
-		String finalPhi = buildPhi();
-
-		// obtain a mathematica handler to perform operations
-		KernelLink link = MathematicaHandler.getInstance();
-        try {
-        	// ignore first response packet
-			link.discardAnswer();
-			
-			for (String rho : rhos) {
-				String query = rho + " && " + finalPhi;
-				link.evaluate("Solve(query)");
-			}
-/*			
-			ml.evaluate("2+2");
-            ml.waitForAnswer();
-
-            int result = ml.getInteger();
-            System.out.println("2 + 2 = " + result);
-
-            // Here's how to send the same input, but not as a string:
-            ml.putFunction("EvaluatePacket", 1);
-            ml.putFunction("Plus", 2);
-            ml.put(3);
-            ml.put(3);
-            ml.endPacket();
-            ml.waitForAnswer();
-            result = ml.getInteger();
-            System.out.println("3 + 3 = " + result);
-
-            // If you want the result back as a string, use evaluateToInputForm
-            // or evaluateToOutputForm. The second arg for either is the
-            // requested page width for formatting the string. Pass 0 for
-            // PageWidth->Infinity. These methods get the result in one
-            // step--no need to call waitForAnswer.
-            String strResult = ml.evaluateToOutputForm("4+4", 0);
-            System.out.println("4 + 4 = " + strResult); */
-			
-		} catch (MathLinkException e) {
-			System.out.println("Unable to perform sigma evaluation in Mathematica");
-			e.printStackTrace();
-		}finally {
-            link.close();
-        }
-        
-		
+	public boolean test(Integer t) {		
 		return false;
 	}
 

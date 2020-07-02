@@ -2,7 +2,9 @@ package thesis;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,35 +50,58 @@ public class GraphBuilder {
 		return variableList + "}";
 	}
 	
-	private static boolean logicalAdd(Vertex v, KernelLink link) {
+	private static String rhoIntersection(String rhoQuery, String phiQuery, String variables, KernelLink link) {
+		String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
+				+ variables + "]";
+		System.out.println(query);
+		String result = link.evaluateToOutputForm(query, 0);
+		System.out.println(result);
+		return result;
+	}
+	
+	private static boolean logicalAdd(VertexSigma v, KernelLink link) {
 		// need to compare newly added vertex to every exisiting vertex
-		String phiV = buildPhi(v.getPhis());
-		//System.out.printf("Phi V: %s\n", phiV);
+		HashMap<String, String> rhosV = v.getRhos();
 		for (GraphVertex gv: vertices) {
-			String phiGV = buildPhi(gv.getSigma().getPhis());
-			//System.out.printf("Phi GV: %s\n", phiGV);
-			// compare rhos of v and gv that access the same table
-			for (String rhoV: v.getRhos()) {
-				//System.out.printf("Rho V: %s\n", rhoV);
-				for (String rhoGV: gv.getSigma().getRhos()) {
-					//System.out.printf("Rho GV: %s\n", rhoGV);
+			// obtain all rhos in previously exisiting vertex
+			HashMap<String, String> rhosGV = gv.getSigma().getRhos();
+			// iterate through the new rhos being added
+			for (Map.Entry<String, String> entryV: rhosV.entrySet()) {
+				String rhoV = entryV.getKey();
+				String phiV = entryV.getValue();
+				for (Map.Entry<String, String> entryGV: rhosGV.entrySet()) {
+					String rhoGV = entryGV.getKey();
+					String phiGV = entryGV.getValue();
 					// check if the rhos are related to the same table
-					if (rhoV.charAt(0) == rhoGV.charAt(0)) {
+					if (rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))) {
 						//compute intersection between rhos given the phis
-						String rhoQuery = rhoV.substring(3) + " == " + rhoGV.substring(3);
+						String rhoQuery = rhoV.substring(rhoV.indexOf(">") + 1) + " == " + rhoGV.substring(rhoGV.indexOf(">") + 1);
 						String phiQuery = phiV + " && " + phiGV;
-						String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
-								+ findVariables(rhoV, rhoGV) + ",  Integers]";
-						System.out.println(query);
-						String result = link.evaluateToOutputForm(query, 0);
-						System.out.println(result);
-						return true;
+						String variables = findVariables(rhoV, rhoGV);
+						String result = rhoIntersection(rhoQuery, phiQuery, variables, link);
+						// check the intersection results
+						if (result.equals("False")) {
+							// no overlap so no subtraction needed
+							continue;
+						}
+						else {
+							// need to update phi for the given rho where intersection was found
+							v.updatePhi(rhoV, result);
+						}
 					}
+					// if rhos are related to same table there is  no point to compare them
 					continue;
 				}
 			}
 		}
-		return false;
+		// in this stage the new vertex has been compare and updated regarding all previous vertices
+		vertices.add(new GraphVertex(v));
+		for (Map.Entry<String, String> entry : v.getRhos().entrySet()) {
+			System.out.println("RHo: " + entry.getKey());
+			System.out.println("Phi: " + entry.getValue());
+		}
+		System.out.println("Vertex added successfully");
+		return true;
 	}
 	
 	private static void buildGraph(KernelLink link) {
@@ -93,13 +118,14 @@ public class GraphBuilder {
 				if (isFirst) {
 					// first vertex doesn't need subtracting
 					isFirst = false;
-					VertexSigma sigma = new VertexSigma(v.getPhis(), v.getRhos());
+					VertexSigma sigma = new VertexSigma(v.getRhos());
 					GraphVertex gv = new GraphVertex(sigma);
 					vertices.add(gv);
 					System.out.println("First vertex added successfully");
 					continue;
 				}
-				logicalAdd(v, link);
+				VertexSigma sigma = new VertexSigma(v.getRhos());
+				logicalAdd(sigma, link);
 			}
 		} catch (IOException e1) {
 			System.out.println("Unable to parse through SE files");
