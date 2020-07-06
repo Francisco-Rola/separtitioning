@@ -12,21 +12,8 @@ import java.util.regex.Pattern;
 import com.wolfram.jlink.*;
 
 public class GraphBuilder {
-	
-	private static ArrayList<GraphVertex> vertices = new ArrayList<>();
-	
-	private static String buildPhi(HashSet<String> phis) {
-		String finalPhi = "";
-		boolean isFirst = true;
-		for (String phi: phis) {
-			if (!isFirst) {
-				finalPhi += " && ";
-			}
-			finalPhi += phi;
-			isFirst = false;
-		}
-		return finalPhi;
-	}
+		
+	private static HashMap<GraphVertex, ArrayList<GraphEdge>> graph = new HashMap<>();
 	
 	private static String findVariables(String rho1, String rho2) {
 		HashSet<String> variables = new HashSet<>();
@@ -50,19 +37,43 @@ public class GraphBuilder {
 		return variableList + "}";
 	}
 	
-	private static String rhoIntersection(String rhoQuery, String phiQuery, String variables, KernelLink link) {
-		String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
-				+ variables + "]";
-		System.out.println(query);
-		String result = link.evaluateToOutputForm(query, 0);
-		System.out.println(result);
-		return result;
+	private static String rhoIntersection(String rhoV, String rhoGV, String phiV, String phiGV, KernelLink link) {
+
+		if (rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))) {
+			String rhoQuery = rhoV.substring(rhoV.indexOf(">") + 1) + " == " + rhoGV.substring(rhoGV.indexOf(">") + 1);
+			String phiQuery = phiV + " && " + phiGV;
+			String variables = findVariables(rhoV, rhoGV);
+			String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
+					+ variables + "]";
+			System.out.println(query);
+			String result = link.evaluateToOutputForm(query, 0);
+			System.out.println(result);
+			return result;
+		}
+		return "False";
+	}
+	
+	private static void addEdge(GraphEdge edge) {
+		GraphVertex src = edge.getSrc();
+		if (graph.get(src) == null) {
+			ArrayList<GraphEdge> edges = new ArrayList<>();
+			edges.add(edge);
+			graph.put(src, edges);
+			return;
+		}
+		graph.get(src).add(edge);
 	}
 	
 	private static boolean logicalAdd(VertexSigma v, KernelLink link) {
+		
+		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
+		
+		GraphVertex newVertex = new GraphVertex(v);
+		
 		// need to compare newly added vertex to every exisiting vertex
 		HashMap<String, String> rhosV = v.getRhos();
-		for (GraphVertex gv: vertices) {
+		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
+			GraphVertex gv = node.getKey();
 			// obtain all rhos in previously exisiting vertex
 			HashMap<String, String> rhosGV = gv.getSigma().getRhos();
 			// iterate through the new rhos being added
@@ -72,43 +83,43 @@ public class GraphBuilder {
 				for (Map.Entry<String, String> entryGV: rhosGV.entrySet()) {
 					String rhoGV = entryGV.getKey();
 					String phiGV = entryGV.getValue();
-					// check if the rhos are related to the same table
-					if (rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))) {
-						//compute intersection between rhos given the phis
-						String rhoQuery = rhoV.substring(rhoV.indexOf(">") + 1) + " == " + rhoGV.substring(rhoGV.indexOf(">") + 1);
-						String phiQuery = phiV + " && " + phiGV;
-						String variables = findVariables(rhoV, rhoGV);
-						String result = rhoIntersection(rhoQuery, phiQuery, variables, link);
-						// check the intersection results
-						if (result.equals("False")) {
-							// no overlap so no subtraction needed
-							continue;
-						}
-						else {
-							// need to update phi for the given rho where intersection was found
-							v.updatePhi(rhoV, result);
-						}
+					
+					//compute intersection between rhos given the phis
+					String result = rhoIntersection(rhoV, rhoGV, phiV, phiGV, link);
+					// check the intersection results
+					if (result.equals("False")) {
+						// no overlap so no subtraction needed
+						continue;
 					}
-					// if rhos are related to same table there is  no point to compare them
-					continue;
+					else {
+						System.out.println("Collision found, adding edge");
+						// collision found, perform phi logical subtraction
+						newVertex.getSigma().updatePhi(rhoV, result);
+						// add edge between vertices whose rhos-phi overlapped
+						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, phiV);
+						GraphEdge edgeSrcGV = new GraphEdge(gv, newVertex, rhoGV, phiGV, edgeSrcV.getEdgeWeight());
+						foundEdges.add(edgeSrcV);
+						foundEdges.add(edgeSrcGV);
+					}
 				}
 			}
 		}
-		// in this stage the new vertex has been compare and updated regarding all previous vertices
-		vertices.add(new GraphVertex(v));
-		for (Map.Entry<String, String> entry : v.getRhos().entrySet()) {
-			System.out.println("RHo: " + entry.getKey());
-			System.out.println("Phi: " + entry.getValue());
+		// in this stage the new vertex has been compared and updated regarding all previous vertices
+		graph.put(newVertex, null);
+		
+		// add its edges to the graph as well
+		for (GraphEdge e : foundEdges) {
+			addEdge(e);
 		}
+		
 		System.out.println("Vertex added successfully");
 		return true;
 	}
 	
 	private static void buildGraph(KernelLink link) {
 		try {
-			String[] files = {"payment_final.txt", "new_order_final.txt"};
-			Parser p = new Parser(files);
-			
+			String[] files = {"payment_final.txt", "new_order_final.txt"};			
+			new Parser(files);
 			// After obtaining vertices from SE need to make them disjoint
 			ArrayList<Vertex> seVertices = Parser.getVertices();
 			
@@ -120,7 +131,7 @@ public class GraphBuilder {
 					isFirst = false;
 					VertexSigma sigma = new VertexSigma(v.getRhos());
 					GraphVertex gv = new GraphVertex(sigma);
-					vertices.add(gv);
+					graph.put(gv, new ArrayList<>());
 					System.out.println("First vertex added successfully");
 					continue;
 				}

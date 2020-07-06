@@ -23,6 +23,14 @@ public class VertexSigma implements Predicate<Integer>{
 		rhos.put(rho, newPhi);
 	}
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((rhos == null) ? 0 : rhos.hashCode());
+		return result;
+	}
+
 	public HashMap<String, String> getRhos() {
 		return this.rhos;
 	}
