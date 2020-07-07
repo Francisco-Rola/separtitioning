@@ -39,6 +39,13 @@ public class VertexSigma implements Predicate<Integer>{
 		for (String rho: rhos) {
 			String rhoUpdated = rho.replaceAll("ol_supply_w_id\\S*\\s*", "olsupplyw_id ");
 			rhoUpdated = rhoUpdated.replaceAll("ol_i_id\\S*\\s*", "oli_id ");
+			if (rhoUpdated.contains("GET")) {				
+				rhoUpdated = rhoUpdated.replaceAll("GET.*->10\\)"
+						, "ir_id");
+				//rhoUpdated = rhoUpdated.replaceAll
+						//("GET-0@Tpcc:79=2->(district_id + (warehouse_id * 100))->10", "ir_id");
+				System.out.println(rhoUpdated);
+			}
 			
 			HashSet<String> variables = findVariables(rhoUpdated);
 			String phi = "";
@@ -57,6 +64,9 @@ public class VertexSigma implements Predicate<Integer>{
 				}
 				else if (variable.equals("oli_id")) {
 					phi += "0 <= oli_id < 10 && ";
+				}
+				else if (variable.equals("ir_id")) {
+					phi += "0 <= ir_id < 10 && ";
 				}
 				else {
 					System.out.println("Missing case -> " + variable);
