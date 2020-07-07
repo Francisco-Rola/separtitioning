@@ -64,7 +64,7 @@ public class GraphBuilder {
 		graph.get(src).add(edge);
 	}
 	
-	private static boolean logicalAdd(VertexSigma v, KernelLink link) {
+	private static void logicalAdd(VertexSigma v, KernelLink link) {
 		
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 		
@@ -112,8 +112,10 @@ public class GraphBuilder {
 			addEdge(e);
 		}
 		
-		System.out.println("Vertex added successfully");
-		return true;
+		// compute vertex weight
+		newVertex.computeVertexWeight(link);	
+		
+		System.out.println("Vertex added successfully");		
 	}
 	
 	private static void buildGraph(KernelLink link) {
@@ -132,6 +134,7 @@ public class GraphBuilder {
 					VertexSigma sigma = new VertexSigma(v.getRhos());
 					GraphVertex gv = new GraphVertex(sigma);
 					graph.put(gv, new ArrayList<>());
+					gv.computeVertexWeight(link);
 					System.out.println("First vertex added successfully");
 					continue;
 				}

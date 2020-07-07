@@ -42,7 +42,7 @@ public class GraphEdge {
 	private int computeEdgeWeight(String edgePhi) {
 		
 		// how many inputs generate remote access 
-		int weight = 0;
+		int weight = 1;
 		
 		String aux = edgePhi;
 		
@@ -63,16 +63,9 @@ public class GraphEdge {
 				end = Integer.parseInt(aux);
 				aux = "";
 			}
-			
-			if (weight != 0 ) {
-				weight *= end - start ;
-			}
-			else {
-				weight += end - start;
-
-			}
-
-		}		
+			weight *= end - start ;
+		}
+		System.out.println("Edge weight -> " + weight);
 		return weight;
 			
 	}

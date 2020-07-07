@@ -37,41 +37,41 @@ public class VertexSigma implements Predicate<Integer>{
 	
 	public VertexSigma(HashSet<String> rhos) {
 		for (String rho: rhos) {
-			HashSet<String> variables = findVariables(rho);
+			String rhoUpdated = rho.replaceAll("ol_supply_w_id\\S*\\s*", "olsupplyw_id ");
+			rhoUpdated = rhoUpdated.replaceAll("ol_i_id\\S*\\s*", "oli_id ");
+			
+			HashSet<String> variables = findVariables(rhoUpdated);
 			String phi = "";
 			for (String variable : variables) {
-				switch(variable) {
-					case "district_id":
-						phi += "0 <= district_id < 10 && ";
-						break;
-					case "warehouse_id":
-						phi += "0 <= warehouse_id < 10 && ";
-						break;
-					case "customer_id":
-						phi += "0 <= client_id < 100 && ";
-						break;
-					case "ol_supply_w_id":
-						phi += "0 <= ol_supply_w_id < 10";
-						break;
-					case "ol_i_id":
-						phi += "0 <= ol_i_id < 10";
-						break;
-					default:
-						System.out.println("Missing case -> " + variable);
-						break;
+				if (variable.equals("district_id")) {
+					phi += "0 <= district_id < 10 && ";
+				}
+				else if (variable.equals("warehouse_id")) {
+					phi += "0 <= warehouse_id < 10 && ";
+				}
+				else if (variable.equals("customer_id")) {
+					phi += "0 <= customer_id < 10 && ";
+				}
+				else if (variable.equals("olsupplyw_id")) {
+					phi += "0 <= olsupplyw_id < 10 && ";
+				}
+				else if (variable.equals("oli_id")) {
+					phi += "0 <= oli_id < 10 && ";
+				}
+				else {
+					System.out.println("Missing case -> " + variable);
 				}
 			}
 			phi = phi.substring(0, phi.length() - 4);
-			this.rhos.put(rho, phi);
+			this.rhos.put(rhoUpdated, phi);
 		}
 	}
 	
-	private static HashSet<String> findVariables(String rho) {
+	public HashSet<String> findVariables(String rho) {
 		HashSet<String> variables = new HashSet<>();
-		Matcher m = Pattern.compile("\\w+_id").matcher(rho);
+		Matcher m = Pattern.compile("(\\w+_id\\S*)\\s*").matcher(rho);
 		while(m.find()) {
-			variables.add(rho.substring(m.start(), m.end()));
-			//System.out.println(rho1.substring(m.start(), m.end()));
+			variables.add((m.group(1)));
 		}
 		return variables;
 	}
