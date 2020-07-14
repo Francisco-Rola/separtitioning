@@ -56,12 +56,12 @@ public class GraphVertex {
 			variableList += "}";
 			
 			String query = "FunctionRange[{" + rhoFinal + ", " + phi + "}, " + variableList + ", weight]";
-			System.out.println(query);
+			//System.out.println(query);
 			
 			String result = link.evaluateToOutputForm(query, 0);
 			
 			if (!result.equals("False")) {
-				start = Integer.parseInt(result.substring(0, result.indexOf("<=") - 1));
+				start = Integer.parseInt(result.substring(0, result.indexOf("<") - 1));
 				end = Integer.parseInt(result.substring(result.lastIndexOf("< ") + 2));
 				weight += end - start;
 			}

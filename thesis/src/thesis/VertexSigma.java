@@ -30,7 +30,6 @@ public class VertexSigma implements Predicate<Integer>{
 	}
 	
 	private static String trimPhi(String s) {
-		System.out.println(s);
 		String trim = s.replaceAll("(\\s&&\\s)?\\(\\w+_id\\)\\s\\S+\\s\\d+", "");
 		return trim.replaceAll("idV", "id");
 	}
