@@ -16,12 +16,13 @@ public class GraphEdge {
 	// set of inputs that cause vertices to overlap hence causing an edge
 	private String edgePhi = null;
 	
-	public GraphEdge(GraphVertex src, GraphVertex dest, String edgeRho, String edgePhi)  {
+	public GraphEdge(GraphVertex src, GraphVertex dest, String edgeRho, String intersection)  {
 		this.src = src;
 		this.dest = dest;
 		this.edgeRho = edgeRho;
-		this.edgePhi = edgePhi;
-		this.edgeWeight = computeEdgeWeight(edgePhi);
+		this.edgePhi = intersection.replaceAll("(\\s&&\\s)?\\(\\w+_id\\)\\s\\S+\\s\\d+", "")
+						.replaceAll("idV", "id");
+		this.edgeWeight = computeEdgeWeight(intersection);
 		System.out.println("Added edge with weight " + this.edgeWeight );
 	}
 	
