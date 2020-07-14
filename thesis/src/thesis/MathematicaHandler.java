@@ -4,6 +4,7 @@ import com.wolfram.jlink.KernelLink;
 import com.wolfram.jlink.MathLinkException;
 import com.wolfram.jlink.MathLinkFactory;
 
+// singleton class that is responsible for keeping a Mathematica endpoint
 public class MathematicaHandler {
 	
 	private static KernelLink ml = null;

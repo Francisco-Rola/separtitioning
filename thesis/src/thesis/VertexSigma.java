@@ -19,9 +19,22 @@ public class VertexSigma implements Predicate<Integer>{
 	}
 	
 	public void updatePhi(String rho, String phi) {
-		String newPhi = rhos.get(rho) + " && !(" + phi + ")";
-		rhos.put(rho, newPhi);
+		
+		String phiTrimmed = trimPhi(phi);
+		
+		String newPhi = rhos.get(rho) + " && !(" + phiTrimmed + ")";
+		KernelLink link = MathematicaHandler.getInstance();
+		String query = "Simplify[" + newPhi + "]";
+		String result = link.evaluateToOutputForm(query, 0);
+		rhos.put(rho, result);
 	}
+	
+	private static String trimPhi(String s) {
+		System.out.println(s);
+		String trim = s.replaceAll("(\\s&&\\s)?\\(\\w+_id\\)\\s\\S+\\s\\d+", "");
+		return trim.replaceAll("idV", "id");
+	}
+
 	
 	@Override
 	public int hashCode() {
@@ -42,9 +55,6 @@ public class VertexSigma implements Predicate<Integer>{
 			if (rhoUpdated.contains("GET")) {				
 				rhoUpdated = rhoUpdated.replaceAll("GET.*->10\\)"
 						, "ir_id");
-				//rhoUpdated = rhoUpdated.replaceAll
-						//("GET-0@Tpcc:79=2->(district_id + (warehouse_id * 100))->10", "ir_id");
-				System.out.println(rhoUpdated);
 			}
 			
 			HashSet<String> variables = findVariables(rhoUpdated);

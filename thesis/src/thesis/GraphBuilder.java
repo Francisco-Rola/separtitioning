@@ -17,7 +17,7 @@ public class GraphBuilder {
 	
 	private static String findVariables(String rho1, String rho2) {
 		HashSet<String> variables = new HashSet<>();
-		Matcher m = Pattern.compile("\\w+_id").matcher(rho1);
+		Matcher m = Pattern.compile("\\w+_idV\\w?").matcher(rho1);
 		while(m.find()) {
 			variables.add(rho1.substring(m.start(), m.end()));
 			//System.out.println(rho1.substring(m.start(), m.end()));
@@ -37,20 +37,31 @@ public class GraphBuilder {
 		return variableList + "}";
 	}
 	
-	private static String rhoIntersection(String rhoV, String rhoGV, String phiV, String phiGV, KernelLink link) {
+	private static String rhoIntersection(String rho, String rhoGV, String phi, String phiGV) {
 
-		if (rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))) {
+		if (rho.substring(0, rho.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))) {
+			
+			KernelLink link = MathematicaHandler.getInstance();
+			
+			String rhoV = variableRename(rho);
+			String phiV = variableRename(phi);
+			
 			String rhoQuery = rhoV.substring(rhoV.indexOf(">") + 1) + " == " + rhoGV.substring(rhoGV.indexOf(">") + 1);
 			String phiQuery = phiV + " && " + phiGV;
 			String variables = findVariables(rhoV, rhoGV);
 			String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
-					+ variables + "]";
+					+ variables + ", Integers]";
 			System.out.println(query);
 			String result = link.evaluateToOutputForm(query, 0);
 			System.out.println(result);
+			
 			return result;
 		}
 		return "False";
+	}
+	
+	private static String variableRename(String s) {
+		return s.replaceAll("id", "idV");
 	}
 	
 	private static void addEdge(GraphEdge edge) {
@@ -64,7 +75,7 @@ public class GraphBuilder {
 		graph.get(src).add(edge);
 	}
 	
-	private static void logicalAdd(VertexSigma v, KernelLink link) {
+	private static void logicalAdd(VertexSigma v) {
 		
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 		
@@ -85,7 +96,7 @@ public class GraphBuilder {
 					String phiGV = entryGV.getValue();
 					
 					//compute intersection between rhos given the phis
-					String result = rhoIntersection(rhoV, rhoGV, phiV, phiGV, link);
+					String result = rhoIntersection(rhoV, rhoGV, phiV, phiGV);
 					// check the intersection results
 					if (result.equals("False")) {
 						// no overlap so no subtraction needed
@@ -96,10 +107,8 @@ public class GraphBuilder {
 						// collision found, perform phi logical subtraction
 						newVertex.getSigma().updatePhi(rhoV, result);
 						// add edge between vertices whose rhos-phi overlapped
-						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, phiV);
-						GraphEdge edgeSrcGV = new GraphEdge(gv, newVertex, rhoGV, phiGV, edgeSrcV.getEdgeWeight());
+						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, result);
 						foundEdges.add(edgeSrcV);
-						foundEdges.add(edgeSrcGV);
 					}
 				}
 			}
@@ -113,33 +122,37 @@ public class GraphBuilder {
 		}
 		
 		// compute vertex weight
-		newVertex.computeVertexWeight(link);	
+		newVertex.computeVertexWeight();	
 		
 		System.out.println("Vertex added successfully");		
 	}
 	
-	private static void buildGraph(KernelLink link) {
+	private static void buildGraph() {
 		try {
+			// obtain vertices from SE tree
 			String[] files = {"payment_final.txt", "new_order_final.txt"};			
 			new Parser(files);
 			// After obtaining vertices from SE need to make them disjoint
 			ArrayList<Vertex> seVertices = Parser.getVertices();
-			
+			// first vertex doesn't need special treatment
 			boolean isFirst = true;
 			
 			for (Vertex v: seVertices) {
 				if (isFirst) {
-					// first vertex doesn't need subtracting
 					isFirst = false;
+					// build vertex sigma to identify items in V
 					VertexSigma sigma = new VertexSigma(v.getRhos());
+					// build a graph vertex 
 					GraphVertex gv = new GraphVertex(sigma);
+					// store it in the graph
 					graph.put(gv, new ArrayList<>());
-					gv.computeVertexWeight(link);
+					// compute its weight, i.e. how many items does it contain
+					gv.computeVertexWeight();
 					System.out.println("First vertex added successfully");
 					continue;
 				}
 				VertexSigma sigma = new VertexSigma(v.getRhos());
-				logicalAdd(sigma, link);
+				logicalAdd(sigma);
 			}
 		} catch (IOException e1) {
 			System.out.println("Unable to parse through SE files");
@@ -153,7 +166,7 @@ public class GraphBuilder {
 		
 		KernelLink link = MathematicaHandler.getInstance();
 		
-		buildGraph(link);
+		buildGraph();
 
 	}
 }

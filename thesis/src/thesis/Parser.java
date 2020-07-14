@@ -3,6 +3,7 @@ package thesis;
 import java.util.*;
 import java.io.*;
 
+// class responsible for parsing through SE file and generating vertices
 public class Parser {
 
 	private static ArrayList<Vertex> vertices = new ArrayList<>();
@@ -29,7 +30,7 @@ public class Parser {
 			}
 			// read set
 			if (rwsetFound && line.startsWith("R:")) {
-				// remove Readset tag from string
+				// remove readset tag from string
 				line = line.substring(line.indexOf(":") + 2);
 				// obtain all read formulas
 				String[] readFormulas = line.split(", ");
@@ -39,7 +40,7 @@ public class Parser {
 			}
 			// write set
 			else if (rwsetFound && line.startsWith("W:")) {
-				// remove Writeset tag from string
+				// remove writeset tag from string
 				line = line.substring(line.indexOf(":") + 2);
 				// obtain all write formulas
 				String[] writeFormulas = line.split(", ");
@@ -68,7 +69,6 @@ public class Parser {
 
 	public static void main(String[] args) {
 		try {
-			//Parser p = new Parser("delivery_final_.txt");
 			String[] files = {"payment_final.txt", "new_order_final.txt"};
 			Parser p = new Parser(files);
 			int vertexCount = 0;
@@ -77,6 +77,7 @@ public class Parser {
 				System.out.println("Vertex no " + vertexCount);
 				vertex.printVertex();
 			}
+			System.out.println("Number of symbolic vertices: " + vertexCount);
 		} catch (IOException e) {
 			System.out.println("Symbolic execution file not found");
 			e.printStackTrace();

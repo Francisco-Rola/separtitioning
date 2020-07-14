@@ -2,6 +2,7 @@ package thesis;
 
 import java.util.*;
 
+// class that represents a symbolic vertex before transformation into a graph vertex
 public class Vertex {
 	
 	private HashSet<String> readSet = new HashSet<>();
@@ -21,6 +22,7 @@ public class Vertex {
 	
 	
 	public HashSet<String> getRhos() {
+		// deal with duplicate formulas by storing them in a set
 		HashSet<String> rhos = new HashSet<>();
 		rhos.addAll(readSet);
 		rhos.addAll(writeSet);

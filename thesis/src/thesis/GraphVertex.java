@@ -29,7 +29,10 @@ public class GraphVertex {
 		return result;
 	}
 	
-	public void computeVertexWeight(KernelLink link) {
+	public void computeVertexWeight() {
+		
+		KernelLink link = MathematicaHandler.getInstance();
+		
 		// variables needed to compute vertex weight
 		int weight = 0;
 		int start = 0;
@@ -65,7 +68,7 @@ public class GraphVertex {
 			else {
 				System.out.println("Rho fully removed from V");
 				// this rho was fully removed from the vertex TODO eventually keep it for spliting options
-				//this.sigma.getRhos().remove(entry.getKey());
+				this.sigma.getRhos().remove(entry.getKey());
 			}
 						
 			

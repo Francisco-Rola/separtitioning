@@ -1,13 +1,19 @@
 package thesis;
 
+import com.wolfram.jlink.KernelLink;
+
+// class that represents a edge in the graph
 public class GraphEdge {
 	
+	// source vertex for the edge, V
 	private GraphVertex src;
+	// destiny vertex for the edge, GV
 	private GraphVertex dest;
-	
+	// number of inputs that cause a transaction to be executed remotely
 	private int edgeWeight = 0;
-	
+	// formula on V that overlaps with a previously existing formula on GV for the given edgePhi
 	private String edgeRho = null;
+	// set of inputs that cause vertices to overlap hence causing an edge
 	private String edgePhi = null;
 	
 	public GraphEdge(GraphVertex src, GraphVertex dest, String edgeRho, String edgePhi)  {
@@ -15,17 +21,9 @@ public class GraphEdge {
 		this.dest = dest;
 		this.edgeRho = edgeRho;
 		this.edgePhi = edgePhi;
-		this.edgeWeight = computeEdgeWeight(edgePhi);		
+		this.edgeWeight = computeEdgeWeight(edgePhi);
+		System.out.println("Added edge with weight " + this.edgeWeight );
 	}
-	
-	public GraphEdge(GraphVertex src, GraphVertex dest, String edgeRho, String edgePhi, int weight)  {
-		this.src = src;
-		this.dest = dest;
-		this.edgeRho = edgeRho;
-		this.edgePhi = edgePhi;
-		this.edgeWeight = weight;
-	}
-	
 	
 	public GraphVertex getSrc() {
 		return src;
@@ -40,34 +38,14 @@ public class GraphEdge {
 	}
 	
 	private int computeEdgeWeight(String edgePhi) {
-		
+		// obtain a mathematica endpoint
+		KernelLink link = MathematicaHandler.getInstance();
+		// build a length query that calculates length of the overlapping phis
+		String query = "Length["+ edgePhi + "]";
 		// how many inputs generate remote access 
-		int weight = 1;
-		
-		String aux = edgePhi;
-		
-		int start = 0;
-		int end = 0;
-		
-		
-		while (aux != "") {
-			start = Integer.parseInt(aux.substring(0, aux.indexOf("<=") - 1));
-			aux = aux.substring(aux.indexOf("id < ") + 5);
-			
-			if (aux.contains("&&")) {
-				end = Integer.parseInt(aux.substring(0, aux.indexOf(" ")));
-				aux = aux.substring(aux.indexOf("&& ") + 3);
-
-			}
-			else {
-				end = Integer.parseInt(aux);
-				aux = "";
-			}
-			weight *= end - start ;
-		}
-		System.out.println("Edge weight -> " + weight);
-		return weight;
-			
+		String result = link.evaluateToOutputForm(query, 0);
+		// parse the output to an integer
+		return Integer.parseInt(result);
 	}
 
 }
