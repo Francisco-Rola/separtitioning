@@ -76,5 +76,10 @@ public class GraphVertex {
 		
 		this.vertexWeight = weight;
 	}
+	
+	public void printVertex() {
+		System.out.println("Vertex weight: " + this.vertexWeight);
+		this.sigma.printSigma();
+	}
 		
 }

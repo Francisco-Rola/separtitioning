@@ -95,6 +95,13 @@ public class VertexSigma implements Predicate<Integer>{
 		return variables;
 	}
 	
+	public void printSigma() {
+		for (Map.Entry<String, String> entry: rhos.entrySet()) {
+			System.out.println("Rho: " + entry.getKey() + " -> Phi: " + entry.getValue());
+		}
+		
+	}
+	
 	
 	@Override
 	public boolean test(Integer t) {		

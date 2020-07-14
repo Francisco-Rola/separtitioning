@@ -37,6 +37,12 @@ public class GraphEdge {
 		return this.edgeWeight;
 	}
 	
+	public void printEdge() {
+		System.out.println("Edge rho: " + this.edgeRho);
+		System.out.println("Edge phi: " + this.edgePhi);
+		System.out.println("Edge weight: " + this.edgeWeight);
+	}
+	
 	private int computeEdgeWeight(String edgePhi) {
 		// obtain a mathematica endpoint
 		KernelLink link = MathematicaHandler.getInstance();

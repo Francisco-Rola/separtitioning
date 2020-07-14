@@ -159,14 +159,28 @@ public class GraphBuilder {
 			e1.printStackTrace();
 		}
 	}
+	
+	public static void printGraph() {
+		int noVertices = 1;
+		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> entry: graph.entrySet()) {
+			System.out.println("Printing vertex no " + noVertices);
+			entry.getKey().printVertex();
+			System.out.println("Printing edges for vertex no " + noVertices);
+			for (GraphEdge e: entry.getValue()) {
+				e.printEdge();
+			}
+			System.out.println("--------------------------");
+			noVertices++;
+		}
+	}
 
 	public static void main(String[] args) {
 		
 		System.out.println("Running graph builder");
-		
-		KernelLink link = MathematicaHandler.getInstance();
-		
+				
 		buildGraph();
+		
+		printGraph();
 
 	}
 }
