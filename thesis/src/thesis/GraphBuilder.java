@@ -50,7 +50,7 @@ public class GraphBuilder {
 			String phiQuery = phiV + " && " + phiGV;
 			String variables = findVariables(rhoV, rhoGV);
 			String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
-					+ variables + ", Integers]";
+					+ variables + ", Integers, Backsubstitution -> True]";
 			//System.out.println(query);
 			String result = link.evaluateToOutputForm(query, 0);
 			//System.out.println(result);

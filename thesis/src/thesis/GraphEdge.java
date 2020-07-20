@@ -1,5 +1,13 @@
 package thesis;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.wolfram.jlink.KernelLink;
 
 // class that represents a edge in the graph
@@ -22,7 +30,7 @@ public class GraphEdge {
 		this.edgeRho = edgeRho;
 		this.edgePhi = intersection.replaceAll("(\\s&&\\s)?\\(\\w+_id\\)\\s\\S+\\s\\d+", "")
 						.replaceAll("idV", "id");
-		this.edgeWeight = computeEdgeWeight(intersection);
+		this.edgeWeight = computeEdgeWeight(edgePhi);
 		System.out.println("Added edge with weight " + this.edgeWeight );
 	}
 	
@@ -45,14 +53,46 @@ public class GraphEdge {
 	}
 	
 	private int computeEdgeWeight(String edgePhi) {
-		// obtain a mathematica endpoint
-		KernelLink link = MathematicaHandler.getInstance();
-		// build a length query that calculates length of the overlapping phis
-		String query = "Length["+ edgePhi + "]";
-		// how many inputs generate remote access 
-		String result = link.evaluateToOutputForm(query, 0);
-		// parse the output to an integer
-		return Integer.parseInt(result);
+		
+		if (!edgePhi.contains("Integers")) {
+			// obtain a mathematica endpoint
+			KernelLink link = MathematicaHandler.getInstance();
+			// build a length query that calculates length of the overlapping phis
+			String query = "Length["+ edgePhi + "]";
+			// how many inputs generate remote access 
+			String result = link.evaluateToOutputForm(query, 0);
+			// parse the output to an integer
+			return Integer.parseInt(result);
+		}
+		else {
+			int noSolutions = 0;
+			String[] solutions = edgePhi.split("\\|\\|");
+			for (String solution: solutions) {
+				if (!solution.contains("Integers")) {
+					noSolutions++;
+					continue;
+				}
+				else {
+					int noSolutionsPartial = 1;
+					String[] partialSolutions = solution.split("&&");
+					for (String partialSolution: partialSolutions) {
+						if (!partialSolution.contains("<")) {
+							continue;
+						}
+						else {
+							// check how many solutions in partial solution
+							int start = Integer.parseInt(partialSolution.substring(1, partialSolution.indexOf("<") - 1));
+							int end = Integer.parseInt(partialSolution.substring(partialSolution.lastIndexOf("<") + 3).trim());
+							noSolutionsPartial *= end - start + 1;
+						}
+					}
+					noSolutions += noSolutionsPartial;
+					noSolutionsPartial = 0;
+				}
+				
+			}
+			return noSolutions;
+		}
 	}
 
 }

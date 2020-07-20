@@ -32,8 +32,11 @@ public class VertexSigma implements Predicate<Integer>{
 	private static String trimPhi(String s) {
 		String trim = s.replaceAll("(\\s&&\\s)?\\(\\w+_id\\)\\s\\S+\\s\\d+", "");
 		String output =  trim.replaceAll("idV", "id");
-		System.out.println(output);
 		return output;
+	}
+	
+	public void removeRho(String rho) {
+		rhos.remove(rho);
 	}
 
 	
@@ -62,22 +65,22 @@ public class VertexSigma implements Predicate<Integer>{
 			String phi = "";
 			for (String variable : variables) {
 				if (variable.equals("district_id")) {
-					phi += "0 <= district_id < 10 && ";
+					phi += "0 < district_id <= 10 && ";
 				}
 				else if (variable.equals("warehouse_id")) {
-					phi += "0 <= warehouse_id < 10 && ";
+					phi += "0 < warehouse_id <= 10 && ";
 				}
 				else if (variable.equals("customer_id")) {
-					phi += "0 <= customer_id < 10 && ";
+					phi += "0 < customer_id <= 3000 && ";
 				}
 				else if (variable.equals("olsupplyw_id")) {
-					phi += "0 <= olsupplyw_id < 10 && ";
+					phi += "0 < olsupplyw_id <= 10 && ";
 				}
 				else if (variable.equals("oli_id")) {
-					phi += "0 <= oli_id < 10 && ";
+					phi += "0 < oli_id <= 10 && ";
 				}
 				else if (variable.equals("ir_id")) {
-					phi += "0 <= ir_id < 10 && ";
+					phi += "0 < ir_id <= 10 && ";
 				}
 				else {
 					System.out.println("Missing case -> " + variable);

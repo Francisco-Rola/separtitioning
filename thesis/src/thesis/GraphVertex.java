@@ -1,9 +1,13 @@
 package thesis;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 
+import com.wolfram.jlink.Expr;
+import com.wolfram.jlink.ExprFormatException;
 import com.wolfram.jlink.KernelLink;
 
 public class GraphVertex {
@@ -33,10 +37,7 @@ public class GraphVertex {
 		
 		KernelLink link = MathematicaHandler.getInstance();
 		
-		// variables needed to compute vertex weight
-		int weight = 0;
-		int start = 0;
-		int end = 0;
+		HashMap<String, String> tableAccess = new HashMap<>();
 		
 		// iterate through all the rhos-phi in the sigma for the vertex
 		HashMap<String, String> rhosPhi = sigma.getRhos();
@@ -53,28 +54,72 @@ public class GraphVertex {
 				variableList += variable + ", ";
 			}
 			variableList = variableList.substring(0, variableList.length() - 2);
-			variableList += "}";
+			variableList += ", x}";
 			
-			String query = "FunctionRange[{" + rhoFinal + ", " + phi + "}, " + variableList + ", weight]";
-			//System.out.println(query);
-			
-			String result = link.evaluateToOutputForm(query, 0);
-			
-			if (!result.equals("False")) {
-				start = Integer.parseInt(result.substring(0, result.indexOf("<") - 1));
-				end = Integer.parseInt(result.substring(result.lastIndexOf("< ") + 2));
-				weight += end - start;
+			String query = "Reduce[" + rhoFinal + " == x" + " && " + phi + ", " 
+					+ variableList + ", Integers, Backsubstitution -> True]";
+			String result = link.evaluateToInputForm(query, 0);
+
+			if (result.equals("False")) {
+				// rho fully removed
+				System.out.println("Rho empty for input phi, removing");
 			}
 			else {
-				System.out.println("Rho fully removed from V");
-				// this rho was fully removed from the vertex TODO eventually keep it for spliting options
-				this.sigma.getRhos().remove(entry.getKey());
+				String table = entry.getKey().substring(0, entry.getKey().indexOf(">") - 1);
+				if (!tableAccess.containsKey(table)) {
+					tableAccess.put(table, result);
+				}
+				else {
+					//System.out.println("Table overlap - need to compute union");
+					tableAccess.get(table).concat(" || " + result);
+				}
 			}
-						
 			
 		}
+		int noItems = 0;
+		// parse results, table by table
+		for (Map.Entry<String, String> entry: tableAccess.entrySet()) {
+			String query = "DeleteDuplicates[" + entry.getValue() + "]";
+			String result = link.evaluateToOutputForm(query,0);
+			if (!entry.getValue().contains("Element")) {
+				noItems += result.split("\\|\\|").length;
+			}
+			else {
+				String[] items = entry.getValue().split("\\|\\|");
+				for (String item: items) {
+					if (!item.contains("Integers")) {
+						noItems++;
+						continue;
+					}
+					else {
+						int noItemsPartial = 1;
+						String[] partialItems = item.split("&&");
+						for (String partialItem: partialItems) {
+							if (!partialItem.contains("Inequality")) {
+								continue;
+							}
+							else {
+								// check how many solutions in partial solution
+								int indexLower = partialItem.indexOf("[");
+								int indexUpper = partialItem.indexOf(",");
+								String value = partialItem.substring(indexLower + 1, indexUpper);
+								int start = Integer.parseInt(value);
+								indexLower = partialItem.lastIndexOf(", ");
+								indexUpper = partialItem.indexOf("]");
+								value = partialItem.substring(indexLower + 2, indexUpper);
+								int end = Integer.parseInt(value);
+								noItemsPartial *= end - start + 1;
+							}
+						}
+						noItems += noItemsPartial;
+						noItemsPartial = 0;
+					}
+					
+				}
+			}
+		}
 		
-		this.vertexWeight = weight;
+		this.vertexWeight = noItems;
 	}
 	
 	public void printVertex() {
