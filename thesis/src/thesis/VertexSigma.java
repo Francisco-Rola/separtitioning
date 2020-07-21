@@ -54,33 +54,33 @@ public class VertexSigma implements Predicate<Integer>{
 	
 	public VertexSigma(HashSet<String> rhos) {
 		for (String rho: rhos) {
-			String rhoUpdated = rho.replaceAll("ol_supply_w_id\\S*\\s*", "olsupplyw_id ");
-			rhoUpdated = rhoUpdated.replaceAll("ol_i_id\\S*\\s*", "oli_id ");
+			String rhoUpdated = rho.replaceAll("_","");
+			rhoUpdated = rhoUpdated.replaceAll("[\\[\\]]", "");
 			if (rhoUpdated.contains("GET")) {				
 				rhoUpdated = rhoUpdated.replaceAll("GET.*->10\\)"
-						, "ir_id");
+						, "irid");
 			}
 			
 			HashSet<String> variables = findVariables(rhoUpdated);
 			String phi = "";
 			for (String variable : variables) {
-				if (variable.equals("district_id")) {
-					phi += "0 < district_id <= 10 && ";
+				if (variable.equals("districtid")) {
+					phi += "0 < districtid <= 10 && ";
 				}
-				else if (variable.equals("warehouse_id")) {
-					phi += "0 < warehouse_id <= 10 && ";
+				else if (variable.equals("warehouseid")) {
+					phi += "0 < warehouseid <= 10 && ";
 				}
-				else if (variable.equals("customer_id")) {
-					phi += "0 < customer_id <= 3000 && ";
+				else if (variable.equals("customerid")) {
+					phi += "0 < customerid <= 10 && ";
 				}
-				else if (variable.equals("olsupplyw_id")) {
-					phi += "0 < olsupplyw_id <= 10 && ";
+				else if (variable.startsWith("olsupplywid")) {
+					phi += "0 < " + variable + " <= 10 && ";
 				}
-				else if (variable.equals("oli_id")) {
-					phi += "0 < oli_id <= 10 && ";
+				else if (variable.startsWith("oliid")) {
+					phi += "0 < " + variable + " <= 10 && ";
 				}
-				else if (variable.equals("ir_id")) {
-					phi += "0 < ir_id <= 10 && ";
+				else if (variable.equals("irid")) {
+					phi += "0 < irid <= 10 && ";
 				}
 				else {
 					System.out.println("Missing case -> " + variable);
@@ -93,7 +93,7 @@ public class VertexSigma implements Predicate<Integer>{
 	
 	public HashSet<String> findVariables(String rho) {
 		HashSet<String> variables = new HashSet<>();
-		Matcher m = Pattern.compile("(\\w+_id\\S*)\\s*").matcher(rho);
+		Matcher m = Pattern.compile("(\\w+id\\S*)\\s*").matcher(rho);
 		while(m.find()) {
 			variables.add((m.group(1)));
 		}

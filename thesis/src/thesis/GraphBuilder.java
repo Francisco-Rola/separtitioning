@@ -17,12 +17,12 @@ public class GraphBuilder {
 	
 	private static String findVariables(String rho1, String rho2) {
 		HashSet<String> variables = new HashSet<>();
-		Matcher m = Pattern.compile("\\w+_idV\\w?").matcher(rho1);
+		Matcher m = Pattern.compile("\\w+idV\\w?").matcher(rho1);
 		while(m.find()) {
 			variables.add(rho1.substring(m.start(), m.end()));
 			//System.out.println(rho1.substring(m.start(), m.end()));
 		}
-		m = Pattern.compile("\\w+_id").matcher(rho2);
+		m = Pattern.compile("\\w+id").matcher(rho2);
 		while (m.find()) {
 			variables.add(rho2.substring(m.start(), m.end()));
 			//System.out.println(rho2.substring(m.start(), m.end()));

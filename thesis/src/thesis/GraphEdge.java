@@ -28,7 +28,7 @@ public class GraphEdge {
 		this.src = src;
 		this.dest = dest;
 		this.edgeRho = edgeRho;
-		this.edgePhi = intersection.replaceAll("(\\s&&\\s)?\\(\\w+_id\\)\\s\\S+\\s\\d+", "")
+		this.edgePhi = intersection.replaceAll("(\\s&&\\s)?\\(\\w+id\\)\\s\\S+\\s\\d+", "")
 						.replaceAll("idV", "id");
 		this.edgeWeight = computeEdgeWeight(edgePhi);
 		System.out.println("Added edge with weight " + this.edgeWeight );
