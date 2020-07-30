@@ -8,9 +8,7 @@ import com.wolfram.jlink.MathLinkFactory;
 public class MathematicaHandler {
 	
 	private static KernelLink ml = null;
-	
-	private static final MathematicaHandler singleton = new MathematicaHandler();
-	
+		
 	private MathematicaHandler() {}
 	
 	public static KernelLink getInstance() {

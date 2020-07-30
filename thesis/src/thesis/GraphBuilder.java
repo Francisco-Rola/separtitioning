@@ -37,7 +37,7 @@ public class GraphBuilder {
 		return variableList + "}";
 	}
 	
-	private static String rhoIntersection(String rho, String rhoGV, String phi, String phiGV) {
+	private static String rhoIntersection(String rho, String rhoGV, String phi, String phiGV, String update) {
 
 		if (rho.substring(0, rho.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))) {
 			
@@ -48,24 +48,33 @@ public class GraphBuilder {
 			
 			String rhoQuery = rhoV.substring(rhoV.indexOf(">") + 1) + " == " + rhoGV.substring(rhoGV.indexOf(">") + 1);
 			String phiQuery = phiV + " && " + phiGV;
+			// check if rho is constrained by logical subtraction
+			if (update != null) {
+				phiQuery += " && !(" + update + ")"; 
+			}
 			String variables = findVariables(rhoV, rhoGV);
 			String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
 					+ variables + ", Integers, Backsubstitution -> True]";
-			//System.out.println(query);
+			System.out.println(query);
 			String result = link.evaluateToOutputForm(query, 0);
-			//System.out.println(result);
 			
 			return result;
 		}
 		return "False";
 	}
 	
+	private static int intersectionLength(String rhoV, String phiV) {
+		KernelLink link = MathematicaHandler.getInstance();
+		String query = "Length[Flatten[Table[" + rhoV + ", " + phiV + "]]]";
+		String result = link.evaluateToOutputForm(query, 0);
+		return Integer.parseInt(result);
+	}
 	private static String variableRename(String s) {
 		return s.replaceAll("id", "idV");
 	}
 	
 	private static void addEdge(GraphEdge edge) {
-		GraphVertex src = edge.getSrc();
+		GraphVertex src = edge.getSrc();		
 		if (graph.get(src) == null) {
 			ArrayList<GraphEdge> edges = new ArrayList<>();
 			edges.add(edge);
@@ -82,21 +91,27 @@ public class GraphBuilder {
 		GraphVertex newVertex = new GraphVertex(v);
 		
 		// need to compare newly added vertex to every exisiting vertex
-		HashMap<String, String> rhosV = v.getRhos();
+		HashMap<VertexRho, VertexPhi> rhosV = v.getRhos();
 		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
 			GraphVertex gv = node.getKey();
 			// obtain all rhos in previously exisiting vertex
-			HashMap<String, String> rhosGV = gv.getSigma().getRhos();
+			HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
 			// iterate through the new rhos being added
-			for (Map.Entry<String, String> entryV: rhosV.entrySet()) {
-				String rhoV = entryV.getKey();
-				String phiV = entryV.getValue();
-				for (Map.Entry<String, String> entryGV: rhosGV.entrySet()) {
-					String rhoGV = entryGV.getKey();
-					String phiGV = entryGV.getValue();
+			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
+				String rhoV = entryV.getKey().getRho();
+				String phiV = entryV.getValue().getPhiAsString();
+				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
+					String rhoGV = entryGV.getKey().getRho();
+					String phiGV = entryGV.getValue().getPhiAsString();
 					
 					//compute intersection between rhos given the phis
-					String result = rhoIntersection(rhoV, rhoGV, phiV, phiGV);
+					String result = null;
+					if (entryV.getKey().getRhoUpdate() != null) {
+						result = rhoIntersection(rhoV, rhoGV, phiV, phiGV, entryV.getKey().getRhoUpdate());
+					}
+					else {
+						result = rhoIntersection(rhoV, rhoGV, phiV, phiGV, null);
+					}
 					// check the intersection results
 					if (result.equals("False")) {
 						// no overlap so no subtraction needed
@@ -104,11 +119,20 @@ public class GraphBuilder {
 					}
 					else {
 						System.out.println("Collision found, adding edge");
-						// collision found, perform phi logical subtraction
-						newVertex.getSigma().updatePhi(rhoV, result);
+						// collision found, perform rho logical subtraction
+						entryV.getKey().updateRho(result);
+						// compute the size of the intersection
+						String rhoVQuery = rhoV.substring(rhoV.indexOf(">") + 1);
+						rhoVQuery += " && !(" + entryV.getKey().getRhoUpdate() + ")";
+						
+						int edgeWeight = intersectionLength(rhoVQuery,
+								entryV.getValue().getPhiAsGroup());
+						
 						// add edge between vertices whose rhos-phi overlapped
-						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, result);
+						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, result, edgeWeight, true);
+						GraphEdge edgeSrcGV = new GraphEdge(gv, newVertex, rhoGV, result, edgeWeight, false); 
 						foundEdges.add(edgeSrcV);
+						foundEdges.add(edgeSrcGV);
 					}
 				}
 			}
