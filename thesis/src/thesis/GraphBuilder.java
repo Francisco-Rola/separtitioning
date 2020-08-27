@@ -63,12 +63,6 @@ public class GraphBuilder {
 		return "False";
 	}
 	
-	private static int intersectionLength(String rhoV, String phiV) {
-		KernelLink link = MathematicaHandler.getInstance();
-		String query = "Length[Flatten[Table[" + rhoV + ", " + phiV + "]]]";
-		String result = link.evaluateToOutputForm(query, 0);
-		return Integer.parseInt(result);
-	}
 	private static String variableRename(String s) {
 		return s.replaceAll("id", "idV");
 	}
@@ -124,15 +118,10 @@ public class GraphBuilder {
 						// compute the size of the intersection
 						String rhoVQuery = rhoV.substring(rhoV.indexOf(">") + 1);
 						rhoVQuery += " && !(" + entryV.getKey().getRhoUpdate() + ")";
-						
-						int edgeWeight = intersectionLength(rhoVQuery,
-								entryV.getValue().getPhiAsGroup());
-						
+											
 						// add edge between vertices whose rhos-phi overlapped
-						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, result, edgeWeight, true);
-						GraphEdge edgeSrcGV = new GraphEdge(gv, newVertex, rhoGV, result, edgeWeight, false); 
+						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, result, entryV.getValue().getPhiAsGroup());
 						foundEdges.add(edgeSrcV);
-						foundEdges.add(edgeSrcGV);
 					}
 				}
 			}
