@@ -1,6 +1,7 @@
 package thesis;
 
 import java.util.HashSet;
+import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,7 +28,31 @@ public class VertexRho {
 	}
 	
 	public void updateRho(String update) {
-		this.update = update;
+		System.out.println(update);
+		StringJoiner edgePhiUpdated = new StringJoiner(" || ");
+		String[] phiParts = update.split(" \\|\\| ");
+		boolean ps = false;
+		for (String disjunction: phiParts) {
+			StringJoiner conjunctionPhi = new StringJoiner(" && ");
+			String[] conjunctionParts = disjunction.split(" && ");
+			for (int i = 0; i < conjunctionParts.length; i++) {
+				if (!conjunctionParts[i].contains("idV")) {
+					conjunctionPhi.add(conjunctionParts[i]);
+				}
+				else if (conjunctionParts[i].contains("Integers")) {
+					ps = true;
+					conjunctionPhi.add(conjunctionParts[i].replaceAll("\\| \\w+idV", ""));
+				}
+			}
+			if(!ps) {
+				edgePhiUpdated.add("(" + conjunctionPhi.toString());
+			}
+			else {
+				edgePhiUpdated.add(conjunctionPhi.toString() + ")");
+			}
+			ps = false;
+		}
+		this.update = edgePhiUpdated.toString();
 	}
 	
 	public String getRhoUpdate() {
