@@ -2,6 +2,8 @@ package thesis;
 
 import java.util.StringJoiner;
 
+import com.wolfram.jlink.KernelLink;
+
 
 // class that represents a edge in the graph
 public class GraphEdge {
@@ -16,14 +18,17 @@ public class GraphEdge {
 	private String edgeRho = null;
 	// set of inputs that cause vertices to overlap hence causing an edge
 	private String edgePhi = null;
+	// range of inputs
+	private String phiRange = null;
 	
-	public GraphEdge(GraphVertex src, GraphVertex dest, String edgeRho, String intersection, int weight, boolean inbound)  {
+	public GraphEdge(GraphVertex src, GraphVertex dest, String edgeRho, String intersection, String phiRange)  {
 		this.src = src;
 		this.dest = dest;
 		this.edgeRho = edgeRho;
-		this.edgePhi = computeEdgePhi(inbound, intersection);
+		this.phiRange = phiRange;
+		this.edgePhi = intersection;
 		System.out.println(edgePhi);
-		this.edgeWeight = weight;
+		this.edgeWeight = computeEdgeWeight(edgeRho, intersection, phiRange);
 		System.out.println("Added edge with weight " + this.edgeWeight );
 	}
 	
@@ -39,40 +44,15 @@ public class GraphEdge {
 		return this.edgeWeight;
 	}
 	
-	private String computeEdgePhi(boolean inbound, String intersection) {
-		System.out.println(intersection);
-		StringJoiner edgePhiUpdated = new StringJoiner(" || ");
-		String[] phiParts = intersection.split(" \\|\\| ");
-		boolean ps = false;
-		for (String disjunction: phiParts) {
-			StringJoiner conjunctionPhi = new StringJoiner(" && ");
-			String[] conjunctionParts = disjunction.split(" && ");
-			for (int i = 0; i < conjunctionParts.length; i++) {
-				if (!conjunctionParts[i].contains("idV")) {
-					conjunctionPhi.add(conjunctionParts[i]);
-				}
-				else if (conjunctionParts[i].contains("Integers")) {
-					ps = true;
-					if (inbound ) {
-						conjunctionPhi.add(conjunctionParts[i].replaceAll("\\| \\w+idV", ""));
-					}
-					else {
-						conjunctionPhi.add(conjunctionParts[i].replaceAll("\\| \\w+id", "")
-								.replaceAll("idV", "id"));
-					}
-				}
-			}
-			if(!ps) {
-				edgePhiUpdated.add("(" + conjunctionPhi.toString());
-			}
-			else {
-				edgePhiUpdated.add(conjunctionPhi.toString() + ")");
-			}
-			ps = false;
-		}
-		this.edgePhi = edgePhiUpdated.toString();
+	private  int computeEdgeWeight(String rhoE, String phiE, String phiRange) {
+		KernelLink link = MathematicaHandler.getInstance();
 		
-		return edgePhi;
+		String rhoVQuery = rhoE.substring(rhoE.indexOf(">") + 1);
+		rhoVQuery += " && !(" + phiE + ")";
+		
+		String query = "Length[Flatten[Table[" + rhoE + ", " + phiRange + "]]]";
+		String result = link.evaluateToOutputForm(query, 0);
+		return Integer.parseInt(result);
 	}
 	
 	public void printEdge() {
