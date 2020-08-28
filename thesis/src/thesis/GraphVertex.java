@@ -32,7 +32,7 @@ public class GraphVertex {
 	public void computeVertexWeight() {
 		// get mathematica endpoint
 		KernelLink link = MathematicaHandler.getInstance();
-		// auxiliart structure to compute vertex weight
+		// auxiliary structure to compute vertex weight
 		HashMap<String, ArrayList<String>> tableAccesses = new HashMap<>();
 		// iterate through rho and respective phis
 		for (Map.Entry<VertexRho, VertexPhi> entry: this.getSigma().getRhos().entrySet()) {
@@ -46,8 +46,9 @@ public class GraphVertex {
 			}
 			String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
 			String result = link.evaluateToOutputForm(query, 0);
+			result = result.replaceAll("[, ]?False[, ]?", "");
 			
-			if (!tableAccesses.containsKey("table")) {
+			if (!tableAccesses.containsKey(table)) {
 				ArrayList<String> accesses = new ArrayList<>();
 				accesses.add(result);
 				tableAccesses.put(table, accesses);
@@ -59,8 +60,6 @@ public class GraphVertex {
 		
 		// each table has its accesses computed, evaluate size of the access
 		for (Map.Entry<String, ArrayList<String>> entry: tableAccesses.entrySet()) {
-			
-
 			String query = "";
 			for (String access: entry.getValue()) {
 				query += access + ", ";

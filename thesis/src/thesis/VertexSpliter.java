@@ -11,6 +11,9 @@ import javafx.util.Pair;
 
 public class VertexSpliter {
 	
+	private int noReplicas = 10;
+	private int noItemsPerVertex = 0;
+	
 	private HashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new HashMap<>();
 	
 	public VertexSpliter(HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
@@ -24,7 +27,7 @@ public class VertexSpliter {
 			// group together rhos that belong to the same table within a vertex
 			HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> buckets = groupRhos(rhos);
 			// after having rhos grouped by table, check for possible overlaps and rank the variables
-			for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> entry: buckets.entrySet()) {			
+			for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> entry: buckets.entrySet()) {		
 				// compare all the pairs with one another
 				for (int i = 0; i < entry.getValue().size(); i++) {
 					Pair<VertexRho, VertexPhi> rhoPhi1 = entry.getValue().get(i);
@@ -86,8 +89,9 @@ public class VertexSpliter {
 		}
 		String phi = rhoPhi.getValue().getPhiAsGroup();
 		
-		String query = "Flatten[Table[ " + rho +  ", " + phi + "]]]";
+		String query = "Flatten[Table[ " + rho +  ", " + phi + "]]";
 		String list = link.evaluateToOutputForm(query, 0);
+		list = list.replaceAll("[, ]?False[, ]?", "");
 		return list;
 	}
 
@@ -105,7 +109,7 @@ public class VertexSpliter {
 		String intersectionLength = link.evaluateToOutputForm(queryIntersection, 0);
 		Integer intLength = Integer.parseInt(intersectionLength);
 		if (intLength != 0) {
-			// add possible cost to all variables involved 								
+			// add possible cost to all variables involved 		
 			for (String variable: v1) 
 				variableCost.put(variable, variableCost.get(variable) + intLength);
 			for (String variable: v2) 
@@ -147,5 +151,11 @@ public class VertexSpliter {
 		}
 		return null;
 	}
+	
+	private void splitVertex(String splitVariable, Pair<Integer, Integer> splitRange) {
+		
+	}
+	
+	
 	
 }
