@@ -194,6 +194,8 @@ public class GraphBuilder {
 		buildGraph();
 		
 		printGraph();
+		
+		new VertexSpliter(graph);
 
 	}
 }
