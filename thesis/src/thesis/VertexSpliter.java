@@ -47,7 +47,15 @@ public class VertexSpliter {
 				}
 			} 
 			// at this stage we have computed the max possible penalty for each variable
-			printRanking(variableCost, counter);
+			printRanking(variableCost, counter);			
+			// obtain variable to split on which has the minimum possible penalty
+			String splitVariable = getSplitVariable(variableCost, counter);
+			// obtain split variable range in original vertex
+			Pair<Integer, Integer> splitRange = getSplitRange(rhos, splitVariable);
+			
+			
+			
+			//increment vertex counter
 			counter++;
 		}
 		
@@ -112,4 +120,32 @@ public class VertexSpliter {
 			System.out.println("Variable: " + entry.getKey() + " -> " + entry.getValue());
 		}
 	}
+	
+	private String getSplitVariable(HashMap<String, Integer> variableCost, int counter) {
+		int min = Integer.MAX_VALUE;
+		String splitVariable = null;
+		for(Map.Entry<String, Integer> entry : variableCost.entrySet()) {
+			if (min > entry.getValue()) {
+				min = entry.getValue();
+				if (min == 0) {
+					splitVariable = entry.getKey();
+					break;
+				}
+				splitVariable  = entry.getKey();
+			}
+		}
+		System.out.println("Split variable for vertex no " + counter + " -> " + splitVariable);
+		return splitVariable;
+	}
+	
+	private Pair<Integer, Integer> getSplitRange(HashMap<VertexRho, VertexPhi> rhos, String splitVariable) {
+		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
+			if (entry.getKey().getVariables().contains(splitVariable)) {
+				System.out.println("Split variable range -> " + entry.getValue().getPhi().get(splitVariable));
+				return entry.getValue().getPhi().get(splitVariable);
+			}
+		}
+		return null;
+	}
+	
 }
