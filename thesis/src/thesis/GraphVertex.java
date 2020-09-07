@@ -2,6 +2,7 @@ package thesis;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import com.wolfram.jlink.KernelLink;
 
@@ -34,6 +35,8 @@ public class GraphVertex {
 		KernelLink link = MathematicaHandler.getInstance();
 		// auxiliary structure to compute vertex weight
 		HashMap<String, ArrayList<String>> tableAccesses = new HashMap<>();
+		// auxiliary structure to compute rhos to remove
+		HashSet<VertexRho> rhosToRemove = new HashSet<>();
 		// iterate through rho and respective phis
 		for (Map.Entry<VertexRho, VertexPhi> entry: this.getSigma().getRhos().entrySet()) {
 			String table = entry.getKey().getRho().substring(0, entry.getKey().getRho().indexOf(">") - 1);
@@ -47,6 +50,11 @@ public class GraphVertex {
 			String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
 			String result = link.evaluateToOutputForm(query, 0);
 			result = result.replaceAll("[, ]?False[, ]?", "");
+			if (result.equals("{}")) {
+				System.out.println("Empty rho, removing");
+				rhosToRemove.add(entry.getKey());
+				continue;
+			}
 			
 			if (!tableAccesses.containsKey(table)) {
 				ArrayList<String> accesses = new ArrayList<>();
@@ -68,7 +76,12 @@ public class GraphVertex {
 			String mathQuery = "Length[DeleteDuplicates[Union[" + query + "]]]";
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			vertexWeight += Integer.parseInt(result);
-		}		
+		}
+		
+		// remove rhos that are now empty
+		for (VertexRho rhoToRemove: rhosToRemove) {
+			this.sigma.removeRho(rhoToRemove);
+		}
 	}
 	
 	public void printVertex() {

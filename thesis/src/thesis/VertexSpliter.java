@@ -1,6 +1,7 @@
 package thesis;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -35,7 +36,16 @@ public class VertexSpliter {
 					String list1 = checkAccess(rhoPhi1);
 					// update variable ranking structure
 					HashSet<String> variables1 = rhoPhi1.getKey().getVariables();
-					variableCost = initializeRanking(rhoPhi1, variables1, variableCost);				
+					variableCost = initializeRanking(rhoPhi1, variables1, variableCost);	
+					// check whether the rho function is injective for these inputs
+					int injection = checkInjective(list1);
+					// if the rho is not injective we are not interested in its variables
+					if (injection != 0) {
+						System.out.println("Non injective rho found -> " + rhoPhi1.getKey().getRho());
+						System.out.println(list1);
+						variableCost = updateRanking(variables1, variableCost);
+						continue;
+					}
 					// compare to all other rho phi pairs with same table
 					for (int j = i + 1; j < entry.getValue().size(); j++) {
 						Pair<VertexRho, VertexPhi> rhoPhi2 = entry.getValue().get(j);
@@ -44,6 +54,13 @@ public class VertexSpliter {
 						// update variable ranking structure
 						HashSet<String> variables2 = rhoPhi2.getKey().getVariables();
 						variableCost = initializeRanking(rhoPhi2, variables2, variableCost);
+						// check whether the rho function is injective for these inputs
+						injection = checkInjective(list2);
+						// if the rho is not injective we are not interested in its variables
+						if (injection != 0) {
+							System.out.println("Non injective rho found -> " + rhoPhi2.getKey().getRho());
+							variableCost = updateRanking(variables2, variableCost);
+						}
 						// compute update of ranking structure based on intersection length
 						variableCost = updateRanking(list1, list2, variables1, variables2, variableCost);
 					} 
@@ -55,9 +72,6 @@ public class VertexSpliter {
 			String splitVariable = getSplitVariable(variableCost, counter);
 			// obtain split variable range in original vertex
 			Pair<Integer, Integer> splitRange = getSplitRange(rhos, splitVariable);
-			
-			
-			
 			//increment vertex counter
 			counter++;
 		}
@@ -85,14 +99,21 @@ public class VertexSpliter {
 		KernelLink link = MathematicaHandler.getInstance();
 		String rho = rhoPhi.getKey().getRho().substring(rhoPhi.getKey().getRho().indexOf(">") + 1);
 		if (rhoPhi.getKey().getRhoUpdate() != null) {
-			rho += " && " + rhoPhi.getKey().getRhoUpdate();
+			rho += " && !(" + rhoPhi.getKey().getRhoUpdate() + ")";
 		}
 		String phi = rhoPhi.getValue().getPhiAsGroup();
 		
 		String query = "Flatten[Table[ " + rho +  ", " + phi + "]]";
 		String list = link.evaluateToOutputForm(query, 0);
-		list = list.replaceAll("[, ]?False[, ]?", "");
 		return list;
+	}
+	
+	private int checkInjective(String list) {
+		String[] items = list.split(",");
+		int len = items.length;
+		items = Arrays.stream(items).distinct().toArray(String[]::new);
+		int newLen = items.length;
+		return len - newLen;
 	}
 
 	private HashMap<String, Integer> initializeRanking(Pair<VertexRho, VertexPhi> rhoPhi, HashSet<String> variables, HashMap<String, Integer> variableCost) {
@@ -110,11 +131,22 @@ public class VertexSpliter {
 		Integer intLength = Integer.parseInt(intersectionLength);
 		if (intLength != 0) {
 			// add possible cost to all variables involved 		
-			for (String variable: v1) 
-				variableCost.put(variable, variableCost.get(variable) + intLength);
-			for (String variable: v2) 
-				variableCost.put(variable, variableCost.get(variable) + intLength);
+			for (String variable: v1) {
+				if (variableCost.get(variable) != Integer.MAX_VALUE)
+					variableCost.put(variable, variableCost.get(variable) + intLength);
+			}
+			for (String variable: v2) {
+				if (variableCost.get(variable) != Integer.MAX_VALUE)
+					variableCost.put(variable, variableCost.get(variable) + intLength);
+			}
 		}
+		return variableCost;
+	}
+	
+	private HashMap<String, Integer> updateRanking(HashSet<String> v1, HashMap<String, Integer> variableCost) {
+		// add max cost to all variables in non injective rho
+		for (String variable: v1) 
+			variableCost.put(variable, Integer.MAX_VALUE);
 		return variableCost;
 	}
 
