@@ -67,7 +67,8 @@ public class VertexSpliter {
 			// at this stage we have computed the max possible penalty for each variable
 			printRanking(ranking , counter);			
 			// obtain variable to split on which has the minimum possible penalty
-			String splitVariable = getSplitVariable(ranking, noRhos, counter);
+			HashSet<String> splitVariable = getSplitVariable(ranking, noRhos, counter);
+			System.out.println(splitVariable);
 			// obtain split variable range in original vertex
 			//Pair<Integer, Integer> splitRange = getSplitRange(rhos, splitVariable);
 			//increment vertex counter
@@ -179,7 +180,7 @@ public class VertexSpliter {
 		}
 	}
 	
-	private String getSplitVariable(HashMap<String, Pair<HashSet<Integer>,Integer>> ranking, int noRhos, int counter) {
+	private HashSet<String> getSplitVariable(HashMap<String, Pair<HashSet<Integer>,Integer>> ranking, int noRhos, int counter) {
 		// map between rhoID and variables that split it
 		HashMap<Integer, HashSet<String>> rhosCoverage = new HashMap<>();
 		
@@ -191,40 +192,74 @@ public class VertexSpliter {
 		
 		// find out which variables split each rho
 		for (Map.Entry<String, Pair<HashSet<Integer>, Integer>> entry : ranking.entrySet()) {
-			HashSet<Integer> rhosCovered = entry.getValue().getKey();
-			for (Integer rhoID: rhosCovered) {
+			for (Integer rhoID: entry.getValue().getKey()) {
 				rhosCoverage.get(rhoID).add(entry.getKey());
 			}
 		}
 		
-		// list of variables that are unique possible splitters for any rho (all of these need to be picked)
-		HashSet<String> mustSplitVariables = new HashSet<>();
+		// list of variables that are splitters 
+		HashSet<String> splitVariables = new HashSet<>();
 		
-		// obtain must split variables
-		for (Map.Entry<Integer, HashSet<String>> entry: rhosCoverage.entrySet()) {
-			if (entry.getValue().size() == 1) {
-				mustSplitVariables.add(entry.getValue().iterator().next());
-			}
-		}
+		return possibleSplit(null, ranking, splitVariables, rhosCoverage);
 		
-		System.out.println("Must split variables for vertex no: " + counter + " -> " + mustSplitVariables);
-		
-		// initialize rho coverage given by must split vars
-		HashSet<Integer> rhosCovered = new HashSet<>();
-		
-		// obtain coverage of must split variables combined
-		for (String var: mustSplitVariables) {
-			HashSet<Integer> rhosCoveredByVar = ranking.get(var).getKey();
-			rhosCovered.addAll(rhosCoveredByVar);
-		}
-		
-		System.out.println("Number of rhos in vertex no " + counter + ": " + noRhos + " -> " +
-				"Coverage: " + rhosCovered.size());
-				
-		return null;
 	}
 	
-	private Pair<Integer, Integer> getSplitRange(HashMap<VertexRho, VertexPhi> rhos, String splitVariable) {
+	private HashSet<String> possibleSplit(String splitVar, HashMap<String, Pair<HashSet<Integer>,Integer>> ranking, HashSet<String> splitVariables, HashMap<Integer, HashSet<String>> rhosCoverage) {
+		if (splitVar != null) {
+			System.out.println(splitVar);
+			// initialize rho coverage given by split var
+			HashSet<Integer> rhosCovered = new HashSet<>();
+			// obtain coverage of split variables combined
+			HashSet<Integer> rhosCoveredByVar = ranking.get(splitVar).getKey();
+			rhosCovered.addAll(rhosCoveredByVar);
+			// remove rhos that are already covered
+			for (Integer rho: rhosCovered) {
+				rhosCoverage.remove(rho);
+			}
+			// remove variable after use
+			for (Map.Entry<Integer, HashSet<String>> entry: rhosCoverage.entrySet()) {
+				entry.getValue().remove(splitVar);
+			}
+		}
+		// parameter that caps how many how many split vars a rho can have 
+		int splitFactor = 1;
+		while (!rhosCoverage.isEmpty()) {
+			// obtain alternative splits considering rhos that can be split only by noAlternatives vars
+			for (Map.Entry<Integer, HashSet<String>> entry: rhosCoverage.entrySet()) {
+				if (entry.getValue().size() == splitFactor && splitFactor == 1) {
+					// in this scenario this variable is the only one capable of splitting the rho		
+					String split = entry.getValue().iterator().next();
+					splitVariables.add(split);
+					System.out.println("Must split variable found: " + split);
+					return possibleSplit(split, ranking, splitVariables, rhosCoverage);
+				}
+				else if (entry.getValue().size() == splitFactor && splitFactor > 1) {
+					// there may be more than one remaining variable that splits a rho, create a tree
+					int minSplitSize = Integer.MAX_VALUE;
+					HashSet<String> result = new HashSet<>();
+					for (String possibleVar : entry.getValue()) {
+						HashSet<String> possibleSplitVars = new HashSet<>();
+						possibleSplitVars.addAll(splitVariables);
+						possibleSplitVars.add(possibleVar);
+						HashSet<String> splitResult = possibleSplit(possibleVar, ranking, possibleSplitVars, rhosCoverage);
+						if (splitResult.size() < minSplitSize) {
+							result = new HashSet<>();
+							result.addAll(splitResult);
+							minSplitSize = result.size();
+							System.out.println("Upgraded my solution");
+						}
+					}
+					return result;
+				}
+			}
+			// did not find a split given current split factor, look for another path
+			splitFactor++;
+		}
+		return splitVariables;
+	}
+	
+	
+ 	private Pair<Integer, Integer> getSplitRange(HashMap<VertexRho, VertexPhi> rhos, String splitVariable) {
 		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
 			if (entry.getKey().getVariables().contains(splitVariable)) {
 				System.out.println("Split variable range -> " + entry.getValue().getPhi().get(splitVariable));
