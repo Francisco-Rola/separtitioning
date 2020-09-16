@@ -10,21 +10,23 @@ public class VertexPhi {
 	
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	
+	private int w = 10;
+	
 	public VertexPhi (HashSet<String> rhoVariables) {
 		
 		this.variables = new HashMap<>();
 		
 		for (String variable : rhoVariables) {
 			if (variable.equals("districtid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("warehouseid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("customerid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(3000));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w*300));
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("olsupplywid")) {
