@@ -195,7 +195,7 @@ public class GraphBuilder {
 		
 		printGraph();
 		
-		new VertexSpliter(graph);
+		new Splitter(graph);
 
 	}
 }

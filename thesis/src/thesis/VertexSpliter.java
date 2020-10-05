@@ -71,6 +71,10 @@ public class VertexSpliter {
 			System.out.println(splitVariables);
 			// obtain split variable range in original vertex
 			HashMap<String,Pair<Integer, Integer>> splitRange = getSplitRange(rhos, splitVariables);
+			
+			
+			
+			
 			//increment vertex counter
 			counter++;
 		}
@@ -93,7 +97,6 @@ public class VertexSpliter {
 		}
 		return buckets;
 	}
-
 	private String checkAccess(Pair<VertexRho, VertexPhi> rhoPhi) {
 		KernelLink link = MathematicaHandler.getInstance();
 		String rho = rhoPhi.getKey().getRho().substring(rhoPhi.getKey().getRho().indexOf(">") + 1);
@@ -206,7 +209,6 @@ public class VertexSpliter {
 	
 	private HashSet<String> possibleSplit(String splitVar, HashMap<String, Pair<HashSet<Integer>,Integer>> ranking, HashSet<String> splitVariables, HashMap<Integer, HashSet<String>> rhosCoverage) {
 		if (splitVar != null) {
-			System.out.println(splitVar);
 			// initialize rho coverage given by split var
 			HashSet<Integer> rhosCovered = new HashSet<>();
 			// obtain coverage of split variables combined
@@ -215,10 +217,6 @@ public class VertexSpliter {
 			// remove rhos that are already covered
 			for (Integer rho: rhosCovered) {
 				rhosCoverage.remove(rho);
-			}
-			// remove variable after use
-			for (Map.Entry<Integer, HashSet<String>> entry: rhosCoverage.entrySet()) {
-				entry.getValue().remove(splitVar);
 			}
 		}
 		// parameter that caps how many how many split vars a rho can have 
@@ -273,8 +271,42 @@ public class VertexSpliter {
 		return varRange;
 	}
  	
+ 	private void applySplit(HashMap<String,Pair<Integer, Integer>> splitVars, HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> buckets) {
+ 		// auxiliary structure that stores which variables have split a given table
+ 		HashMap<Integer,HashMap<String, Pair<Integer, Integer>>> tableSpliters = new HashMap<>();
+ 		// iterate through all pre computed split vars
+ 		for (Map.Entry<String, Pair<Integer, Integer>> splitVar: splitVars.entrySet()) {
+ 			// iterate through each table in V
+ 			for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> tableRhos: buckets.entrySet())  {
+ 				// iterate through each rho in V given table
+ 				for (Pair<VertexRho, VertexPhi> rhoPhi : tableRhos.getValue()) {
+ 					if (!rhoPhi.getKey().getVariables().contains(splitVar)) {
+ 						// split variable does not exist in this rho
+ 						continue;
+ 					}
+ 					else {
+ 						// rho contains split variable, check if rhos table has been split already
+ 						if (tableSpliters.get(tableRhos.getKey()).equals(null)) {
+ 							// no previous splitters for table, splitVar is the frst
+ 							HashMap<String, Pair<Integer, Integer>> tableSplitersVars = new HashMap<>();
+ 							tableSplitersVars.put(splitVar.getKey(), splitVar.getValue());
+ 							tableSpliters.put(tableRhos.getKey(), tableSplitersVars);
+ 						}
+ 						else {
+ 							// there is at least one split var that has split the same table, add to list
+ 							tableSpliters.get(tableRhos.getKey()).put(splitVar.getKey(), splitVar.getValue());
+ 						}
+ 						
+ 					}
+ 				}
+ 			}
+ 		}
+ 		// at this point we know which and how many variables split each table
+ 		
+ 	}
+ 	
+
 	
-	
-	
+
 	
 }
