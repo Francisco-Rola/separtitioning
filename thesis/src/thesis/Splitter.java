@@ -67,13 +67,19 @@ public class Splitter {
 				}
 			}		
 			// variable that stores how many vertices result from splitting 
-			int noSplits = 1;
+			int noSplits = 0;
+			// variable that stores table splits
+			HashSet<Integer> tableSplits = new HashSet<>();
 			
 			// map between rhoID and variables that cover it
 			HashMap<Integer, HashSet<String>> rhoCoverage = new HashMap<>();
 			int rhoID = 1;
 			for (Map.Entry<Integer, ArrayList<HashSet<String>>> entry: possibleSplits.entrySet()) {
 				if (entry.getValue() == null) {
+					// table split detected, store it
+					tableSplits.add(entry.getKey());
+					// duplicate amount of vertices
+					noSplits++;
 					continue;
 				}
 				for (HashSet<String> splitters: entry.getValue()) {
@@ -82,8 +88,10 @@ public class Splitter {
 				}
 			}
 			HashSet<String> splitVars = new HashSet<>();
+			// get the smallest hitting set, NP complete problem
 			splitVars = getSplitVars(rhoCoverage, splitVars, null);
 			
+			/* DEBUG PRINT
 			for (Map.Entry<Integer, ArrayList<HashSet<String>>> entry: possibleSplits.entrySet()) {
 				if (entry.getValue() == null) {
 					System.out.println("Table no" + entry.getKey() + " contains overlapping rhos, splitting table");
@@ -93,8 +101,14 @@ public class Splitter {
 					System.out.println("Tablo no" + entry.getKey() + " splitted by var list");
 				}
 			}
-			System.out.println("Var list for vertex no" + counter + " -> " + splitVars);
-
+			System.out.println("Var list for vertex no" + counter + " -> " + splitVars); DEBUG PRINT*/
+			
+			// calculate how many vertices are needed based on size of split var list
+			noSplits = noSplits + splitVars.size();
+			// get the range of each split var
+			HashMap<String,Pair<Integer, Integer>> splitRanges = getSplitRange(rhos, splitVars);
+			// apply the split to the vertex
+			applySplit(v.getSigma(), splitRanges, tableSplits, noSplits);
 			
 			//increment vertex counter
 			counter++;
@@ -118,7 +132,6 @@ public class Splitter {
 		}
 		return buckets;
 	}
-	
 	
 	private boolean checkIntersection(Pair<VertexRho, VertexPhi> rhoPhi1, Pair<VertexRho, VertexPhi> rhoPhi2) {
 		String rho1 = rhoPhi1.getKey().getRho();
@@ -166,13 +179,11 @@ public class Splitter {
 		}
 	}
 	
-
 	private String variableRename(String s) {
 
 		return s.replaceAll("id", "idV");
 	}
 	
-		
 	private HashSet<String> getSplitVars(HashMap<Integer, HashSet<String>> rhoCoverage, HashSet<String> splitVars, String splitVar) {
 		if (splitVar != null) {
 			// remove thos that are covered by var
@@ -221,6 +232,54 @@ public class Splitter {
 		}		
 		return splitVars;
 	}
+	
+	private HashMap<String,Pair<Integer, Integer>> getSplitRange(HashMap<VertexRho, VertexPhi> rhos, HashSet<String> splitVariables) {
+		HashMap<String, Pair<Integer, Integer>> varRange = new HashMap<>();
+		for (String splitVariable: splitVariables) {
+	 		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
+				if (entry.getKey().getVariables().contains(splitVariable)) {
+					System.out.println("Split var: " + splitVariable + " | Range -> " + entry.getValue().getPhi().get(splitVariable));
+					varRange.put(splitVariable, entry.getValue().getPhi().get(splitVariable));
+					break;
+				}
+			}
+		}
+		return varRange;
+	}
+
+	private void applySplit(VertexSigma sigma, HashMap<String, Pair<Integer, Integer>> splitVars, HashSet<Integer> tableSplits, int noSplits) {
+		// merge table and variable split information
+		for (Integer tableSplit: tableSplits) {
+			splitVars.put(tableSplit.toString(), null);
+		}
+		// give an ID to each vertex consisting of a byte array
+		ArrayList<String> ids = generateCombinations(noSplits, new int[noSplits], 0);
+		
+		//TODO remove debug priest
+		for (String id: ids) {
+			System.out.println(id);
+		}
+		
+	}
+	
+	private ArrayList<String> generateCombinations(int n, int comb[], int pos) {
+		ArrayList<String> ids = new ArrayList<>();
+		
+		if (pos == n) {
+			int temp = 0;
+			for (int i = n - 1; i >= 0; i--) { 
+				temp = (int)(Math.pow(10, i)*comb[i] + temp);
+			}
+			ids.add(String.format("%0"+ n +"d", temp));
+			return ids;
+		}
+		comb[pos] = 0; 
+	    ids.addAll(generateCombinations(n, comb, pos + 1));
+	    comb[pos] = 1; 
+	    ids.addAll(generateCombinations(n, comb, pos + 1));
+	    return ids;
+	}
+
 }
 	
 	

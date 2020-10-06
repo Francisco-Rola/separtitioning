@@ -78,7 +78,7 @@ public class GraphBuilder {
 		graph.get(src).add(edge);
 	}
 	
-	private static void logicalAdd(VertexSigma v) {
+	public static void logicalAdd(VertexSigma v) {
 		
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 		

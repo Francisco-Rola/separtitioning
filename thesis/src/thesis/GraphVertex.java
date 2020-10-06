@@ -77,11 +77,11 @@ public class GraphVertex {
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			vertexWeight += Integer.parseInt(result);
 		}
-		
+		/*
 		// remove rhos that are now empty
 		for (VertexRho rhoToRemove: rhosToRemove) {
 			this.sigma.removeRho(rhoToRemove);
-		}
+		}*/
 	}
 	
 	public void printVertex() {
