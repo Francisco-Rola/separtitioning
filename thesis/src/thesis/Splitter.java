@@ -66,10 +66,8 @@ public class Splitter {
 					}
 				}
 			}		
-			// variable that stores how many vertices result from splitting 
-			int noSplits = 0;
-			// variable that stores table splits
-			HashSet<Integer> tableSplits = new HashSet<>();
+			// variable that stores table splits and variable splits
+			ArrayList<String> splits = new ArrayList<>();
 			
 			// map between rhoID and variables that cover it
 			HashMap<Integer, HashSet<String>> rhoCoverage = new HashMap<>();
@@ -77,9 +75,7 @@ public class Splitter {
 			for (Map.Entry<Integer, ArrayList<HashSet<String>>> entry: possibleSplits.entrySet()) {
 				if (entry.getValue() == null) {
 					// table split detected, store it
-					tableSplits.add(entry.getKey());
-					// duplicate amount of vertices
-					noSplits++;
+					splits.add("#" + entry.getKey().toString());
 					continue;
 				}
 				for (HashSet<String> splitters: entry.getValue()) {
@@ -87,28 +83,13 @@ public class Splitter {
 					rhoID++;
 				}
 			}
-			HashSet<String> splitVars = new HashSet<>();
+			ArrayList<String> splitVars = new ArrayList<>();
 			// get the smallest hitting set, NP complete problem
-			splitVars = getSplitVars(rhoCoverage, splitVars, null);
-			
-			/* DEBUG PRINT
-			for (Map.Entry<Integer, ArrayList<HashSet<String>>> entry: possibleSplits.entrySet()) {
-				if (entry.getValue() == null) {
-					System.out.println("Table no" + entry.getKey() + " contains overlapping rhos, splitting table");
-					continue;
-				}
-				else {
-					System.out.println("Tablo no" + entry.getKey() + " splitted by var list");
-				}
-			}
-			System.out.println("Var list for vertex no" + counter + " -> " + splitVars); DEBUG PRINT*/
-			
-			// calculate how many vertices are needed based on size of split var list
-			noSplits = noSplits + splitVars.size();
-			// get the range of each split var
-			HashMap<String,Pair<Integer, Integer>> splitRanges = getSplitRange(rhos, splitVars);
+			splits.addAll(getSplitVars(rhoCoverage, splitVars, null));
+			// display the splits
+			printSplits(counter, splits);
 			// apply the split to the vertex
-			applySplit(v.getSigma(), splitRanges, tableSplits, noSplits);
+			applySplit(v.getSigma(), splits);
 			
 			//increment vertex counter
 			counter++;
@@ -184,7 +165,7 @@ public class Splitter {
 		return s.replaceAll("id", "idV");
 	}
 	
-	private HashSet<String> getSplitVars(HashMap<Integer, HashSet<String>> rhoCoverage, HashSet<String> splitVars, String splitVar) {
+	private ArrayList<String> getSplitVars(HashMap<Integer, HashSet<String>> rhoCoverage, ArrayList<String> splitVars, String splitVar) {
 		if (splitVar != null) {
 			// remove thos that are covered by var
 			ArrayList<Integer> toRemove = new ArrayList<>();
@@ -211,14 +192,14 @@ public class Splitter {
 				else if (entry.getValue().size() == splitFactor && splitFactor > 1) {
 					// there may be more than one remaining variable that splits a rho, create a tree
 					int minSplitSize = Integer.MAX_VALUE;
-					HashSet<String> result = new HashSet<>();
+					ArrayList<String> result = new ArrayList<>();
 					for (String possibleVar : entry.getValue()) {
-						HashSet<String> possibleSplitVars = new HashSet<>();
+						ArrayList<String> possibleSplitVars = new ArrayList<>();
 						possibleSplitVars.addAll(splitVars);
 						possibleSplitVars.add(possibleVar);
-						HashSet<String> splitResult = getSplitVars(rhoCoverage, possibleSplitVars, possibleVar);
+						ArrayList<String> splitResult = getSplitVars(rhoCoverage, possibleSplitVars, possibleVar);
 						if (splitResult.size() < minSplitSize) {
-							result = new HashSet<>();
+							result = new ArrayList<>();
 							result.addAll(splitResult);
 							minSplitSize = result.size();
 							//System.out.println("Upgraded my solution");
@@ -233,31 +214,57 @@ public class Splitter {
 		return splitVars;
 	}
 	
-	private HashMap<String,Pair<Integer, Integer>> getSplitRange(HashMap<VertexRho, VertexPhi> rhos, HashSet<String> splitVariables) {
-		HashMap<String, Pair<Integer, Integer>> varRange = new HashMap<>();
-		for (String splitVariable: splitVariables) {
-	 		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
-				if (entry.getKey().getVariables().contains(splitVariable)) {
-					System.out.println("Split var: " + splitVariable + " | Range -> " + entry.getValue().getPhi().get(splitVariable));
-					varRange.put(splitVariable, entry.getValue().getPhi().get(splitVariable));
-					break;
-				}
+	private Pair<Integer, Integer> getSplitRange(HashMap<VertexRho, VertexPhi> rhos, String splitVar) {
+ 		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
+			if (entry.getKey().getVariables().contains(splitVar)) {
+				System.out.println("Split var: " + splitVar + " | Range -> " + entry.getValue().getPhi().get(splitVar));
+				return entry.getValue().getPhi().get(splitVar);
 			}
 		}
-		return varRange;
+ 		return null;
 	}
 
-	private void applySplit(VertexSigma sigma, HashMap<String, Pair<Integer, Integer>> splitVars, HashSet<Integer> tableSplits, int noSplits) {
-		// merge table and variable split information
-		for (Integer tableSplit: tableSplits) {
-			splitVars.put(tableSplit.toString(), null);
-		}
+	private void printSplits(int counter, ArrayList<String> splitVars) {
+		System.out.println("Var list for vertex no" + counter + " -> " + splitVars); 
+	}
+	
+	private void applySplit(VertexSigma sigma, ArrayList<String> splits) {
 		// give an ID to each vertex consisting of a byte array
-		ArrayList<String> ids = generateCombinations(noSplits, new int[noSplits], 0);
-		
-		//TODO remove debug priest
+		ArrayList<String> ids = generateCombinations(splits.size(), new int[splits.size()], 0);
+		// iterate over all split combinations
 		for (String id: ids) {
-			System.out.println(id);
+			// create a new sub vertex sigma
+			VertexSigma newSigma = new VertexSigma(sigma);
+			// each ith element of the string is mapped to the ith parameter in splitVars
+			for (int i = 0; i < id.length(); i++) {
+				String splitParam = splits.get(i);
+				char paramValue = id.charAt(i);		
+				if (splitParam.startsWith("#")) {
+					// table split, check whether this param is a "lower" or "upper" split
+					if (paramValue == '0') {
+						// lower table split
+					}
+					else {
+						//upper table split
+					}
+				}
+				else {
+					// input split, check whether this param is a "lower" or "upper" split, get range
+					Pair<Integer, Integer> inputRange = getSplitRange(sigma.getRhos(), splitParam);
+					if (paramValue == '0') {
+						// lower input split
+						newSigma = rhoInputSplit(newSigma, splitParam, inputRange, 0);
+					}
+					else {
+						//upper input split
+						newSigma = rhoInputSplit(newSigma, splitParam, inputRange, 1);
+					}
+				}
+			}
+			// associate new sigma to a new vertex
+			GraphVertex gv = new GraphVertex(newSigma);
+			// TODO fix vertex weight, edges and add to graph
+			
 		}
 		
 	}
@@ -280,6 +287,23 @@ public class Splitter {
 	    return ids;
 	}
 
+	
+	private VertexSigma rhoInputSplit(VertexSigma sigma, String splitParam, Pair<Integer, Integer> inputRange, int section) {
+		// calculate cutoff for new vertex phis
+		int cutoff = (inputRange.getValue() - inputRange.getKey() + 1) / 2;
+		// update all phis in the vertex
+		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
+			// if the rho contains the split param its respective phi needs to be updated
+			if (rhoPhi.getKey().getVariables().contains(splitParam)) {
+				if (section == 0) rhoPhi.getValue().getPhi().put(splitParam, 
+						new Pair<Integer, Integer>(inputRange.getKey(), cutoff));
+				else 
+					rhoPhi.getValue().getPhi().put(splitParam, 
+							new Pair<Integer, Integer>(cutoff+1, inputRange.getValue()));
+			}
+		}
+		return sigma;
+	}
 }
 	
 	

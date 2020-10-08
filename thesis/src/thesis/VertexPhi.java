@@ -12,6 +12,15 @@ public class VertexPhi {
 	
 	private int w = 10;
 	
+	public VertexPhi(VertexPhi vertexPhi) {
+		this.variables = new HashMap<>();
+		for (Map.Entry<String, Pair<Integer, Integer>> entry : vertexPhi.getPhi().entrySet()) {
+			String newVar = new String(entry.getKey());
+			Pair<Integer, Integer> newRanges = new Pair<Integer, Integer>(entry.getValue().getKey(), entry.getValue().getValue());
+			this.variables.put(newVar, newRanges);
+		}
+	}
+	
 	public VertexPhi (HashSet<String> rhoVariables) {
 		
 		this.variables = new HashMap<>();

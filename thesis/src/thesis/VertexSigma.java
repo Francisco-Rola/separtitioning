@@ -29,6 +29,16 @@ public class VertexSigma implements Predicate<Integer>{
 		return this.rhos;
 	}
 	
+	public VertexSigma(VertexSigma sigma) {
+		this.rhos = new HashMap<>();
+		
+		for (Map.Entry<VertexRho, VertexPhi> rhoPhi : sigma.getRhos().entrySet()) {
+			VertexRho rhoCopy = new VertexRho(rhoPhi.getKey());
+			VertexPhi phiCopy = new VertexPhi(rhoPhi.getValue());
+			this.rhos.put(rhoCopy, phiCopy);
+		}
+	}
+	
 	public VertexSigma(HashSet<String> rhos) {
 		for (String rho: rhos) {
 			String rhoUpdated = rho.replaceAll("_", "");

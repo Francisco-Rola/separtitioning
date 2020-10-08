@@ -23,6 +23,14 @@ public class VertexRho {
 		this.variables = variables;
 	}
 	
+	public VertexRho(VertexRho vertexRho) {
+		this.rho = new String(vertexRho.getRho());
+		if (vertexRho.getRhoUpdate() != null)
+			this.update = new String(vertexRho.getRhoUpdate());
+		this.variables = new HashSet<>();
+		this.variables.addAll(vertexRho.getVariables());
+	}
+	
 	public String getRho() {
 		return this.rho;
 	}
