@@ -243,9 +243,11 @@ public class Splitter {
 					// table split, check whether this param is a "lower" or "upper" split
 					if (paramValue == '0') {
 						// lower table split
+						newSigma = tableSplit(newSigma, splitParam, 0);
 					}
 					else {
 						//upper table split
+						newSigma = tableSplit(newSigma, splitParam, 1);
 					}
 				}
 				else {
@@ -263,6 +265,7 @@ public class Splitter {
 			}
 			// associate new sigma to a new vertex
 			GraphVertex gv = new GraphVertex(newSigma);
+			gv.printVertex();
 			// TODO fix vertex weight, edges and add to graph
 			
 		}
@@ -300,6 +303,24 @@ public class Splitter {
 				else 
 					rhoPhi.getValue().getPhi().put(splitParam, 
 							new Pair<Integer, Integer>(cutoff+1, inputRange.getValue()));
+			}
+		}
+		return sigma;
+	}
+
+	private VertexSigma tableSplit(VertexSigma sigma, String splitParam, int section) {
+		// obtain table number by trimming meta char
+		String tableNo = splitParam.substring(1);
+		// check the range of items in this table
+		int tableRange = VertexPhi.getTableRange(Integer.parseInt(tableNo));
+		// update all phis in the vertex
+		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
+			// update every access to the table under split
+			if (rhoPhi.getKey().getRho().startsWith(tableNo)) {
+				if (section == 0) 
+					rhoPhi.getKey().splitRho(" <= " + tableRange / 2);
+				else
+					rhoPhi.getKey().splitRho(" > " + tableRange / 2);
 			}
 		}
 		return sigma;

@@ -10,7 +10,7 @@ public class VertexPhi {
 	
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	
-	private int w = 10;
+	private static int w = 10;
 	
 	public VertexPhi(VertexPhi vertexPhi) {
 		this.variables = new HashMap<>();
@@ -39,15 +39,15 @@ public class VertexPhi {
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("olsupplywid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("oliid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("irid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
 				this.variables.put(variable, range);
 			}
 			else {
@@ -77,6 +77,17 @@ public class VertexPhi {
 		}
 		phiQuery = phiQuery.substring(0, phiQuery.length() - 2);
 		return phiQuery;
+	}
+	
+	public static int getTableRange(int tableNo) {
+		switch (tableNo) {
+		case 8:
+			return w;
+		case 9:
+			return w * w;
+		default:
+			return -1;
+		}
 	}
 	
 	public void printPhi() {

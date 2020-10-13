@@ -35,6 +35,10 @@ public class VertexRho {
 		return this.rho;
 	}
 	
+	public void splitRho(String split) {
+		this.rho = this.rho + split;
+	}
+	
 	public void updateRho(String update) {
 		System.out.println(update);
 		StringJoiner edgePhiUpdated = new StringJoiner(" || ");

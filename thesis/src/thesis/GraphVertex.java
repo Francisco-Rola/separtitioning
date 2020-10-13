@@ -85,6 +85,7 @@ public class GraphVertex {
 	}
 	
 	public void printVertex() {
+		System.out.println("--------------------------");
 		System.out.println("Vertex weight: " + this.vertexWeight);
 		this.sigma.printSigma();
 	}
