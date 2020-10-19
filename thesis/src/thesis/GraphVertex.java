@@ -35,8 +35,6 @@ public class GraphVertex {
 		KernelLink link = MathematicaHandler.getInstance();
 		// auxiliary structure to compute vertex weight
 		HashMap<String, ArrayList<String>> tableAccesses = new HashMap<>();
-		// auxiliary structure to compute rhos to remove
-		HashSet<VertexRho> rhosToRemove = new HashSet<>();
 		// iterate through rho and respective phis
 		for (Map.Entry<VertexRho, VertexPhi> entry: this.getSigma().getRhos().entrySet()) {
 			String table = entry.getKey().getRho().substring(0, entry.getKey().getRho().indexOf(">") - 1);
@@ -77,11 +75,7 @@ public class GraphVertex {
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			vertexWeight += Integer.parseInt(result);
 		}
-		/* TODO : this method is no longer needed as rhos need to stay for splitting purposes
-		// remove rhos that are now empty
-		for (VertexRho rhoToRemove: rhosToRemove) {
-			this.sigma.removeRho(rhoToRemove);
-		}*/
+		
 	}
 	
 	public void printVertex() {

@@ -13,10 +13,6 @@ public class VertexSigma implements Predicate<Integer>{
 		return rhos.get(rho);
 	}
 	
-	public void removeRho(VertexRho rho) {
-		rhos.remove(rho);
-	}
-	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
