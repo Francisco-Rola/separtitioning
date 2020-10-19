@@ -5,10 +5,13 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.wolfram.jlink.KernelLink;
+
 public class VertexRho {
 	
-	private String rho;
-	private String update;
+	private String rho = null;
+	
+	private String update = null;
 	
 	private HashSet<String> variables = null;
 	
@@ -36,11 +39,16 @@ public class VertexRho {
 	}
 	
 	public void splitRho(String split) {
-		this.rho = this.rho + split;
+		// check if there is a previous update to concatenate
+		if (update != null) {	
+			this.update = this.update + " && " + this.rho.substring(this.rho.indexOf(">") + 1) + split;
+		}
+		else {
+			this.update = this.rho.substring(this.rho.indexOf(">") + 1) + split;
+		}
 	}
 	
 	public void updateRho(String update) {
-		System.out.println(update);
 		StringJoiner edgePhiUpdated = new StringJoiner(" || ");
 		String[] phiParts = update.split(" \\|\\| ");
 		boolean ps = false;
@@ -64,7 +72,16 @@ public class VertexRho {
 			}
 			ps = false;
 		}
-		this.update = edgePhiUpdated.toString();
+		if (this.update == null) {
+			this.update = "!(" + edgePhiUpdated.toString() + ")";
+		}
+		else {
+			this.update = this.update + "!(" + edgePhiUpdated.toString() + ")";
+		}
+		// get mathematica link
+		KernelLink link = MathematicaHandler.getInstance();
+		// simplify rho update expression for further computations
+		this.update = link.evaluateToOutputForm("FullSimplify[" + this.update + "]", 0);
 	}
 	
 	public String getRhoUpdate() {

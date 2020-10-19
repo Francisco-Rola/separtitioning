@@ -14,7 +14,11 @@ public class Splitter {
 	
 	private HashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new HashMap<>();
 	
-	public Splitter(HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	public Splitter() {
+		
+	}
+	
+	public HashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// for each vertex, iterate through its rhos
 		int counter = 1;
 		for (GraphVertex v: graph.keySet()) {
@@ -94,7 +98,7 @@ public class Splitter {
 			//increment vertex counter
 			counter++;
 		}
-		
+		return splitGraph;
 	}
 	
 	private HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> groupRhos(HashMap<VertexRho, VertexPhi> rhos) {
@@ -161,7 +165,7 @@ public class Splitter {
 	}
 	
 	private String variableRename(String s) {
-
+		// rename variables to prepare mathematica query
 		return s.replaceAll("id", "idV");
 	}
 	
@@ -231,6 +235,8 @@ public class Splitter {
 	private void applySplit(VertexSigma sigma, ArrayList<String> splits) {
 		// give an ID to each vertex consisting of a byte array
 		ArrayList<String> ids = generateCombinations(splits.size(), new int[splits.size()], 0);
+		// flag to note if dealing with first subvertex
+		boolean isFirst = true;
 		// iterate over all split combinations
 		for (String id: ids) {
 			// create a new sub vertex sigma
@@ -265,9 +271,17 @@ public class Splitter {
 			}
 			// associate new sigma to a new vertex
 			GraphVertex gv = new GraphVertex(newSigma);
-			gv.printVertex();
-			// TODO fix vertex weight, edges and add to graph
-			
+			// add vertex to graph
+			if (isFirst) {
+				// first subvertex does not need logical subtraction
+				isFirst = false;
+				splitGraph.put(gv, new ArrayList<>());
+				gv.computeVertexWeight();
+			}
+			else {
+				// other sub vertices need to be disjoint from previously existing ones
+				GraphBuilder.logicalAdd(gv, splitGraph);
+			}
 		}
 		
 	}
@@ -290,7 +304,6 @@ public class Splitter {
 	    return ids;
 	}
 
-	
 	private VertexSigma rhoInputSplit(VertexSigma sigma, String splitParam, Pair<Integer, Integer> inputRange, int section) {
 		// calculate cutoff for new vertex phis
 		int cutoff = (inputRange.getValue() - inputRange.getKey() + 1) / 2;
@@ -325,6 +338,110 @@ public class Splitter {
 		}
 		return sigma;
 	}
+	
+	private void addVertex(GraphVertex newVertex, HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+		// edges found during rho comparison
+		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
+		
+		// need to compare newly added vertex to every other vertex
+		HashMap<VertexRho, VertexPhi> rhosV = newVertex.getSigma().getRhos();
+		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
+			GraphVertex gv = node.getKey();
+			// obtain all rhos in previously exisiting vertex
+			HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
+			// iterate through the new rhos being added
+			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
+				String rhoV = entryV.getKey().getRho();
+				String phiV = entryV.getValue().getPhiAsString();
+				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
+					String rhoGV = entryGV.getKey().getRho();
+					String phiGV = entryGV.getValue().getPhiAsString();
+					// if rhos are not on same table they do need to be compared
+					if (rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1)))
+						continue;
+					//compute intersection between rhos given the phis
+					String result = null;
+					String phiVQ = preparePhi(phiV, entryV.getKey().getRhoUpdate());
+					String phiGVQ = preparePhi(phiGV, entryGV.getKey().getRhoUpdate());
+					result = rhoIntersection(rhoV, rhoGV, phiVQ, phiGVQ, entryV.getKey().getVariables(), entryGV.getKey().getVariables());
+					// check the intersection results
+					if (result.equals("False")) {
+						// no overlap so no subtraction needed
+						continue;
+					}
+					else {
+						System.out.println("Collision found, adding edge");
+						// collision found, perform rho logical subtraction
+						entryV.getKey().updateRho(result);
+						// add edge between vertices whose rhos-phi overlapped
+						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, rhoGV, entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup());
+						foundEdges.add(edgeSrcV);
+					}
+				}
+			}
+		}
+		// in this stage the new vertex has been compared and updated regarding all previous vertices
+		graph.put(newVertex, null);
+		
+		// add its edges to the graph as well
+		for (GraphEdge e : foundEdges) {
+			addEdge(e, graph);
+		}
+		// compute vertex weight
+		newVertex.computeVertexWeight();	
+		
+		System.out.println("Vertex added successfully");
+	}
+	
+	private String preparePhi(String phi, String update) {
+		String preparedPhi = new String(phi);
+		if (update != null) {
+			// if there is a constraint on rho, phi needs an update
+			 preparedPhi += " && " + update;
+		}
+		return preparedPhi;
+	}
+	
+	private String rhoIntersection(String rho1, String rho2, String phi1, String phi2, HashSet<String> vars1, HashSet<String> vars2) {
+		KernelLink link = MathematicaHandler.getInstance();
+		
+		rho1 = variableRename(rho1);
+		phi1 = variableRename(phi1);
+		
+		String rhoQuery = rho1.substring(rho1.indexOf(">") + 1) + " == " + rho2.substring(rho2.indexOf(">") + 1);
+		String phiQuery = phi1 + " && " + phi2;
+		
+		// build variables string for mathematica query
+		String variables = "{";
+		for (String variable: vars1) {
+			variables += variable.replaceAll("id", "idV") + ", ";
+		}
+		for (String variable: vars2) {
+			variables += variable + ", ";
+		}
+		// remove extra characters and finalize string
+		variables = variables.substring(0, variables.length() - 2) + "}";
+
+		
+		String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
+				+ variables + ", Integers, Backsubstitution -> True]";
+		System.out.println(query);
+		String result = link.evaluateToOutputForm(query, 0);
+		
+		return result;
+	}
+
+	private void addEdge(GraphEdge edge, HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+		GraphVertex src = edge.getSrc();		
+		if (graph.get(src) == null) {
+			ArrayList<GraphEdge> edges = new ArrayList<>();
+			edges.add(edge);
+			graph.put(src, edges);
+			return;
+		}
+		graph.get(src).add(edge);
+	}
+
 }
 	
 	

@@ -77,7 +77,7 @@ public class GraphVertex {
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			vertexWeight += Integer.parseInt(result);
 		}
-		/*
+		/* TODO : this method is no longer needed as rhos need to stay for splitting purposes
 		// remove rhos that are now empty
 		for (VertexRho rhoToRemove: rhosToRemove) {
 			this.sigma.removeRho(rhoToRemove);

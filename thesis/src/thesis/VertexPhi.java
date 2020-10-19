@@ -86,6 +86,7 @@ public class VertexPhi {
 		case 9:
 			return w * w;
 		default:
+			System.out.println("\n\nTable range unknown\n\n");
 			return -1;
 		}
 	}
