@@ -10,7 +10,7 @@ public class VertexPhi {
 	
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	
-	private static int w = 10;
+	private static int w = 2;
 	
 	public VertexPhi(VertexPhi vertexPhi) {
 		this.variables = new HashMap<>();

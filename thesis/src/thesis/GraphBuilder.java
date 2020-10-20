@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,7 +14,7 @@ import com.wolfram.jlink.*;
 
 public class GraphBuilder {
 		
-	private static HashMap<GraphVertex, ArrayList<GraphEdge>> graph = new HashMap<>();
+	private static LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph = new LinkedHashMap<>();
 	
 	private static String preparePhi(String phi, String update) {
 		String preparedPhi = new String(phi);
@@ -47,7 +48,6 @@ public class GraphBuilder {
 		
 		String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
 				+ variables + ", Integers, Backsubstitution -> True]";
-		System.out.println(query);
 		String result = link.evaluateToOutputForm(query, 0);
 		
 		return result;
@@ -57,7 +57,7 @@ public class GraphBuilder {
 		return s.replaceAll("id", "idV");
 	}
 	
-	private static void addEdge(GraphEdge edge, HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	private static void addEdge(GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		GraphVertex src = edge.getSrc();		
 		if (graph.get(src) == null) {
 			ArrayList<GraphEdge> edges = new ArrayList<>();
@@ -68,7 +68,7 @@ public class GraphBuilder {
 		graph.get(src).add(edge);
 	}
 	
-	public static void logicalAdd(GraphVertex newVertex, HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	public static void logicalAdd(GraphVertex newVertex, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 		
@@ -80,12 +80,12 @@ public class GraphBuilder {
 			HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
 			// iterate through the new rhos being added
 			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
-				String rhoV = entryV.getKey().getRho();
-				String phiV = entryV.getValue().getPhiAsString();
-				
 				// don't compare remote rhos as they are elsewhere
 				if (entryV.getKey().isRemote())
 					continue;
+				
+				String rhoV = entryV.getKey().getRho();
+				String phiV = entryV.getValue().getPhiAsString();
 				
 				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
 					String rhoGV = entryGV.getKey().getRho();
@@ -139,6 +139,8 @@ public class GraphBuilder {
 			ArrayList<Vertex> seVertices = Parser.getVertices();
 			// first vertex doesn't need special treatment
 			boolean isFirst = true;
+			// id for tx profle
+			int txProfile = 1;
 			
 			for (Vertex v: seVertices) {
 				if (isFirst) {
@@ -146,7 +148,7 @@ public class GraphBuilder {
 					// build vertex sigma to identify items in V
 					VertexSigma sigma = new VertexSigma(v.getRhos());
 					// build a graph vertex 
-					GraphVertex gv = new GraphVertex(sigma);
+					GraphVertex gv = new GraphVertex(sigma, txProfile);
 					// store it in the graph
 					graph.put(gv, new ArrayList<>());
 					// compute its weight, i.e. how many items does it contain
@@ -155,8 +157,9 @@ public class GraphBuilder {
 					continue;
 				}
 				VertexSigma sigma = new VertexSigma(v.getRhos());
-				GraphVertex newVertex = new GraphVertex(sigma);
+				GraphVertex newVertex = new GraphVertex(sigma, txProfile);
 				logicalAdd(newVertex, graph);
+				txProfile++;
 			}
 		} catch (IOException e1) {
 			System.out.println("Unable to parse through SE files");
@@ -164,7 +167,7 @@ public class GraphBuilder {
 		}
 	}
 	
-	public static void printGraph(HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	public static void printGraph(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		int noVertices = 1;
 		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> entry: graph.entrySet()) {
 			System.out.println("Printing vertex no " + noVertices);
@@ -184,11 +187,11 @@ public class GraphBuilder {
 				
 		buildGraph();
 				
-		/*Splitter splitter = new Splitter();
+		Splitter splitter = new Splitter();
 		
 		graph = splitter.splitGraph(graph);
 		
-		printGraph(graph);*/
+		printGraph(graph);
 
 	}
 }

@@ -12,10 +12,17 @@ public class GraphVertex {
 	
 	private int vertexWeight = 0;
 	
+	private int txProfile;
+	
 	private VertexSigma sigma;
 	
-	public GraphVertex(VertexSigma sigma) {
+	public GraphVertex(VertexSigma sigma, int txProfile) {
 		this.sigma = sigma;	
+		this.txProfile = txProfile;
+	}
+	
+	public int getTxProfile() {
+		return this.txProfile;
 	}
 	
 	public VertexSigma getSigma() {
@@ -49,6 +56,7 @@ public class GraphVertex {
 			String result = link.evaluateToOutputForm(query, 0);
 			result = result.replaceAll("[, ]?False[, ]?", "");
 			if (result.equals("{}")) {
+				System.out.println(query);
 				System.out.println("Empty rho, removing");
 				entry.getKey().setRemote();
 				continue;

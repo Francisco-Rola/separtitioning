@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.wolfram.jlink.KernelLink;
@@ -12,15 +13,17 @@ import javafx.util.Pair;
 
 public class Splitter {
 	
-	private HashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new HashMap<>();
+	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new LinkedHashMap<>();
 	
 	public Splitter() {
 		
 	}
 	
-	public HashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// for each vertex, iterate through its rhos
 		int counter = 1;
+		// tx profile identifier
+		int txProfile = 1;
 		for (GraphVertex v: graph.keySet()) {
 			// variable that stores rho intersection information
 			boolean stop = false;
@@ -93,7 +96,7 @@ public class Splitter {
 			// display the splits
 			printSplits(counter, splits);
 			// apply the split to the vertex
-			applySplit(v.getSigma(), splits);
+			applySplit(v.getSigma(), splits, txProfile);
 			
 			//increment vertex counter
 			counter++;
@@ -218,7 +221,7 @@ public class Splitter {
 		return splitVars;
 	}
 	
-	private Pair<Integer, Integer> getSplitRange(HashMap<VertexRho, VertexPhi> rhos, String splitVar) {
+	private Pair<Integer, Integer> getSplitRange(LinkedHashMap<VertexRho, VertexPhi> rhos, String splitVar) {
  		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
 			if (entry.getKey().getVariables().contains(splitVar)) {
 				System.out.println("Split var: " + splitVar + " | Range -> " + entry.getValue().getPhi().get(splitVar));
@@ -232,7 +235,7 @@ public class Splitter {
 		System.out.println("Var list for vertex no" + counter + " -> " + splitVars); 
 	}
 	
-	private void applySplit(VertexSigma sigma, ArrayList<String> splits) {
+	private void applySplit(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
 		// give an ID to each vertex consisting of a byte array
 		ArrayList<String> ids = generateCombinations(splits.size(), new int[splits.size()], 0);
 		// flag to note if dealing with first subvertex
@@ -270,7 +273,7 @@ public class Splitter {
 				}
 			}
 			// associate new sigma to a new vertex
-			GraphVertex gv = new GraphVertex(newSigma);
+			GraphVertex gv = new GraphVertex(newSigma, txProfile);
 			// add vertex to graph
 			if (isFirst) {
 				// first subvertex does not need logical subtraction
@@ -280,7 +283,7 @@ public class Splitter {
 			}
 			else {
 				// other sub vertices need to be disjoint from previously existing ones
-				addVertex(gv, splitGraph);
+				addVertex(gv, txProfile, splitGraph);
 			}
 		}
 		
@@ -339,10 +342,10 @@ public class Splitter {
 		return sigma;
 	}
 	
-	private void addVertex(GraphVertex newVertex, HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	private void addVertex(GraphVertex newVertex, int txProfile, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// edges found during rho comparison
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
-		
+	
 		// need to compare newly added vertex to every other vertex
 		HashMap<VertexRho, VertexPhi> rhosV = newVertex.getSigma().getRhos();
 		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
@@ -351,12 +354,18 @@ public class Splitter {
 			HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
 			// iterate through the new rhos being added
 			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
+				// don't compare remote rhos as they are elsewhere
+				if (entryV.getKey().isRemote()) {
+					ArrayList<GraphEdge> remoteEdges = redrawEdges(newVertex, entryV.getKey(), entryV.getValue(), txProfile, graph);
+					// add all remote edges found
+					for (GraphEdge e : remoteEdges) {
+						foundEdges.add(e);
+					}
+					continue;
+				}
+				
 				String rhoV = entryV.getKey().getRho();
 				String phiV = entryV.getValue().getPhiAsString();
-				
-				// don't compare remote rhos as they are elsewhere
-				if (entryV.getKey().isRemote())
-					continue;
 				
 				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
 					String rhoGV = entryGV.getKey().getRho();
@@ -387,7 +396,7 @@ public class Splitter {
 			}
 		}
 		// in this stage the new vertex has been compared and updated regarding all previous vertices
-		graph.put(newVertex, null);
+		graph.put(newVertex, new ArrayList<>());
 		
 		// add its edges to the graph as well
 		for (GraphEdge e : foundEdges) {
@@ -396,7 +405,7 @@ public class Splitter {
 		// compute vertex weight
 		newVertex.computeVertexWeight();	
 		
-		System.out.println(" added successfully");
+		System.out.println("Subvertex added successfully");
 	}
 	
 	private String preparePhi(String phi, String update) {
@@ -431,23 +440,53 @@ public class Splitter {
 		
 		String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
 				+ variables + ", Integers, Backsubstitution -> True]";
-		System.out.println(query);
 		String result = link.evaluateToOutputForm(query, 0);
 		
 		return result;
 	}
 
-	private void addEdge(GraphEdge edge, HashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
-		GraphVertex src = edge.getSrc();		
-		if (graph.get(src) == null) {
-			ArrayList<GraphEdge> edges = new ArrayList<>();
-			edges.add(edge);
-			graph.put(src, edges);
-			return;
-		}
-		graph.get(src).add(edge);
+	private void addEdge(GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+		graph.get(edge.getSrc()).add(edge);
 	}
 
+	private ArrayList<GraphEdge> redrawEdges(GraphVertex newVertex, VertexRho remoteRho, VertexPhi remotePhi, int txProfile, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+		// list of edges found based on remote rho
+		ArrayList<GraphEdge> remoteEdges = new ArrayList<>();
+		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> entry: graph.entrySet()) {
+			// compare current vertex with all previously existing ones to settle remote edges
+			if (txProfile > entry.getKey().getTxProfile()) {
+				// check intersection between remoteRho and its pair
+				String remRho = remoteRho.getRho();
+				String remPhi = remotePhi.getPhiAsString();
+				// check every rho
+				for (Map.Entry<VertexRho, VertexPhi> entryGV: entry.getKey().getSigma().getRhos().entrySet()) {
+					String rhoGV = entryGV.getKey().getRho();
+					String phiGV = entryGV.getValue().getPhiAsString();
+					// if rhos are not on same table they do need to be compared
+					if (!remRho.substring(0, remRho.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
+							|| entryGV.getKey().isRemote())
+						continue;
+					String result = null;
+					String remPhiQ = preparePhi(remPhi, remoteRho.getRhoUpdate());
+					String phiGVQ = preparePhi(phiGV, entryGV.getKey().getRhoUpdate());
+					result = rhoIntersection(remRho, rhoGV, remPhiQ, phiGVQ, remoteRho.getVariables(), entryGV.getKey().getVariables());
+					// check the intersection results
+					if (result.equals("False")) {
+						// no overlap so no edge redrawing
+						continue;
+					}
+					else {
+						System.out.println("Collision found, redrawing remote edge");
+						// collision found, adding remote edge to list
+						GraphEdge remEdge = new GraphEdge(newVertex, entry.getKey(), remRho, rhoGV, result, remotePhi.getPhiAsGroup());
+						remoteEdges.add(remEdge);
+					}
+				}
+			}
+		}
+		
+		return remoteEdges;
+	}
 }
 	
 	

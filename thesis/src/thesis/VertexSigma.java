@@ -6,7 +6,7 @@ import java.util.*;
 
 public class VertexSigma implements Predicate<Integer>{
 	
-	private HashMap<VertexRho, VertexPhi> rhos = new HashMap<>();
+	private LinkedHashMap<VertexRho, VertexPhi> rhos = new LinkedHashMap<>();
 	
 	
 	public VertexPhi getPhi(VertexRho rho) {
@@ -21,12 +21,12 @@ public class VertexSigma implements Predicate<Integer>{
 		return result;
 	}
 
-	public HashMap<VertexRho, VertexPhi> getRhos() {
+	public LinkedHashMap<VertexRho, VertexPhi> getRhos() {
 		return this.rhos;
 	}
 	
 	public VertexSigma(VertexSigma sigma) {
-		this.rhos = new HashMap<>();
+		this.rhos = new LinkedHashMap<>();
 		
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi : sigma.getRhos().entrySet()) {
 			VertexRho rhoCopy = new VertexRho(rhoPhi.getKey());
