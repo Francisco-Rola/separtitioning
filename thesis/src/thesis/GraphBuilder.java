@@ -82,11 +82,17 @@ public class GraphBuilder {
 			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
 				String rhoV = entryV.getKey().getRho();
 				String phiV = entryV.getValue().getPhiAsString();
+				
+				// don't compare remote rhos as they are elsewhere
+				if (entryV.getKey().isRemote())
+					continue;
+				
 				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
 					String rhoGV = entryGV.getKey().getRho();
 					String phiGV = entryGV.getValue().getPhiAsString();
 					
-					if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1)))
+					if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
+							|| entryGV.getKey().isRemote())
 						continue;
 					
 					//compute intersection between rhos given the phis
@@ -178,11 +184,11 @@ public class GraphBuilder {
 				
 		buildGraph();
 				
-		Splitter splitter = new Splitter();
+		/*Splitter splitter = new Splitter();
 		
 		graph = splitter.splitGraph(graph);
 		
-		printGraph(graph);
+		printGraph(graph);*/
 
 	}
 }

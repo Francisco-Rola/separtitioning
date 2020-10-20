@@ -42,15 +42,15 @@ public class GraphVertex {
 			String rhoQuery = entry.getKey().getRho().substring(entry.getKey().getRho().indexOf(">") + 1);
 			// check if rho is constrained by logical subtraction
 			if (entry.getKey().getRhoUpdate() != null) {
-				System.out.println("Calculing weight for rho with modified clause");
-				rhoQuery += " && !(" + entry.getKey().getRhoUpdate() + ")";
+				//System.out.println("Calculing weight for rho with modified clause");
+				rhoQuery += " && " + entry.getKey().getRhoUpdate();
 			}
 			String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
 			String result = link.evaluateToOutputForm(query, 0);
 			result = result.replaceAll("[, ]?False[, ]?", "");
 			if (result.equals("{}")) {
 				System.out.println("Empty rho, removing");
-				rhosToRemove.add(entry.getKey());
+				entry.getKey().setRemote();
 				continue;
 			}
 			
@@ -73,6 +73,7 @@ public class GraphVertex {
 			query = query.substring(0, query.length() - 2);
 			String mathQuery = "Length[DeleteDuplicates[Union[" + query + "]]]";
 			String result = link.evaluateToOutputForm(mathQuery, 0);
+			System.out.println("Table: " + entry.getKey() + " Weight: " + result);
 			vertexWeight += Integer.parseInt(result);
 		}
 		

@@ -9,6 +9,8 @@ import com.wolfram.jlink.KernelLink;
 
 public class VertexRho {
 	
+	private boolean remote = false;
+	
 	private String rho = null;
 	
 	private String update = null;
@@ -32,6 +34,7 @@ public class VertexRho {
 			this.update = new String(vertexRho.getRhoUpdate());
 		this.variables = new HashSet<>();
 		this.variables.addAll(vertexRho.getVariables());
+		this.remote = vertexRho.isRemote();
 	}
 	
 	public String getRho() {
@@ -78,10 +81,19 @@ public class VertexRho {
 		else {
 			this.update = this.update + "!(" + edgePhiUpdated.toString() + ")";
 		}
+		this.update = this.update.replaceAll("idV", "id");
 		// get mathematica link
 		KernelLink link = MathematicaHandler.getInstance();
 		// simplify rho update expression for further computations
 		this.update = link.evaluateToOutputForm("FullSimplify[" + this.update + "]", 0);
+	}
+	
+	public void setRemote() {
+		this.remote = true;
+	}
+
+	public boolean isRemote() {
+		return this.remote;
 	}
 	
 	public String getRhoUpdate() {

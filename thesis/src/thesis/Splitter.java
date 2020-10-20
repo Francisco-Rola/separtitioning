@@ -156,7 +156,7 @@ public class Splitter {
 		KernelLink link = MathematicaHandler.getInstance();
 		String result = link.evaluateToOutputForm(query, 0);
 		// check if there is an intersection
-		if (result.length() == 2) {
+		if (result.equals("{}")) {
 			return false;
 		}
 		else {
@@ -280,7 +280,7 @@ public class Splitter {
 			}
 			else {
 				// other sub vertices need to be disjoint from previously existing ones
-				GraphBuilder.logicalAdd(gv, splitGraph);
+				addVertex(gv, splitGraph);
 			}
 		}
 		
@@ -353,11 +353,17 @@ public class Splitter {
 			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
 				String rhoV = entryV.getKey().getRho();
 				String phiV = entryV.getValue().getPhiAsString();
+				
+				// don't compare remote rhos as they are elsewhere
+				if (entryV.getKey().isRemote())
+					continue;
+				
 				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
 					String rhoGV = entryGV.getKey().getRho();
 					String phiGV = entryGV.getValue().getPhiAsString();
 					// if rhos are not on same table they do need to be compared
-					if (rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1)))
+					if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
+							|| entryGV.getKey().isRemote())
 						continue;
 					//compute intersection between rhos given the phis
 					String result = null;
@@ -390,7 +396,7 @@ public class Splitter {
 		// compute vertex weight
 		newVertex.computeVertexWeight();	
 		
-		System.out.println("Vertex added successfully");
+		System.out.println(" added successfully");
 	}
 	
 	private String preparePhi(String phi, String update) {
