@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 
 import com.wolfram.jlink.KernelLink;
 
+// class that represents a SE formula, maps to a database access
 public class VertexRho {
 	// flag that denotes if a rho is remote aka in other vertex
 	private boolean remote = false;
