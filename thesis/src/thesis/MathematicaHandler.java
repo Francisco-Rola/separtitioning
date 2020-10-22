@@ -6,11 +6,13 @@ import com.wolfram.jlink.MathLinkFactory;
 
 // singleton class that is responsible for keeping a Mathematica endpoint
 public class MathematicaHandler {
-	
+	// matematica link
 	private static KernelLink ml = null;
 		
+	// default constructor
 	private MathematicaHandler() {}
 	
+	// singleton handler method
 	public static KernelLink getInstance() {
 		if (ml == null) {
 			 try {

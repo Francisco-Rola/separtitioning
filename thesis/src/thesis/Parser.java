@@ -5,9 +5,10 @@ import java.io.*;
 
 // class responsible for parsing through SE file and generating vertices
 public class Parser {
-
+	// list of vertices obtained from parsing SE file
 	private static ArrayList<Vertex> vertices = new ArrayList<>();
-
+	
+	// default constructor for parser, takes files to read as input
 	public Parser(String[] files) throws IOException {
 		for (String file : files) {
 			FileReader input = new FileReader(file);
@@ -17,6 +18,7 @@ public class Parser {
 		}
 	}
 
+	// method to build vvertices by reading SE file
 	private void buildVertices(BufferedReader file, String line) throws IOException {
 		Boolean rwsetFound = false;
 		Vertex vertex = new Vertex();
@@ -63,10 +65,12 @@ public class Parser {
 		}
 	}
 	
+	// getter for vertices generated from parsing SE file
 	public static ArrayList<Vertex> getVertices() {
 		return vertices;
 	}
-
+	
+	// main for debug purposes
 	public static void main(String[] args) {
 		try {
 			String[] files = {"payment_final.txt", "new_order_final.txt"};
