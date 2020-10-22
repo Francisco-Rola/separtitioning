@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.StringJoiner;
 
 import com.wolfram.jlink.KernelLink;
 
@@ -358,11 +359,6 @@ public class Splitter {
 			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
 				// don't compare remote rhos as they are elsewhere
 				if (entryV.getKey().isRemote()) {
-					ArrayList<GraphEdge> remoteEdges = redrawEdges(newVertex, entryV.getKey(), entryV.getValue(), txProfile, graph);
-					// add all remote edges found
-					for (GraphEdge e : remoteEdges) {
-						foundEdges.add(e);
-					}
 					continue;
 				}
 				
@@ -466,7 +462,7 @@ public class Splitter {
 		graph.get(edge.getSrc()).add(edge);
 	}
 
-	private ArrayList<GraphEdge> redrawEdges(GraphVertex newVertex, VertexRho remoteRho, VertexPhi remotePhi, int txProfile, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	private ArrayList<GraphEdge> redrawEdgesF(GraphVertex newVertex, VertexRho remoteRho, VertexPhi remotePhi, int txProfile, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// list of edges found based on remote rho
 		ArrayList<GraphEdge> remoteEdges = new ArrayList<>();
 		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> entry: graph.entrySet()) {
@@ -474,7 +470,6 @@ public class Splitter {
 			if (txProfile > entry.getKey().getTxProfile()) {
 				// check intersection between remoteRho and its pair
 				String remRho = remoteRho.getRho();
-				String remPhi = remotePhi.getPhiAsString();
 				// check every rho
 				for (Map.Entry<VertexRho, VertexPhi> entryGV: entry.getKey().getSigma().getRhos().entrySet()) {
 					String rhoGV = entryGV.getKey().getRho();
@@ -484,9 +479,8 @@ public class Splitter {
 							|| entryGV.getKey().isRemote())
 						continue;
 					String result = null;
-					String remPhiQ = preparePhi(remPhi, remoteRho.getRhoUpdate());
 					String phiGVQ = preparePhi(phiGV, entryGV.getKey().getRhoUpdate());
-					result = rhoIntersection(remRho, rhoGV, remPhiQ, phiGVQ, remoteRho.getVariables(), entryGV.getKey().getVariables());
+					result = rhoIntersection(remRho, rhoGV, "True", phiGVQ, remoteRho.getVariables(), entryGV.getKey().getVariables());
 					// check the intersection results
 					if (result.equals("False")) {
 						// no overlap so no edge redrawing
@@ -494,8 +488,8 @@ public class Splitter {
 					}
 					else {
 						System.out.println("Collision found, redrawing remote edge");
-						// collision found, adding remote edge to list
-						GraphEdge remEdge = new GraphEdge(newVertex, entry.getKey(), remRho, rhoGV, result, remotePhi.getPhiAsGroup());
+						// collision found, redraw edge
+						GraphEdge remEdge = new GraphEdge(newVertex, entry.getKey(), remRho, rhoGV, remoteRho.getRhoUpdate(), remotePhi.getPhiAsGroup());
 						remoteEdges.add(remEdge);
 					}
 				}
@@ -503,6 +497,28 @@ public class Splitter {
 		}
 		
 		return remoteEdges;
+	}
+	
+	private ArrayList<GraphEdge> redrawEdges(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> oldGraph) {
+		// need to ensure that edges that mapped to parent are correctly assigned to sub vertex
+		// parent was mapped to an edge with certain information
+		// need to check size of overlap between children's modified rho and new vertex
+		// problem is modified rho comprises the disjointess assurance, so mathematica wont detect an overlap
+		// if i dont consider the update then im missing the splitting updates
+		// splitting updates can be either table split or input split
+		// worth case scenario the rho is not fully remote
+		// it can suffer table splitting or input splitting
+		// updates from splitting need to be considered, updates from 
+		
+		// for each vertex in the old graph
+		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> oldEntry: oldGraph.entrySet()) {
+			//iterate over its edges
+			for (GraphEdge oldEdge : oldEntry.getValue()) {
+				
+			}
+		}
+		
+		return null;
 	}
 }
 	

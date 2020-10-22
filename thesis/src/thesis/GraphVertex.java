@@ -2,43 +2,37 @@ package thesis;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import com.wolfram.jlink.KernelLink;
 
-
-
+// class that represents a graph vertex
 public class GraphVertex {
-	
+	// vertex ID
+	private int vertexID;
+	// number of data items stored in the vertex
 	private int vertexWeight = 0;
-	
+	// transaction profile that generated this vertex originally, inheried from parent in case of splitting
 	private int txProfile;
-	
+	// formulas that represent the data items in this vertex
 	private VertexSigma sigma;
 	
+	// default constructor for a graph vertex
 	public GraphVertex(VertexSigma sigma, int txProfile) {
 		this.sigma = sigma;	
 		this.txProfile = txProfile;
 	}
 	
+	// getter for transaction profile
 	public int getTxProfile() {
 		return this.txProfile;
 	}
 	
+	// getter for vertex sigma
 	public VertexSigma getSigma() {
 		return sigma;
 	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((sigma == null) ? 0 : sigma.hashCode());
-		result = prime * result + txProfile;
-		result = prime * result + vertexWeight;
-		return result;
-	}
 	
+	// method that computes vertex weight, i.e. how many data items it stores
 	public void computeVertexWeight() {
 		// get mathematica endpoint
 		KernelLink link = MathematicaHandler.getInstance();
@@ -51,18 +45,19 @@ public class GraphVertex {
 			String rhoQuery = entry.getKey().getRho().substring(entry.getKey().getRho().indexOf(">") + 1);
 			// check if rho is constrained by logical subtraction
 			if (entry.getKey().getRhoUpdate() != null) {
-				//System.out.println("Calculing weight for rho with modified clause");
-				rhoQuery += " && " + entry.getKey().getRhoUpdate();
+				rhoQuery = "(" + rhoQuery +  ") && " + entry.getKey().getRhoUpdate();
 			}
+			// check items accessed by rho given phi
 			String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
 			String result = link.evaluateToOutputForm(query, 0);
 			result = result.replaceAll("[, ]?False[, ]?", "");
+			// if empty result then this rho is remote
 			if (result.equals("{}")) {
 				System.out.println("Empty rho, removing");
 				entry.getKey().setRemote();
 				continue;
 			}
-			
+			// add accesses to its corresponding table entry
 			if (!tableAccesses.containsKey(table)) {
 				ArrayList<String> accesses = new ArrayList<>();
 				accesses.add(result);
@@ -80,6 +75,7 @@ public class GraphVertex {
 				query += access + ", ";
 			}
 			query = query.substring(0, query.length() - 2);
+			// size given by union of all the accesses, no duplicates
 			String mathQuery = "Length[DeleteDuplicates[Union[" + query + "]]]";
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			System.out.println("Table: " + entry.getKey() + " Weight: " + result);
@@ -88,10 +84,24 @@ public class GraphVertex {
 		
 	}
 	
+	// debug and presentation print
 	public void printVertex() {
 		System.out.println("--------------------------");
+		//System.out.println("Printing vertex id: " + this.vertexID);
 		System.out.println("Vertex weight: " + this.vertexWeight);
 		this.sigma.printSigma();
+		System.out.println("--------------------------");
+
 	}
-		
+	
+	// automatically generated hash code for vertex sigma
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((sigma == null) ? 0 : sigma.hashCode());
+		result = prime * result + txProfile;
+		result = prime * result + vertexWeight;
+		return result;
+	}
 }

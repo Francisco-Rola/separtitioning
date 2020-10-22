@@ -61,7 +61,7 @@ public class VertexRho {
 
 	// method used to update a rho upon detecting a remote access, ensures disjointness
 	public void updateRho(String update) {
-		StringJoiner edgePhiUpdated = new StringJoiner(" || ");
+		StringJoiner updateParsed = new StringJoiner(" || ");
 		// split update on each disjunction
 		String[] phiParts = update.split(" \\|\\| ");
 		// check if parenthesis missing
@@ -87,24 +87,24 @@ public class VertexRho {
 			}
 			// if there is only one solution no need to add parenthesis
 			if (phiParts.length == 1)
-				edgePhiUpdated.add(conjunctionPhi.toString());
+				updateParsed.add(conjunctionPhi.toString());
 			else if(ps) {
-				edgePhiUpdated.add("(" + conjunctionPhi.toString());
+				updateParsed.add("(" + conjunctionPhi.toString());
 			}
 			else {
-				edgePhiUpdated.add(conjunctionPhi.toString() + ")");
+				updateParsed.add(conjunctionPhi.toString() + ")");
 			}
 			ps = false;
 		}
 		// check if there is update to concatenate
 		if (this.update == null) {
-			this.update = "!(" + edgePhiUpdated.toString() + ")";
+			this.update = "!(" + updateParsed.toString() + ")";
 		}
 		else {
-			this.update = "(" + this.update + ") && !(" + edgePhiUpdated.toString() + ")";
+			this.update = "(" + this.update + ") && !(" + updateParsed.toString() + ")";
 		}
 		// simplify rho update to aid further queries
-		simplifyRho(edgePhiUpdated.toString());
+		simplifyRho(update);
 	}
 	
 	// method used to simplify a rho update formula
@@ -112,7 +112,7 @@ public class VertexRho {
 		// get mathematica link
 		KernelLink link = MathematicaHandler.getInstance();
 		// simplify rho update expression for further computations
-		this.update = link.evaluateToOutputForm("FullSimplify[" + this.update + "]", 0);
+		this.update = link.evaluateToOutputForm("Simplify[" + this.update + "]", 0);
 		// if there is an error, check what went wrong
 		if (this.update.equals("$Failed")) {
 			System.out.println(update);
