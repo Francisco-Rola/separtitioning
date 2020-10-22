@@ -1,7 +1,5 @@
 package thesis;
 
-import java.util.StringJoiner;
-
 import com.wolfram.jlink.KernelLink;
 
 

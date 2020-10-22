@@ -28,8 +28,8 @@ public class GraphBuilder {
 	private static String rhoIntersection(String rho1, String rho2, String phi1, String phi2, HashSet<String> vars1, HashSet<String> vars2) {
 		KernelLink link = MathematicaHandler.getInstance();
 		
-		rho1 = variableRename(rho1);
-		phi1 = variableRename(phi1);
+		rho2 = variableRename(rho2);
+		phi2 = variableRename(phi2);
 		
 		String rhoQuery = rho1.substring(rho1.indexOf(">") + 1) + " == " + rho2.substring(rho2.indexOf(">") + 1);
 		String phiQuery = phi1 + " && " + phi2;
@@ -37,10 +37,10 @@ public class GraphBuilder {
 		// build variables string for mathematica query
 		String variables = "{";
 		for (String variable: vars1) {
-			variables += variable.replaceAll("id", "idV") + ", ";
+			variables += variable + ", ";
 		}
 		for (String variable: vars2) {
-			variables += variable + ", ";
+			variables += variable.replaceAll("id", "idGV") + ", ";
 		}
 		// remove extra characters and finalize string
 		variables = variables.substring(0, variables.length() - 2) + "}";
@@ -54,7 +54,7 @@ public class GraphBuilder {
 	}
 	
 	private static String variableRename(String s) {
-		return s.replaceAll("id", "idV");
+		return s.replaceAll("id", "idGV");
 	}
 	
 	private static void addEdge(GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {

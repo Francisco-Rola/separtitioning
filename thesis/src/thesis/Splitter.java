@@ -148,7 +148,7 @@ public class Splitter {
 			variableList += variable + ", ";
 		}
 		for (String variable: vars2) {
-			variableList += variable.replaceAll("id", "idV") + ", ";
+			variableList += variable.replaceAll("id", "idGV") + ", ";
 		}
 		variableList = variableList.substring(0, variableList.length() - 2);
 		variableList += "}";
@@ -169,7 +169,7 @@ public class Splitter {
 	
 	private String variableRename(String s) {
 		// rename variables to prepare mathematica query
-		return s.replaceAll("id", "idV");
+		return s.replaceAll("id", "idGV");
 	}
 	
 	private ArrayList<String> getSplitVars(HashMap<Integer, HashSet<String>> rhoCoverage, ArrayList<String> splitVars, String splitVar) {
@@ -274,6 +274,7 @@ public class Splitter {
 			}
 			// associate new sigma to a new vertex
 			GraphVertex gv = new GraphVertex(newSigma, txProfile);
+			
 			// add vertex to graph
 			if (isFirst) {
 				// first subvertex does not need logical subtraction
@@ -284,6 +285,7 @@ public class Splitter {
 			else {
 				// other sub vertices need to be disjoint from previously existing ones
 				addVertex(gv, txProfile, splitGraph);
+				gv.printVertex();
 			}
 		}
 		
@@ -350,7 +352,7 @@ public class Splitter {
 		HashMap<VertexRho, VertexPhi> rhosV = newVertex.getSigma().getRhos();
 		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
 			GraphVertex gv = node.getKey();
-			// obtain all rhos in previously exisiting vertex
+			// obtain all rhos in previously existing vertex
 			HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
 			// iterate through the new rhos being added
 			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
@@ -412,7 +414,7 @@ public class Splitter {
 		String preparedPhi = new String(phi);
 		if (update != null) {
 			// if there is a constraint on rho, phi needs an update
-			 preparedPhi += " && " + update;
+			 preparedPhi = "(" + phi +  " && (" + update + "))";
 		}
 		return preparedPhi;
 	}
@@ -420,27 +422,42 @@ public class Splitter {
 	private String rhoIntersection(String rho1, String rho2, String phi1, String phi2, HashSet<String> vars1, HashSet<String> vars2) {
 		KernelLink link = MathematicaHandler.getInstance();
 		
-		rho1 = variableRename(rho1);
-		phi1 = variableRename(phi1);
+		rho2 = variableRename(rho2);
+		phi2 = variableRename(phi2);
 		
 		String rhoQuery = rho1.substring(rho1.indexOf(">") + 1) + " == " + rho2.substring(rho2.indexOf(">") + 1);
 		String phiQuery = phi1 + " && " + phi2;
-		
+				
 		// build variables string for mathematica query
 		String variables = "{";
 		for (String variable: vars1) {
-			variables += variable.replaceAll("id", "idV") + ", ";
+			variables += variable + ", ";
 		}
 		for (String variable: vars2) {
-			variables += variable + ", ";
+			variables += variable.replaceAll("id", "idGV") + ", ";
 		}
 		// remove extra characters and finalize string
 		variables = variables.substring(0, variables.length() - 2) + "}";
 
-		
 		String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
 				+ variables + ", Integers, Backsubstitution -> True]";
 		String result = link.evaluateToOutputForm(query, 0);
+		
+		if (result.equals("$Failed"))
+			System.out.println("Failed rho intersection query ->" + query);
+		if (result.contains("C[1]")) {
+			// Mathematica is not working in this case
+			System.out.println("Slow intersection due to negative numbers");
+			System.out.println(query);
+			return "False";
+		}
+		if (result.contains("Integers") && result.contains("oliid")) {
+			System.out.println(rho1);
+			System.out.println(rho2);
+			System.out.println(phi1);
+			System.out.println(phi2);
+			System.out.println(query);
+		}
 		
 		return result;
 	}

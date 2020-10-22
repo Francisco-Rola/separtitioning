@@ -34,6 +34,8 @@ public class GraphVertex {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((sigma == null) ? 0 : sigma.hashCode());
+		result = prime * result + txProfile;
+		result = prime * result + vertexWeight;
 		return result;
 	}
 	
@@ -56,7 +58,6 @@ public class GraphVertex {
 			String result = link.evaluateToOutputForm(query, 0);
 			result = result.replaceAll("[, ]?False[, ]?", "");
 			if (result.equals("{}")) {
-				System.out.println(query);
 				System.out.println("Empty rho, removing");
 				entry.getKey().setRemote();
 				continue;

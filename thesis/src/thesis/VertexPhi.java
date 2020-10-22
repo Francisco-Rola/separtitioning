@@ -27,7 +27,7 @@ public class VertexPhi {
 		
 		for (String variable : rhoVariables) {
 			if (variable.equals("districtid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w*10));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("warehouseid")) {
