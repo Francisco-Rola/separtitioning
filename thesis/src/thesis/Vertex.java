@@ -4,23 +4,27 @@ import java.util.*;
 
 // class that represents a symbolic vertex before transformation into a graph vertex
 public class Vertex {
-	
+	// read set for a given vertex, rho formulas
 	private HashSet<String> readSet = new HashSet<>();
+	// write set for a given vertex,rho formulas
 	private HashSet<String> writeSet = new HashSet<>();
 	
+	// default constructor
 	public Vertex() {
 		
 	}
 	
+	// method to add a formula to a vertex's read set
 	public void addToReadSet(String formula) {
 		readSet.add(formula);
 	}
 	
+	// method to add a formula to a vertex's write set
 	public void addToWriteSet(String formula) {
 		writeSet.add(formula);
 	}
 	
-	
+	// method that returns all the rhos in a vertex, no duplicates
 	public HashSet<String> getRhos() {
 		// deal with duplicate formulas by storing them in a set
 		HashSet<String> rhos = new HashSet<>();
@@ -29,7 +33,7 @@ public class Vertex {
 		return rhos;
 	}
 	
-	
+	// debug purposes, prints read and write set for a vertex
 	public void printVertex() {
 		System.out.println("\tRead set");
 		for(String formula : readSet) {
