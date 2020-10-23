@@ -239,8 +239,7 @@ public class Splitter {
 	private void applySplit(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
 		// give an ID to each vertex consisting of a byte array
 		ArrayList<String> ids = generateCombinations(splits.size(), new int[splits.size()], 0);
-		// flag to note if dealing with first subvertex
-		boolean isFirst = true;
+		
 		// iterate over all split combinations
 		for (String id: ids) {
 			// create a new sub vertex sigma
@@ -276,18 +275,10 @@ public class Splitter {
 			// associate new sigma to a new vertex
 			GraphVertex gv = new GraphVertex(newSigma, txProfile);
 			
-			// add vertex to graph
-			if (isFirst) {
-				// first subvertex does not need logical subtraction
-				isFirst = false;
-				splitGraph.put(gv, new ArrayList<>());
-				gv.computeVertexWeight();
-			}
-			else {
-				// other sub vertices need to be disjoint from previously existing ones
-				addVertex(gv, txProfile, splitGraph);
-				gv.printVertex();
-			}
+			// other sub vertices need to be disjoint from previously existing ones
+			addVertex(gv, txProfile, splitGraph);
+			gv.printVertex();
+			
 		}
 		
 	}
@@ -351,26 +342,23 @@ public class Splitter {
 	
 		// need to compare newly added vertex to every other vertex
 		HashMap<VertexRho, VertexPhi> rhosV = newVertex.getSigma().getRhos();
-		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
-			GraphVertex gv = node.getKey();
-			// obtain all rhos in previously existing vertex
-			HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
-			// iterate through the new rhos being added
-			for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
-				// don't compare remote rhos as they are elsewhere
-				if (entryV.getKey().isRemote()) {
-					continue;
-				}
-				
-				String rhoV = entryV.getKey().getRho();
-				String phiV = entryV.getValue().getPhiAsString();
-				
+		
+		for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
+			String rhoV = entryV.getKey().getRho();
+			String phiV = entryV.getValue().getPhiAsString();
+			
+			if (entryV.getKey().isRemote()) continue;
+			
+			for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
+				GraphVertex gv = node.getKey();
+				// obtain all rhos in previously existing vertex
+				HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
 				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
 					String rhoGV = entryGV.getKey().getRho();
 					String phiGV = entryGV.getValue().getPhiAsString();
 					// if rhos are not on same table they do need to be compared
 					if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
-							|| entryGV.getKey().isRemote())
+							|| entryGV.getKey().isRemote()) 
 						continue;
 					//compute intersection between rhos given the phis
 					String result = null;
@@ -422,7 +410,10 @@ public class Splitter {
 		phi2 = variableRename(phi2);
 		
 		String rhoQuery = rho1.substring(rho1.indexOf(">") + 1) + " == " + rho2.substring(rho2.indexOf(">") + 1);
-		String phiQuery = phi1 + " && " + phi2;
+		String phiQuery = "(" + phi1 + ") && (" + phi2 + ")";
+		
+		String query = link.evaluateToOutputForm("Simplify[(" + rhoQuery + ") && ("  + phiQuery + ")]", 0);
+
 				
 		// build variables string for mathematica query
 		String variables = "{";
@@ -435,10 +426,12 @@ public class Splitter {
 		// remove extra characters and finalize string
 		variables = variables.substring(0, variables.length() - 2) + "}";
 
-		String query = "Reduce[" + rhoQuery + " && " + phiQuery + ", " 
-				+ variables + ", Integers, Backsubstitution -> True]";
+		 query = "Reduce[" + query + ", " 
+				+ variables + ", Integers, Backsubstitution -> True]";	
+				
 		String result = link.evaluateToOutputForm(query, 0);
 		
+		// debug cases, exceptions
 		if (result.equals("$Failed"))
 			System.out.println("Failed rho intersection query ->" + query);
 		if (result.contains("C[1]")) {
@@ -447,13 +440,6 @@ public class Splitter {
 			System.out.println(query);
 			return "False";
 		}
-		if (result.contains("Integers") && result.contains("oliid")) {
-			System.out.println(rho1);
-			System.out.println(rho2);
-			System.out.println(phi1);
-			System.out.println(phi2);
-			System.out.println(query);
-		}
 		
 		return result;
 	}
@@ -461,65 +447,7 @@ public class Splitter {
 	private void addEdge(GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		graph.get(edge.getSrc()).add(edge);
 	}
-
-	private ArrayList<GraphEdge> redrawEdgesF(GraphVertex newVertex, VertexRho remoteRho, VertexPhi remotePhi, int txProfile, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
-		// list of edges found based on remote rho
-		ArrayList<GraphEdge> remoteEdges = new ArrayList<>();
-		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> entry: graph.entrySet()) {
-			// compare current vertex with all previously existing ones to settle remote edges
-			if (txProfile > entry.getKey().getTxProfile()) {
-				// check intersection between remoteRho and its pair
-				String remRho = remoteRho.getRho();
-				// check every rho
-				for (Map.Entry<VertexRho, VertexPhi> entryGV: entry.getKey().getSigma().getRhos().entrySet()) {
-					String rhoGV = entryGV.getKey().getRho();
-					String phiGV = entryGV.getValue().getPhiAsString();
-					// if rhos are not on same table they do need to be compared
-					if (!remRho.substring(0, remRho.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
-							|| entryGV.getKey().isRemote())
-						continue;
-					String result = null;
-					String phiGVQ = preparePhi(phiGV, entryGV.getKey().getRhoUpdate());
-					result = rhoIntersection(remRho, rhoGV, "True", phiGVQ, remoteRho.getVariables(), entryGV.getKey().getVariables());
-					// check the intersection results
-					if (result.equals("False")) {
-						// no overlap so no edge redrawing
-						continue;
-					}
-					else {
-						System.out.println("Collision found, redrawing remote edge");
-						// collision found, redraw edge
-						GraphEdge remEdge = new GraphEdge(newVertex, entry.getKey(), remRho, rhoGV, remoteRho.getRhoUpdate(), remotePhi.getPhiAsGroup());
-						remoteEdges.add(remEdge);
-					}
-				}
-			}
-		}
-		
-		return remoteEdges;
-	}
 	
-	private ArrayList<GraphEdge> redrawEdges(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> oldGraph) {
-		// need to ensure that edges that mapped to parent are correctly assigned to sub vertex
-		// parent was mapped to an edge with certain information
-		// need to check size of overlap between children's modified rho and new vertex
-		// problem is modified rho comprises the disjointess assurance, so mathematica wont detect an overlap
-		// if i dont consider the update then im missing the splitting updates
-		// splitting updates can be either table split or input split
-		// worth case scenario the rho is not fully remote
-		// it can suffer table splitting or input splitting
-		// updates from splitting need to be considered, updates from 
-		
-		// for each vertex in the old graph
-		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> oldEntry: oldGraph.entrySet()) {
-			//iterate over its edges
-			for (GraphEdge oldEdge : oldEntry.getValue()) {
-				
-			}
-		}
-		
-		return null;
-	}
 }
 	
 	

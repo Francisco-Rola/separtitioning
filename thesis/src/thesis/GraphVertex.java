@@ -45,7 +45,7 @@ public class GraphVertex {
 			String rhoQuery = entry.getKey().getRho().substring(entry.getKey().getRho().indexOf(">") + 1);
 			// check if rho is constrained by logical subtraction
 			if (entry.getKey().getRhoUpdate() != null) {
-				rhoQuery = "(" + rhoQuery +  ") && " + entry.getKey().getRhoUpdate();
+				rhoQuery = "(" + rhoQuery +  ") && (" + entry.getKey().getRhoUpdate() + ")";
 			}
 			// check items accessed by rho given phi
 			String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
@@ -53,7 +53,7 @@ public class GraphVertex {
 			result = result.replaceAll("[, ]?False[, ]?", "");
 			// if empty result then this rho is remote
 			if (result.equals("{}")) {
-				System.out.println("Empty rho, removing");
+				//System.out.println("Empty rho, removing");
 				entry.getKey().setRemote();
 				continue;
 			}
