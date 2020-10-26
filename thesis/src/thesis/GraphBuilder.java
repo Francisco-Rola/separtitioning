@@ -18,18 +18,15 @@ public class GraphBuilder {
 			new Parser(files);
 			// after obtaining vertices from SE need to make them disjoint
 			ArrayList<Vertex> seVertices = Parser.getVertices();
-			// id for tx profle
-			int txProfile = 1;
 			// iterate through SE vertices to add them to graph
 			for (Vertex v: seVertices) {
 				// build vertex sigma to identify items in V
 				VertexSigma sigma = new VertexSigma(v.getRhos());
 				// build a graph vertex 
-				GraphVertex gv = new GraphVertex(sigma, txProfile);
+				GraphVertex gv = new GraphVertex(sigma, v.getTxProfile());
 				// store it in the graph
 				graph.put(gv, new ArrayList<>());
 				// increment transaction profile id
-				txProfile++;
 				System.out.println("Vertex added successfully");
 				continue;
 			}
@@ -65,7 +62,7 @@ public class GraphBuilder {
 		
 		graph = splitter.splitGraph(graph);
 		
-		printGraph(graph);
+		//printGraph(graph);
 
 	}
 }

@@ -10,24 +10,26 @@ public class Parser {
 	
 	// default constructor for parser, takes files to read as input
 	public Parser(String[] files) throws IOException {
+		int txProfile = 1;
 		for (String file : files) {
 			FileReader input = new FileReader(file);
 			BufferedReader bufRead = new BufferedReader(input);
 			String line = null;
-			buildVertices(bufRead, line);
+			buildVertices(bufRead, line, txProfile);
+			txProfile++;
 		}
 	}
 
 	// method to build vvertices by reading SE file
-	private void buildVertices(BufferedReader file, String line) throws IOException {
+	private void buildVertices(BufferedReader file, String line, int txProfile) throws IOException {
 		Boolean rwsetFound = false;
-		Vertex vertex = new Vertex();
+		Vertex vertex = new Vertex(txProfile);
 		// read through the whole file
 		while ((line = file.readLine()) != null) {
-			// found a write read write set for a symbolic execution leaf
+			// found a read write set for a symbolic execution leaf
 			if (line.startsWith("[RWSET") && rwsetFound == false) {
 				rwsetFound = true;
-				vertex = new Vertex();
+				vertex = new Vertex(txProfile);
 				continue;
 			}
 			// read set

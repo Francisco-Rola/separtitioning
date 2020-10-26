@@ -8,10 +8,17 @@ public class Vertex {
 	private HashSet<String> readSet = new HashSet<>();
 	// write set for a given vertex,rho formulas
 	private HashSet<String> writeSet = new HashSet<>();
+	// transaction profile id
+	private int txProfile;
 	
 	// default constructor
-	public Vertex() {
-		
+	public Vertex(int txProfile) {
+		this.txProfile = txProfile;
+	}
+	
+	// getter for tx profile
+	public int getTxProfile() {
+		return this.txProfile;
 	}
 	
 	// method to add a formula to a vertex's read set

@@ -30,7 +30,7 @@ public class VertexPhi {
 		// from all the variables in the corresponding rho, initialize its range
 		for (String variable : rhoVariables) {
 			if (variable.equals("districtid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w*10));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(5));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("warehouseid")) {
@@ -38,7 +38,7 @@ public class VertexPhi {
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("customerid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w*300));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("olsupplywid")) {
@@ -46,11 +46,11 @@ public class VertexPhi {
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("oliid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("irid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(5));
 				this.variables.put(variable, range);
 			}
 			else {
@@ -90,9 +90,9 @@ public class VertexPhi {
 	public static int getTableRange(int tableNo) {
 		switch (tableNo) {
 		case 8:
-			return w;
+			return 10;
 		case 9:
-			return w * w;
+			return w + (100 * 10);
 		default:
 			// debug scenario, if needed add more tables
 			System.out.println("\n\nTable range unknown\n\n");

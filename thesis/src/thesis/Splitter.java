@@ -14,6 +14,9 @@ import javafx.util.Pair;
 
 public class Splitter {
 	
+	int noEdges = 0;
+	int noVertices = 0;
+	
 	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new LinkedHashMap<>();
 	
 	public Splitter() {
@@ -102,6 +105,14 @@ public class Splitter {
 			//increment vertex counter
 			counter++;
 		}
+		
+		// build metis graph
+		LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> metisGraph = buildMETISGraph();
+		// print matrix
+		printMatrix(metisGraph);
+		// print METIS file
+		printMETISfile(metisGraph);
+		
 		return splitGraph;
 	}
 	
@@ -236,6 +247,7 @@ public class Splitter {
 		System.out.println("Var list for vertex no" + counter + " -> " + splitVars); 
 	}
 	
+	
 	private void applySplit(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
 		// give an ID to each vertex consisting of a byte array
 		ArrayList<String> ids = generateCombinations(splits.size(), new int[splits.size()], 0);
@@ -273,16 +285,17 @@ public class Splitter {
 				}
 			}
 			// associate new sigma to a new vertex
-			GraphVertex gv = new GraphVertex(newSigma, txProfile);
+			GraphVertex gv = new GraphVertex(newSigma, txProfile, true);
 			
 			// other sub vertices need to be disjoint from previously existing ones
-			addVertex(gv, txProfile, splitGraph);
+			addVertex(gv, splitGraph);
 			gv.printVertex();
 			
 		}
 		
 	}
 	
+
 	private ArrayList<String> generateCombinations(int n, int comb[], int pos) {
 		ArrayList<String> ids = new ArrayList<>();
 		
@@ -301,6 +314,7 @@ public class Splitter {
 	    return ids;
 	}
 
+	
 	private VertexSigma rhoInputSplit(VertexSigma sigma, String splitParam, Pair<Integer, Integer> inputRange, int section) {
 		// calculate cutoff for new vertex phis
 		int cutoff = (inputRange.getValue() - inputRange.getKey() + 1) / 2;
@@ -318,6 +332,7 @@ public class Splitter {
 		return sigma;
 	}
 
+	
 	private VertexSigma tableSplit(VertexSigma sigma, String splitParam, int section) {
 		// obtain table number by trimming meta char
 		String tableNo = splitParam.substring(1);
@@ -336,7 +351,8 @@ public class Splitter {
 		return sigma;
 	}
 	
-	private void addVertex(GraphVertex newVertex, int txProfile, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	
+	private void addVertex(GraphVertex newVertex, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// edges found during rho comparison
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 	
@@ -394,6 +410,7 @@ public class Splitter {
 		System.out.println("Subvertex added successfully");
 	}
 	
+	
 	private String preparePhi(String phi, String update) {
 		String preparedPhi = new String(phi);
 		if (update != null) {
@@ -402,6 +419,7 @@ public class Splitter {
 		}
 		return preparedPhi;
 	}
+	
 	
 	private String rhoIntersection(String rho1, String rho2, String phi1, String phi2, HashSet<String> vars1, HashSet<String> vars2) {
 		KernelLink link = MathematicaHandler.getInstance();
@@ -444,10 +462,80 @@ public class Splitter {
 		return result;
 	}
 
+	
 	private void addEdge(GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		graph.get(edge.getSrc()).add(edge);
 	}
 	
+	// method used to build adjacency matrix for graph presenting
+	private LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> buildMETISGraph() {
+		// final graph for METIS
+		LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> METISGraph = new LinkedHashMap<>();
+		// iterate through every vertex
+		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> vertex : splitGraph.entrySet()) {
+			// map each edge destiny with a weight
+			HashMap<Integer, Integer> edges = new HashMap<>();
+			// go through all the edges linked to a vertex
+			for (GraphEdge e : vertex.getValue()) {
+				// get edge destiny
+				int edgeDst = e.getDest().getVertexID();
+				// get edge weight
+				int edgeWeight = e.getEdgeWeight();
+				// add edge to the metis graph
+				if (edges.containsKey(edgeDst)) 
+					edges.put(edgeDst, edges.get(edgeDst) + edgeWeight);
+				else {
+					// increment edge counter
+					this.noEdges++;
+					edges.put(edgeDst, edgeWeight);
+				}
+			}
+			// increment number of vertices
+			this.noVertices++;
+			METISGraph.put(new Pair<Integer, Integer>(vertex.getKey().getVertexID(), vertex.getKey().getVertexWeight()), edges);
+		}
+		return METISGraph;
+	}
+	
+	private void printMatrix(LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> graph) {
+		// number of vertices in graph
+		int noVertices = graph.size();
+		// iterate through each vertex
+		for (Map.Entry<Pair<Integer, Integer>, HashMap<Integer, Integer>> vertex : graph.entrySet()) {
+			int i = 1;
+			while (i <= noVertices) {
+				int entry = 0;
+				if (graph.get(vertex.getKey()).containsKey(i)) entry = graph.get(vertex.getKey()).get(i);
+				if (i != 1) System.out.print(", " + entry);
+				else System.out.print(entry);
+				i++;
+			}
+			System.out.print("\n");
+		}
+	}
+	
+	private void printMETISfile(LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> graph) {
+		// first line contains no vertices, no edges and type of graph
+		System.out.println(this.noVertices + " " +this.noEdges + " " + "011");
+		// iterate through all the vertices in the graph
+		for (Map.Entry<Pair<Integer, Integer>, HashMap<Integer, Integer>> vertex : graph.entrySet()) {
+			// get vertex weight
+			int vertexWeight = vertex.getKey().getValue();
+			// print vertex line
+			System.out.print(vertexWeight);
+			for (Map.Entry<Integer, Integer> edge : vertex.getValue().entrySet()) {
+				// get edge destination
+				int edgeDest = edge.getKey();
+				// get edge weight
+				int edgeWeight = edge.getValue();
+				// print edge 
+				System.out.print(" " + edgeDest + " " + edgeWeight);
+			}
+			// print new line and go to next vertex
+			System.out.print("\n");
+		}
+	}
+
 }
 	
 	

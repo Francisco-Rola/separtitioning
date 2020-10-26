@@ -3,12 +3,16 @@ package thesis;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.StringJoiner;
+
 import com.wolfram.jlink.KernelLink;
 
 // class that represents a graph vertex
 public class GraphVertex {
+	// vertex ID counter
+	private static int vertexIDcounter = 1;
 	// vertex ID
-	private int vertexID;
+	private int vertexID = 0;
 	// number of data items stored in the vertex
 	private int vertexWeight = 0;
 	// transaction profile that generated this vertex originally, inheried from parent in case of splitting
@@ -22,9 +26,27 @@ public class GraphVertex {
 		this.txProfile = txProfile;
 	}
 	
+	// constructor with ID
+	public GraphVertex(VertexSigma sigma, int txProfile, boolean ID) {
+		this.sigma = sigma;	
+		this.txProfile = txProfile;
+		this.vertexID = vertexIDcounter;
+		vertexIDcounter++;
+	}
+	
 	// getter for transaction profile
 	public int getTxProfile() {
 		return this.txProfile;
+	}
+	
+	// getter for transaction profile
+	public int getVertexID() {
+		return this.vertexID;
+	}
+	
+	// getter for vertex weeight
+	public int getVertexWeight() {
+		return this.vertexWeight;
 	}
 	
 	// getter for vertex sigma
@@ -50,7 +72,7 @@ public class GraphVertex {
 			// check items accessed by rho given phi
 			String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
 			String result = link.evaluateToOutputForm(query, 0);
-			result = result.replaceAll("[, ]?False[, ]?", "");
+			result = result.replaceAll("[, ]*False[, ]*", "");
 			// if empty result then this rho is remote
 			if (result.equals("{}")) {
 				//System.out.println("Empty rho, removing");
@@ -77,6 +99,7 @@ public class GraphVertex {
 			query = query.substring(0, query.length() - 2);
 			// size given by union of all the accesses, no duplicates
 			String mathQuery = "Length[DeleteDuplicates[Union[" + query + "]]]";
+			if (entry.getKey().equals("8")) System.out.println(mathQuery);
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			System.out.println("Table: " + entry.getKey() + " Weight: " + result);
 			vertexWeight += Integer.parseInt(result);
@@ -87,7 +110,7 @@ public class GraphVertex {
 	// debug and presentation print
 	public void printVertex() {
 		System.out.println("--------------------------");
-		//System.out.println("Printing vertex id: " + this.vertexID);
+		System.out.println("Printing vertex id: " + this.vertexID);
 		System.out.println("Vertex weight: " + this.vertexWeight);
 		this.sigma.printSigma();
 		System.out.println("--------------------------");
