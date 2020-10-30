@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import javafx.util.Pair;
-
 // class that represents the constrains on each variable in SE formulas
 public class VertexPhi {
 	// set of variables and its ranges

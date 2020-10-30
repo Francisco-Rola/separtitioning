@@ -29,7 +29,8 @@ public class GraphEdge {
 		this.phiRange = phiRange;
 		this.edgePhi = intersection;
 		this.edgeWeight = computeEdgeWeight(intersection, phiRange);
-		System.out.println("Added edge with weight " + this.edgeWeight );
+		System.out.println("Edge S:" + src.getVertexID() + " D:" + dest.getVertexID() +
+				" T:" + rhoSrc.substring(0, rhoSrc.indexOf(">") - 1) +  " W:" +  this.edgeWeight);
 	}
 	
 	// getter for vertex src

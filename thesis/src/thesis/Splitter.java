@@ -1,16 +1,13 @@
 package thesis;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.StringJoiner;
 
 import com.wolfram.jlink.KernelLink;
 
-import javafx.util.Pair;
 
 public class Splitter {
 	
@@ -387,7 +384,6 @@ public class Splitter {
 						continue;
 					}
 					else {
-						System.out.println("Collision found, adding edge");
 						// collision found, perform rho logical subtraction
 						entryV.getKey().updateRho(result);
 						// add edge between vertices whose rhos-phi overlapped
