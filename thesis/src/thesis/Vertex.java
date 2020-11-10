@@ -21,14 +21,14 @@ public class Vertex {
 		return this.txProfile;
 	}
 	
-	// method to add a formula to a vertex's read set
-	public void addToReadSet(String formula) {
-		readSet.add(formula);
+	// method to add a readset to a vertex's read set
+	public void addToReadSet(HashSet<String> readSet) {
+		this.readSet.addAll(readSet);
 	}
 	
-	// method to add a formula to a vertex's write set
-	public void addToWriteSet(String formula) {
-		writeSet.add(formula);
+	// method to add a writeset to a vertex's write set
+	public void addToWriteSet(HashSet<String> writeSet) {
+		this.writeSet.addAll(writeSet);
 	}
 	
 	// method that returns all the rhos in a vertex, no duplicates

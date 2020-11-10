@@ -14,10 +14,10 @@ public class GraphBuilder {
 	private static void buildGraph() {
 		try {
 			// obtain vertices from SE tree
-			String[] files = {"payment_final.txt", "new_order_final.txt"};			
-			new Parser(files);
+			String[] files = {"payment_final.txt", "new_order_final.txt", "delivery_simple.txt"};			
+			new SEParser(files);
 			// after obtaining vertices from SE need to make them disjoint
-			ArrayList<Vertex> seVertices = Parser.getVertices();
+			ArrayList<Vertex> seVertices = SEParser.getVertices();
 			// iterate through SE vertices to add them to graph
 			for (Vertex v: seVertices) {
 				// build vertex sigma to identify items in V
