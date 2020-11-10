@@ -99,7 +99,6 @@ public class GraphVertex {
 			query = query.substring(0, query.length() - 2);
 			// size given by union of all the accesses, no duplicates
 			String mathQuery = "Length[DeleteDuplicates[Union[" + query + "]]]";
-			if (entry.getKey().equals("8")) System.out.println(mathQuery);
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			System.out.println("Table: " + entry.getKey() + " Weight: " + result);
 			vertexWeight += Integer.parseInt(result);

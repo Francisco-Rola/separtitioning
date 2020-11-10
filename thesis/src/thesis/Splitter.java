@@ -63,13 +63,24 @@ public class Splitter {
 							possibleSplits.put(entry.getKey(), splits);
 						}
 						else {
-							// rhos overlap for some input, splitting the table instead
-							possibleSplits.remove(entry.getKey());
-							// mark possible splits for table as null to know it is a table split
-							possibleSplits.put(entry.getKey(), null);
+							// check if there is a split variable common amonst all rhos
+							HashSet<String> commonSplit = checkCommonSplit(entry.getValue());
+							// check if any vars found
+							if (commonSplit.size() != 0) {
+								// split found, add it
+								ArrayList<HashSet<String>> splits = new ArrayList<>();
+								splits.add(commonSplit);
+								possibleSplits.put(entry.getKey(), splits);
+							}
+							else {
+								// rhos overlap for some input, splitting the table instead
+								possibleSplits.remove(entry.getKey());
+								// mark possible splits for table as null to know it is a table split
+								possibleSplits.put(entry.getKey(), null);	
+							}
 							// set stop variable, indicating table is dealt with
 							stop = true;
-							break;				
+							break;
 						}
 					}
 				}
@@ -233,7 +244,6 @@ public class Splitter {
 	private Pair<Integer, Integer> getSplitRange(LinkedHashMap<VertexRho, VertexPhi> rhos, String splitVar) {
  		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
 			if (entry.getKey().getVariables().contains(splitVar)) {
-				System.out.println("Split var: " + splitVar + " | Range -> " + entry.getValue().getPhi().get(splitVar));
 				return entry.getValue().getPhi().get(splitVar);
 			}
 		}
@@ -458,7 +468,7 @@ public class Splitter {
 		return result;
 	}
 
-	
+	// method used to add an edge to a graph
 	private void addEdge(GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		graph.get(edge.getSrc()).add(edge);
 	}
@@ -493,6 +503,7 @@ public class Splitter {
 		return METISGraph;
 	}
 	
+	// method to print adjacency matrix given graph
 	private void printMatrix(LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> graph) {
 		// number of vertices in graph
 		int noVertices = graph.size();
@@ -510,6 +521,7 @@ public class Splitter {
 		}
 	}
 	
+	// method to print input file for METIS given a graph
 	private void printMETISfile(LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> graph) {
 		// first line contains no vertices, no edges and type of graph
 		System.out.println(this.noVertices + " " +this.noEdges + " " + "011");
@@ -530,6 +542,72 @@ public class Splitter {
 			// print new line and go to next vertex
 			System.out.print("\n");
 		}
+	}
+	
+	// method to check if there is a variable that can split multiple overlapping rhos on same table
+	private HashSet<String> checkCommonSplit(ArrayList<Pair<VertexRho, VertexPhi>> rhos) {
+		// possible splits
+		HashSet<String> splits = new HashSet<>();
+		// set of common variables in every rho on the same table
+		HashSet<String> commonVars = new HashSet<>();
+		// check commonVars accross all rhos
+		boolean isFirst = true;
+		for (Pair<VertexRho, VertexPhi> rho: rhos) {
+			if (isFirst) {
+				commonVars.addAll(rho.getKey().getVariables());
+				isFirst = false;
+			}
+			else if (commonVars.size() == 0) {
+				// no possible commonVars
+				break;
+			}
+			else
+				commonVars.retainAll(rho.getKey().getVariables());
+		}
+		// if commonVars is not empty then we have candidate splits
+		for (String commonVar : commonVars) {	
+			// intersection flag
+			boolean overlap = false;
+			// simulate split by commonVar and check overlaps
+			for (int i = 0; i < rhos.size(); i++) {
+				// get rho
+				Pair<VertexRho, VertexPhi> rho1 = rhos.get(i);
+				// get range of commonVar
+				Pair<Integer, Integer> varRange = rho1.getValue().getPhi().get(commonVar);
+				// calculate cutoff for new simulated phi
+				int cutoff = (varRange.getValue() - varRange.getKey() + 1) / 2;
+				VertexRho rhoCopy1 = new VertexRho(rho1.getKey());
+				VertexPhi phiCopy1 = new VertexPhi(rho1.getValue());
+				// edit phi for sim 
+				phiCopy1.getPhi().put(commonVar, new Pair<Integer, Integer>(varRange.getKey(), cutoff));
+				// build rho phi pair
+				Pair<VertexRho, VertexPhi> rhoPhi1 = new Pair<VertexRho, VertexPhi>(rhoCopy1, phiCopy1);
+				for (int j = 0; j < rhos.size(); j++) {
+					// get rho
+					Pair<VertexRho, VertexPhi> rho2 = rhos.get(j);
+					VertexRho rhoCopy2 = new VertexRho(rho2.getKey());
+					VertexPhi phiCopy2 = new VertexPhi(rho2.getValue());
+					// edit phi for sim 
+					phiCopy2.getPhi().put(commonVar, new Pair<Integer, Integer> (cutoff + 1, varRange.getValue()));
+					// build rho phi pair
+					Pair<VertexRho, VertexPhi> rhoPhi2 = new Pair<VertexRho, VertexPhi>(rhoCopy2, phiCopy2);
+					//check inersection 
+					overlap = checkIntersection(rhoPhi1, rhoPhi2);
+					// if overlapping bin variable
+					if (overlap) {
+						break;
+					}
+				}
+				// collision detected, common var not good splitter
+				if (overlap) {
+					break;
+				}	
+			}
+			// no collision detected
+			if (!overlap)
+				splits.add(commonVar);
+		}
+		return splits;
 	}
 
 }
