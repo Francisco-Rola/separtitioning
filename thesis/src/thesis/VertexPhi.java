@@ -9,7 +9,11 @@ public class VertexPhi {
 	// set of variables and its ranges
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	// scale factor for TPC -C
-	private static int w = 2;
+	private static int w = 1;
+	private static int order = 4;
+	private static int customer = 9;
+	private static int district = 4;
+	
 	
 	// constructor for deep copy purpose
 	public VertexPhi(VertexPhi vertexPhi) {
@@ -28,27 +32,31 @@ public class VertexPhi {
 		// from all the variables in the corresponding rho, initialize its range
 		for (String variable : rhoVariables) {
 			if (variable.equals("districtid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(5));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(district));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("warehouseid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(w));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("customerid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(customer));
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("olsupplywid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(w));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(w));
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("oliid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(10));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(order));
 				this.variables.put(variable, range);
 			}
-			else if (variable.equals("irid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(1), new Integer(5));
+			else if (variable.equals("iroliid")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(order));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("ircustomerid")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(customer));
 				this.variables.put(variable, range);
 			}
 			else {
@@ -87,13 +95,17 @@ public class VertexPhi {
 	// schema helper, obtain table max range for vertex splitting purposes
 	public static int getTableRange(int tableNo) {
 		switch (tableNo) {
+		case 5:
+			return w * 100 + order * 10000 + district;
+		case 7:
+			return w * 100 + order * 10000 + district;
 		case 8:
-			return 10;
+			return order;
 		case 9:
-			return w + (100 * 10);
+			return w + (order * 100);
 		default:
 			// debug scenario, if needed add more tables
-			System.out.println("\n\nTable range unknown\n\n");
+			System.out.println("\n\nTable range unknown\n\n" + tableNo);
 			return -1;
 		}
 	}

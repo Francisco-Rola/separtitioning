@@ -5,9 +5,9 @@ import java.util.*;
 // class that represents a symbolic vertex before transformation into a graph vertex
 public class Vertex {
 	// read set for a given vertex, rho formulas
-	private HashSet<String> readSet = new HashSet<>();
+	private TreeSet<String> readSet = new TreeSet<>();
 	// write set for a given vertex,rho formulas
-	private HashSet<String> writeSet = new HashSet<>();
+	private TreeSet<String> writeSet = new TreeSet<>();
 	// transaction profile id
 	private int txProfile;
 	

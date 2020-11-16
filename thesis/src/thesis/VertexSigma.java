@@ -26,9 +26,41 @@ public class VertexSigma implements Predicate<Integer>{
 			// remove brackets from rho variables
 			rhoUpdated = rhoUpdated.replaceAll("[\\[\\]]", "");
 			// translate indirect reads into variables
-			if (rhoUpdated.contains("GET")) {				
-				rhoUpdated = rhoUpdated.replaceAll("GET.*->10\\)"
-						, "irid");
+			if (rhoUpdated.contains("GET")) {
+				System.out.println(rhoUpdated);
+
+				// table 7 indirect read, new order
+				if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("->10"))
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
+						, "iroliid");
+				// table 7 indirect read, delivery
+				else if (rhoUpdated.startsWith("7->"))
+					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)\\s"
+						, "(iroliid ");
+				// table 5 indirect read, new order
+				else if (rhoUpdated.startsWith("5->") && rhoUpdated.contains("->10"))
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
+						, "iroliid");
+				// table 5 indirect reads, delivery
+				else if (rhoUpdated.startsWith("5->") && rhoUpdated.contains("->3"))
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->3\\)"
+							, "iroliid");
+				else if (rhoUpdated.startsWith("5->"))
+					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)\\s"
+							, "(iroliid "); 
+				// table 6 indirect reads, new order
+				else if (rhoUpdated.startsWith("6->") && rhoUpdated.contains("->10"))
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
+						, "iroliid");
+				// table 6 indirect reads, delivery
+				else if (rhoUpdated.startsWith("6->"))
+					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)\\s"
+							, "(iroliid ");				
+				// delivery table 3 indirect reads
+				else if (rhoUpdated.startsWith("3->"))
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->3\\)"
+							, "ircustomerid");
+				System.out.println(rhoUpdated);
 			}
 			//build the rho from the updated string
 			VertexRho vertexRho = new VertexRho(rhoUpdated);

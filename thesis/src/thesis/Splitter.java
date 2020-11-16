@@ -1,5 +1,8 @@
 package thesis;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -120,6 +123,7 @@ public class Splitter {
 		printMatrix(metisGraph);
 		// print METIS file
 		printMETISfile(metisGraph);
+		// 
 		
 		return splitGraph;
 	}
@@ -324,11 +328,12 @@ public class Splitter {
 	
 	private VertexSigma rhoInputSplit(VertexSigma sigma, String splitParam, Pair<Integer, Integer> inputRange, int section) {
 		// calculate cutoff for new vertex phis
-		int cutoff = (inputRange.getValue() - inputRange.getKey() + 1) / 2;
+		int cutoff = (inputRange.getValue() - inputRange.getKey()) / 2;
 		// update all phis in the vertex
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
 			// if the rho contains the split param its respective phi needs to be updated
 			if (rhoPhi.getKey().getVariables().contains(splitParam)) {
+				
 				if (section == 0) rhoPhi.getValue().getPhi().put(splitParam, 
 						new Pair<Integer, Integer>(inputRange.getKey(), cutoff));
 				else 
@@ -434,10 +439,7 @@ public class Splitter {
 		phi2 = variableRename(phi2);
 		
 		String rhoQuery = rho1.substring(rho1.indexOf(">") + 1) + " == " + rho2.substring(rho2.indexOf(">") + 1);
-		String phiQuery = "(" + phi1 + ") && (" + phi2 + ")";
-		
-		String query = link.evaluateToOutputForm("Simplify[(" + rhoQuery + ") && ("  + phiQuery + ")]", 0);
-
+		String phiQuery = "(" + phi1 + ") && (" + phi2 + ")";		
 				
 		// build variables string for mathematica query
 		String variables = "{";
@@ -449,10 +451,12 @@ public class Splitter {
 		}
 		// remove extra characters and finalize string
 		variables = variables.substring(0, variables.length() - 2) + "}";
-
-		 query = "Reduce[" + query + ", " 
-				+ variables + ", Integers, Backsubstitution -> True]";	
-				
+		
+		// build mathematica query with simplifier
+		String query = "Reduce[" + "Simplify[(" + rhoQuery + ") && ("  + phiQuery + ")]" + ", " 
+					+ variables + ", Integers, Backsubstitution -> True]";	
+			
+		
 		String result = link.evaluateToOutputForm(query, 0);
 		
 		// debug cases, exceptions
@@ -523,25 +527,50 @@ public class Splitter {
 	
 	// method to print input file for METIS given a graph
 	private void printMETISfile(LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> graph) {
-		// first line contains no vertices, no edges and type of graph
-		System.out.println(this.noVertices + " " +this.noEdges + " " + "011");
-		// iterate through all the vertices in the graph
-		for (Map.Entry<Pair<Integer, Integer>, HashMap<Integer, Integer>> vertex : graph.entrySet()) {
-			// get vertex weight
-			int vertexWeight = vertex.getKey().getValue();
-			// print vertex line
-			System.out.print(vertexWeight);
-			for (Map.Entry<Integer, Integer> edge : vertex.getValue().entrySet()) {
-				// get edge destination
-				int edgeDest = edge.getKey();
-				// get edge weight
-				int edgeWeight = edge.getValue();
-				// print edge 
-				System.out.print(" " + edgeDest + " " + edgeWeight);
-			}
-			// print new line and go to next vertex
-			System.out.print("\n");
+		// create METIS file
+		File metis = new File("metis.txt");
+		try {
+			if (metis.createNewFile()) {
+			    System.out.println("File created: " + metis.getName());
+			  } else {
+			    System.out.println("File already exists.");
+			  }
+		} catch (IOException e) {
+			System.out.println("Error while creating METIS file!");
+			e.printStackTrace();
 		}
+		// write to METIS file
+		try {
+			FileWriter metisFile = new FileWriter("metis.txt");
+			// first line contains no vertices, no edges and type of graph
+			metisFile.append(this.noVertices + " " +this.noEdges + " " + "011\n");
+			// iterate through all the vertices in the graph
+			for (Map.Entry<Pair<Integer, Integer>, HashMap<Integer, Integer>> vertex : graph.entrySet()) {
+				// get vertex weight
+				int vertexWeight = vertex.getKey().getValue();
+				// print vertex line
+				metisFile.append(String.valueOf(vertexWeight));
+				for (Map.Entry<Integer, Integer> edge : vertex.getValue().entrySet()) {
+					// get edge destination
+					int edgeDest = edge.getKey();
+					// get edge weight
+					int edgeWeight = edge.getValue();
+					// print edge 
+					metisFile.append(" " + edgeDest + " " + edgeWeight);
+				}
+				// print new line and go to next vertex
+				metisFile.append("\n");
+			}
+			// close file
+			metisFile.close();
+			System.out.println("Successfully generated METIS file");
+		} catch (IOException e) {
+			System.out.println("Error on generating METIS file!");
+			e.printStackTrace();
+		}
+		
+		
+		
 	}
 	
 	// method to check if there is a variable that can split multiple overlapping rhos on same table

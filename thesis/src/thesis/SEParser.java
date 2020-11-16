@@ -125,8 +125,33 @@ public class SEParser {
 		// create array of rwets
 		ArrayList<Pair<HashSet<String>, HashSet<String>>> rwSets = new ArrayList<>();
 		// traverse tree to generate all the vertices
-		traverseTree(tree, tree.get("root"), rwSets, txProfile);
+		// traverseTree(tree, tree.get("root"), rwSets, txProfile);TODO remove, used for smart delivery
+		// merge all tree leaves into a single vertex
+		mergeTree(tree, txProfile);
+	}
+	
+	// method that merges all tree leaves into a single vertex
+	public void mergeTree(LinkedHashMap<String, SETreeNode> tree, int txProfile) {
+		// create new Vertex
+		Vertex vertex = new Vertex(txProfile);
+		// go over tree
+		for (Map.Entry<String, SETreeNode> leaf : tree.entrySet()) {
+			// get read set
+			HashSet<String> rSet = leaf.getValue().getReadSet();
+			// get write set
+			HashSet<String> wSet = leaf.getValue().getWriteSet();
+			// add readSet if it exists
+			if (rSet != null) {
+				vertex.addToReadSet(rSet);
+			}
+			// add writeSet if it exists
+			if (wSet != null) {
+				vertex.addToWriteSet(wSet);
+			}
+		}
 		
+		// add vertex to vertices
+		vertices.add(vertex);
 	}
 	
 	// method that generates SE vertices from traversing tree
@@ -215,7 +240,7 @@ public class SEParser {
 	// main for debug purposes
 	public static void main(String[] args) {
 		try {
-			String[] files = {"payment_final.txt"};
+			String[] files = {"delivery_simple.txt"};
 			new SEParser(files);
 			int vertexCount = 0;
 			for(Vertex vertex : vertices) {
