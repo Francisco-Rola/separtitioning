@@ -26,7 +26,6 @@ public class GraphBuilder {
 				GraphVertex gv = new GraphVertex(sigma, v.getTxProfile());
 				// store it in the graph
 				graph.put(gv, new ArrayList<>());
-				// increment transaction profile id
 				System.out.println("Vertex added successfully");
 				continue;
 			}
@@ -50,19 +49,25 @@ public class GraphBuilder {
 			noVertices++;
 		}
 	}
-
-	// tools main
+	
+	// build graph and feed it to splitter and partitioner
 	public static void main(String[] args) {
 		
 		System.out.println("Running graph builder");
 				
 		buildGraph();
+		
+		System.out.println("Running graph splitter");
 				
 		Splitter splitter = new Splitter();
 		
 		graph = splitter.splitGraph(graph);
+				
+		System.out.println("Running graph partitioner");
 		
-		//printGraph(graph);
+		Partitioner partitioner = new Partitioner(graph);
+		
+		Partitioner.partitionGraph();
 
 	}
 }

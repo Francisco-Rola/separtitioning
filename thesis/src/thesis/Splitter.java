@@ -8,20 +8,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import com.wolfram.jlink.KernelLink;
 
 
+// class performing vertex splitting and creating graph file for the partitioner
 public class Splitter {
 	
+	// no edges in final graph
 	int noEdges = 0;
+	// no vertices in final graph
 	int noVertices = 0;
-	
+	// graph resultant from splitting
 	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new LinkedHashMap<>();
-	
-	public Splitter() {
-		
-	}
 	
 	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// for each vertex, iterate through its rhos
@@ -112,7 +110,6 @@ public class Splitter {
 			printSplits(counter, splits);
 			// apply the split to the vertex
 			applySplit(v.getSigma(), splits, txProfile);
-			
 			//increment vertex counter
 			counter++;
 		}
@@ -123,8 +120,7 @@ public class Splitter {
 		printMatrix(metisGraph);
 		// print METIS file
 		printMETISfile(metisGraph);
-		// 
-		
+
 		return splitGraph;
 	}
 	
@@ -504,6 +500,7 @@ public class Splitter {
 			this.noVertices++;
 			METISGraph.put(new Pair<Integer, Integer>(vertex.getKey().getVertexID(), vertex.getKey().getVertexWeight()), edges);
 		}
+		this.noEdges = this.noEdges / 2;
 		return METISGraph;
 	}
 	
@@ -638,7 +635,9 @@ public class Splitter {
 		}
 		return splits;
 	}
-
+	
+	
+ 
 }
 	
 	

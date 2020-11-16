@@ -123,7 +123,7 @@ public class SEParser {
 			}
 		}
 		// create array of rwets
-		ArrayList<Pair<HashSet<String>, HashSet<String>>> rwSets = new ArrayList<>();
+		//ArrayList<Pair<HashSet<String>, HashSet<String>>> rwSets = new ArrayList<>();
 		// traverse tree to generate all the vertices
 		// traverseTree(tree, tree.get("root"), rwSets, txProfile);TODO remove, used for smart delivery
 		// merge all tree leaves into a single vertex
@@ -230,7 +230,6 @@ public class SEParser {
 		return node;
 	}
 	
-	// getter for SE vertices
 	// getter for vertices generated from parsing SE file
 	public static ArrayList<Vertex> getVertices() {
 		return vertices;

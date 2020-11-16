@@ -94,8 +94,11 @@ public class VertexPhi {
 	
 	// schema helper, obtain table max range for vertex splitting purposes
 	public static int getTableRange(int tableNo) {
+		// compute max id of each table
 		switch (tableNo) {
 		case 5:
+			return w * 100 + order * 10000 + district;
+		case 6:
 			return w * 100 + order * 10000 + district;
 		case 7:
 			return w * 100 + order * 10000 + district;

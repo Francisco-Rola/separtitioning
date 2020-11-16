@@ -1,10 +1,9 @@
 package thesis;
 
-import java.util.function.Predicate;
 import java.util.*;
 
 // class that represents a formula mapping to the data items present in a vertex
-public class VertexSigma implements Predicate<Integer>{
+public class VertexSigma {
 	// ordered hash map that stores the mapping between each vertex rho and its corresponding vertex phi
 	private LinkedHashMap<VertexRho, VertexPhi> rhos = new LinkedHashMap<>();
 	
@@ -27,8 +26,6 @@ public class VertexSigma implements Predicate<Integer>{
 			rhoUpdated = rhoUpdated.replaceAll("[\\[\\]]", "");
 			// translate indirect reads into variables
 			if (rhoUpdated.contains("GET")) {
-				System.out.println(rhoUpdated);
-
 				// table 7 indirect read, new order
 				if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("->10"))
 					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
@@ -60,7 +57,6 @@ public class VertexSigma implements Predicate<Integer>{
 				else if (rhoUpdated.startsWith("3->"))
 					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->3\\)"
 							, "ircustomerid");
-				System.out.println(rhoUpdated);
 			}
 			//build the rho from the updated string
 			VertexRho vertexRho = new VertexRho(rhoUpdated);
@@ -71,7 +67,7 @@ public class VertexSigma implements Predicate<Integer>{
 		}
 	}
 	
-	// method used to extract a vertexp hi for a given vertex rho
+	// method used to extract a vertex phi for a given vertex rho
 	public VertexPhi getPhi(VertexRho rho) {
 		return rhos.get(rho);
 	}
@@ -87,12 +83,6 @@ public class VertexSigma implements Predicate<Integer>{
 			entry.getKey().printRho();
 			entry.getValue().printPhi();
 		}
-	}
-	
-	// sigma is a logical predicate, given a data item identifier evaluate to true if vertex contains item
-	@Override
-	public boolean test(Integer t) {		
-		return false;
 	}
 	
 	// automatically generated hash code for a vertex sigma
