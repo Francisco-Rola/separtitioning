@@ -21,91 +21,22 @@ public class Splitter {
 	// graph resultant from splitting
 	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new LinkedHashMap<>();
 	
+	// method that takes a graph as input and splits its vertices, returns the resulting graph
 	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// for each vertex, iterate through its rhos
 		int counter = 1;
 		// tx profile identifier
 		int txProfile = 1;
+		// go through all vertices in graph
 		for (GraphVertex v: graph.keySet()) {
-			// variable that stores rho intersection information
-			boolean stop = false;
 			// obtain rho phi pair for the given vertex
 			HashMap<VertexRho, VertexPhi> rhos = v.getSigma().getRhos();
-			// store no of rhos in V
-			int noRhos = rhos.size();
-			// possible split variables per table
-			HashMap<Integer, ArrayList<HashSet<String>>> possibleSplits = new HashMap<>();
 			// group together rhos that belong to the same table within a vertex
 			HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> buckets = groupRhos(rhos);
-			// after having rhos grouped by table, analyze each table
-			for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> entry: buckets.entrySet()) {	
-				// reset intersection flag
-				stop = false;
-				// check how many rhos for given table
-				if (entry.getValue().size() == 1) {
-					// only rho for table, must be split using one of its variables
-					ArrayList<HashSet<String>> splits = new ArrayList<>();
-					splits.add(entry.getValue().iterator().next().getKey().getVariables());
-					possibleSplits.put(entry.getKey(), splits);
-					continue;
-				}
-				for (int i = 0; i < entry.getValue().size(); i++) {
-					// if an intersection was found on this table then it has been split
-					if (stop) break;
-					Pair<VertexRho, VertexPhi> rhoPhi1 = entry.getValue().get(i);
-					for (int j = i + 1; j < entry.getValue().size(); j++) {
-						Pair<VertexRho, VertexPhi> rhoPhi2 = entry.getValue().get(j);
-						boolean intersection = checkIntersection(rhoPhi1, rhoPhi2);
-						if (!intersection) {
-							// rhos do not overlap, add all the variables that can split them
-							ArrayList<HashSet<String>> splits = new ArrayList<>();
-							splits.add(rhoPhi1.getKey().getVariables());
-							splits.add(rhoPhi2.getKey().getVariables());
-							possibleSplits.put(entry.getKey(), splits);
-						}
-						else {
-							// check if there is a split variable common amonst all rhos
-							HashSet<String> commonSplit = checkCommonSplit(entry.getValue());
-							// check if any vars found
-							if (commonSplit.size() != 0) {
-								// split found, add it
-								ArrayList<HashSet<String>> splits = new ArrayList<>();
-								splits.add(commonSplit);
-								possibleSplits.put(entry.getKey(), splits);
-							}
-							else {
-								// rhos overlap for some input, splitting the table instead
-								possibleSplits.remove(entry.getKey());
-								// mark possible splits for table as null to know it is a table split
-								possibleSplits.put(entry.getKey(), null);	
-							}
-							// set stop variable, indicating table is dealt with
-							stop = true;
-							break;
-						}
-					}
-				}
-			}		
-			// variable that stores table splits and variable splits
-			ArrayList<String> splits = new ArrayList<>();
-			
-			// map between rhoID and variables that cover it
-			HashMap<Integer, HashSet<String>> rhoCoverage = new HashMap<>();
-			int rhoID = 1;
-			for (Map.Entry<Integer, ArrayList<HashSet<String>>> entry: possibleSplits.entrySet()) {
-				if (entry.getValue() == null) {
-					// table split detected, store it
-					splits.add("#" + entry.getKey().toString());
-					continue;
-				}
-				for (HashSet<String> splitters: entry.getValue()) {
-					rhoCoverage.put(rhoID, splitters);
-					rhoID++;
-				}
-			}
-			ArrayList<String> splitVars = new ArrayList<>();
-			// get the smallest hitting set, NP complete problem
-			splits.addAll(getSplitVars(rhoCoverage, splitVars, null));
+			// after having rhos grouped by table, analyze each table and get possible splits
+			HashMap<Integer, ArrayList<HashSet<String>>> possibleSplits = analyseTables(buckets);
+			// get the shortest splitting variable set and table splits needed
+			ArrayList<String> splits = getSplits(possibleSplits);
 			// display the splits
 			printSplits(counter, splits);
 			// apply the split to the vertex
@@ -113,25 +44,28 @@ public class Splitter {
 			//increment vertex counter
 			counter++;
 		}
-		
 		// build metis graph
 		LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> metisGraph = buildMETISGraph();
 		// print matrix
 		printMatrix(metisGraph);
 		// print METIS file
 		printMETISfile(metisGraph);
-
 		return splitGraph;
 	}
 	
+	// method responsible for grouping together rhos on the same table
 	private HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> groupRhos(HashMap<VertexRho, VertexPhi> rhos) {
+		// map between table identifier and rhos that access it
 		HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> buckets = new HashMap<>();
+		// iterate over all rhos and check which table they access
 		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
 			Pair<VertexRho, VertexPhi> rhoPhi = new Pair<VertexRho, VertexPhi>(entry.getKey(), entry.getValue());
 			Integer tableNo = Integer.parseInt(rhoPhi.getKey().getRho().substring(0, rhoPhi.getKey().getRho().indexOf(">") - 1));
+			// if buvcket exists for given table, add to it
 			if (buckets.containsKey(tableNo)) {
 				buckets.get(tableNo).add(rhoPhi);
 			}
+			// new table, create a bucket for it
 			else {
 				ArrayList<Pair<VertexRho, VertexPhi>> bucket = new ArrayList<>();
 				bucket.add(rhoPhi);
@@ -141,19 +75,71 @@ public class Splitter {
 		return buckets;
 	}
 	
+	// method responsible for analyzing bucket and determining how to split each table
+	private HashMap<Integer, ArrayList<HashSet<String>>> analyseTables(HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> buckets) {
+		// variable that stores rho intersection information
+		boolean stop = false;
+		// possible split variables per tab
+		HashMap<Integer, ArrayList<HashSet<String>>> possibleSplits = new HashMap<>();
+		// go through all the buckets to analyze each table
+		for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> entry: buckets.entrySet()) {	
+			// reset intersection flag
+			stop = false;
+			// list of variables that splits a table
+			ArrayList<HashSet<String>> splits = new ArrayList<>();
+			// check how many rhos for given table
+			if (entry.getValue().size() == 1) {
+				// only rho for table, must be split using one of its variables
+				splits.add(entry.getValue().iterator().next().getKey().getVariables());
+				possibleSplits.put(entry.getKey(), splits);
+				continue;
+			}
+			for (int i = 0; i < entry.getValue().size(); i++) {
+				// if an intersection was found on this table then it has been split
+				if (stop) break;
+				Pair<VertexRho, VertexPhi> rhoPhi1 = entry.getValue().get(i);
+				for (int j = i + 1; j < entry.getValue().size(); j++) {
+					Pair<VertexRho, VertexPhi> rhoPhi2 = entry.getValue().get(j);
+					boolean intersection = checkIntersection(rhoPhi1, rhoPhi2);
+					if (!intersection) {
+						// rhos do not overlap, add all the variables that can split them
+						splits.add(rhoPhi1.getKey().getVariables());
+						splits.add(rhoPhi2.getKey().getVariables());
+						possibleSplits.put(entry.getKey(), splits);
+					}
+					else {
+						// check if there is a split variable common amongst all rhos
+						HashSet<String> commonSplit = checkCommonSplit(entry.getValue());
+						// check if any vars found
+						if (commonSplit.size() != 0) {
+							// split found, add it
+							splits.add(commonSplit);
+							possibleSplits.put(entry.getKey(), splits);
+						}
+						else {
+							// rhos overlap for some input, splitting the table instead
+							possibleSplits.remove(entry.getKey());
+							// mark possible splits for table as null to know it is a table split
+							possibleSplits.put(entry.getKey(), null);	
+						}
+						// set stop variable, indicating table is dealt with
+						stop = true;
+						break;
+					}
+				}
+			}
+		}
+		return possibleSplits;
+	}
+	
+	// method that checks if two rhos can intersect for any input
 	private boolean checkIntersection(Pair<VertexRho, VertexPhi> rhoPhi1, Pair<VertexRho, VertexPhi> rhoPhi2) {
+		// get rhos and phis as strings
 		String rho1 = rhoPhi1.getKey().getRho();
 		String rho2 = rhoPhi2.getKey().getRho();
 		String phi1 = rhoPhi1.getValue().getPhiAsString();
 		String phi2 = rhoPhi2.getValue().getPhiAsString();
-		
-		if (rhoPhi1.getKey().getRhoUpdate() != null) {
-			phi1 += " && !(" + rhoPhi1.getKey().getRhoUpdate()+ ")"; 
-		}
-		if (rhoPhi2.getKey().getRhoUpdate() != null) {
-			phi2 += " && !(" + rhoPhi2.getKey().getRhoUpdate()+ ")"; 
-		}
-	
+		// rename vars for mathematica query
 		rho2 = variableRename(rho2);
 		phi2 = variableRename(phi2);
 		
@@ -178,6 +164,7 @@ public class Splitter {
 		
 		KernelLink link = MathematicaHandler.getInstance();
 		String result = link.evaluateToOutputForm(query, 0);
+		
 		// check if there is an intersection
 		if (result.equals("{}")) {
 			return false;
@@ -187,11 +174,39 @@ public class Splitter {
 		}
 	}
 	
+	// method that leverages regex for var renaming
 	private String variableRename(String s) {
 		// rename variables to prepare mathematica query
 		return s.replaceAll("id", "idGV");
 	}
 	
+	// method that marks all the splits and gets the splitting variables set
+	private ArrayList<String> getSplits(HashMap<Integer, ArrayList<HashSet<String>>> possibleSplits) {
+		ArrayList<String> splits = new ArrayList<>();
+		// map between rhoID and variables that cover it
+		HashMap<Integer, HashSet<String>> rhoCoverage = new HashMap<>();
+		// rho identifier
+		int rhoID = 1;
+		for (Map.Entry<Integer, ArrayList<HashSet<String>>> entry: possibleSplits.entrySet()) {
+			if (entry.getValue() == null) {
+				// table split detected, store it
+				splits.add("#" + entry.getKey().toString());
+				continue;
+			}
+			for (HashSet<String> splitters: entry.getValue()) {
+				rhoCoverage.put(rhoID, splitters);
+				rhoID++;
+			}
+		}
+		// initial set of splitting vars is empty
+		ArrayList<String> splitVars = new ArrayList<>();
+		// get the smallest hitting set, NP complete problem
+		splits.addAll(getSplitVars(rhoCoverage, splitVars, null));
+		// return all splits, table splits and variables
+		return splits;
+	}
+	
+	// method that solves hitting set problem
 	private ArrayList<String> getSplitVars(HashMap<Integer, HashSet<String>> rhoCoverage, ArrayList<String> splitVars, String splitVar) {
 		if (splitVar != null) {
 			// remove thos that are covered by var
@@ -241,6 +256,12 @@ public class Splitter {
 		return splitVars;
 	}
 	
+	// method that prints the splitting parameters for a given vertex
+	private void printSplits(int counter, ArrayList<String> splitVars) {
+		System.out.println("Split parameters for vertex no" + counter + " -> " + splitVars); 
+	}
+	
+	// method that obtains ranges of a given variable for a given rho
 	private Pair<Integer, Integer> getSplitRange(LinkedHashMap<VertexRho, VertexPhi> rhos, String splitVar) {
  		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
 			if (entry.getKey().getVariables().contains(splitVar)) {
@@ -250,11 +271,7 @@ public class Splitter {
  		return null;
 	}
 
-	private void printSplits(int counter, ArrayList<String> splitVars) {
-		System.out.println("Var list for vertex no" + counter + " -> " + splitVars); 
-	}
-	
-	
+	// method that applies a given split to a given vertex
 	private void applySplit(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
 		// give an ID to each vertex consisting of a byte array
 		ArrayList<String> ids = generateCombinations(splits.size(), new int[splits.size()], 0);
@@ -295,9 +312,7 @@ public class Splitter {
 			GraphVertex gv = new GraphVertex(newSigma, txProfile, true);
 			
 			// other sub vertices need to be disjoint from previously existing ones
-			addVertex(gv, splitGraph);
-			gv.printVertex();
-			
+			addVertex(gv, splitGraph);			
 		}
 		
 	}
@@ -359,7 +374,7 @@ public class Splitter {
 		return sigma;
 	}
 	
-	
+	// method that adds a vertex to the graph, ensuring no vertex overlaps
 	private void addVertex(GraphVertex newVertex, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// edges found during rho comparison
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
@@ -417,7 +432,7 @@ public class Splitter {
 		System.out.println("Subvertex added successfully");
 	}
 	
-	
+	// method that prepares phi for mathematica query, appending any update if needed
 	private String preparePhi(String phi, String update) {
 		String preparedPhi = new String(phi);
 		if (update != null) {
@@ -427,7 +442,7 @@ public class Splitter {
 		return preparedPhi;
 	}
 	
-	
+	// method that computers rho intersection and outputs their symbolic intersection
 	private String rhoIntersection(String rho1, String rho2, String phi1, String phi2, HashSet<String> vars1, HashSet<String> vars2) {
 		KernelLink link = MathematicaHandler.getInstance();
 		
@@ -500,6 +515,7 @@ public class Splitter {
 			this.noVertices++;
 			METISGraph.put(new Pair<Integer, Integer>(vertex.getKey().getVertexID(), vertex.getKey().getVertexWeight()), edges);
 		}
+		// edges are bidirectional
 		this.noEdges = this.noEdges / 2;
 		return METISGraph;
 	}
@@ -565,9 +581,6 @@ public class Splitter {
 			System.out.println("Error on generating METIS file!");
 			e.printStackTrace();
 		}
-		
-		
-		
 	}
 	
 	// method to check if there is a variable that can split multiple overlapping rhos on same table
@@ -635,9 +648,6 @@ public class Splitter {
 		}
 		return splits;
 	}
-	
-	
- 
 }
 	
 	
