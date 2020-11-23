@@ -105,8 +105,16 @@ public class Splitter {
 				// if an intersection was found on this table then it has been split
 				if (stop) break;
 				Pair<VertexRho, VertexPhi> rhoPhi1 = entry.getValue().get(i);
+				// skip low prob rhos, consider only yheir more probably counterpart
+				if (rhoPhi1.getKey().getProb() < 0.5) {
+					continue;
+				}
 				for (int j = i + 1; j < entry.getValue().size(); j++) {
 					Pair<VertexRho, VertexPhi> rhoPhi2 = entry.getValue().get(j);
+					// skip low prob rhos, consider only yheir more probably counterpart
+					if (rhoPhi2.getKey().getProb() < 0.5) {
+						continue;
+					}
 					boolean intersection = checkIntersection(rhoPhi1, rhoPhi2);
 					if (!intersection) {
 						// rhos do not overlap, add all the variables that can split them
@@ -343,8 +351,6 @@ public class Splitter {
 				// update all sigmas in each section, i represents the section
 				for (int j = 0; j < temp.get(i).size(); j++) {
 					// check if table split or input split
-					System.out.println(i % noSplitsParameter);
-
 					if (split.getKey().startsWith("#")) {
 						// input split case
 						VertexSigma newSigma = tableSplit(temp.get(i).get(j), split.getKey(), noSplitsParameter, i % noSplitsParameter);
@@ -446,6 +452,10 @@ public class Splitter {
 				// obtain all rhos in previously existing vertex
 				HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
 				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
+					// skip low prob rho
+					if (entryGV.getKey().getProb() < 0.5) {
+						continue;
+					}
 					String rhoGV = entryGV.getKey().getRho();
 					String phiGV = entryGV.getValue().getPhiAsString();
 					// if rhos are not on same table they do need to be compared
@@ -466,7 +476,8 @@ public class Splitter {
 						// collision found, perform rho logical subtraction
 						entryV.getKey().updateRho(result);
 						// add edge between vertices whose rhos-phi overlapped
-						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, rhoGV, entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup());
+						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, rhoGV, 
+								entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup(), entryV.getKey().getProb());
 						foundEdges.add(edgeSrcV);
 					}
 				}
@@ -645,6 +656,10 @@ public class Splitter {
 		// check commonVars accross all rhos
 		boolean isFirst = true;
 		for (Pair<VertexRho, VertexPhi> rho: rhos) {
+			// skip low prob rhos
+			if (rho.getKey().getProb() < 0.5) {
+				continue;
+			}
 			if (isFirst) {
 				commonVars.addAll(rho.getKey().getVariables());
 				isFirst = false;
@@ -664,6 +679,8 @@ public class Splitter {
 			for (int i = 0; i < rhos.size(); i++) {
 				// get rho
 				Pair<VertexRho, VertexPhi> rho1 = rhos.get(i);
+				// skip low probs rhos
+				if (rho1.getKey().getProb() < 0.5) continue;
 				// get range of commonVar
 				Pair<Integer, Integer> varRange = rho1.getValue().getPhi().get(commonVar);
 				// calculate cutoff for new simulated phi
@@ -677,6 +694,8 @@ public class Splitter {
 				for (int j = 0; j < rhos.size(); j++) {
 					// get rho
 					Pair<VertexRho, VertexPhi> rho2 = rhos.get(j);
+					// skip low prob rhos
+					if (rho2.getKey().getProb() < 0.5) continue;
 					VertexRho rhoCopy2 = new VertexRho(rho2.getKey());
 					VertexPhi phiCopy2 = new VertexPhi(rho2.getValue());
 					// edit phi for sim 

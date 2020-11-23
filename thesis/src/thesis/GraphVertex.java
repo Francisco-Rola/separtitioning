@@ -62,6 +62,9 @@ public class GraphVertex {
 		HashMap<String, ArrayList<String>> tableAccesses = new HashMap<>();
 		// iterate through rho and respective phis
 		for (Map.Entry<VertexRho, VertexPhi> entry: this.getSigma().getRhos().entrySet()) {
+			// skip low prob rhos they are always remote
+			if (entry.getKey().getProb() < 0.5) 
+				continue;
 			String table = entry.getKey().getRho().substring(0, entry.getKey().getRho().indexOf(">") - 1);
 			String phiQuery = entry.getValue().getPhiAsGroup();
 			String rhoQuery = entry.getKey().getRho().substring(entry.getKey().getRho().indexOf(">") + 1);

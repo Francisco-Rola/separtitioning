@@ -58,18 +58,18 @@ public class GraphBuilder {
 		buildGraph();
 		
 		System.out.println("Running graph splitter");
-				
+								
 		Splitter splitter = new Splitter();
 		
 		graph = splitter.splitGraph(graph);
 		
 		printGraph(graph);
-				
+		
 		System.out.println("Running graph partitioner");
 		
 		Partitioner partitioner = new Partitioner(graph);
 		
-		Partitioner.partitionGraph();
+		Partitioner.partitionGraph();   
 
 	}
 }

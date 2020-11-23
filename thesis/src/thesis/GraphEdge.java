@@ -21,14 +21,14 @@ public class GraphEdge {
 	private String phiRange = null;
 	
 	// default constructor for graph edge
-	public GraphEdge(GraphVertex src, GraphVertex dest, String rhoSrc, String rhoDest, String intersection, String phiRange) {
+	public GraphEdge(GraphVertex src, GraphVertex dest, String rhoSrc, String rhoDest, String intersection, String phiRange, double prob) {
 		this.src = src;
 		this.dest = dest;
 		this.rhoSrc = rhoSrc;
 		this.rhoDest = rhoDest;
 		this.phiRange = phiRange;
 		this.edgePhi = intersection;
-		this.edgeWeight = computeEdgeWeight(intersection, phiRange);
+		this.edgeWeight = computeEdgeWeight(intersection, phiRange, prob);
 		System.out.println("Edge S:" + src.getVertexID() + " D:" + dest.getVertexID() +
 				" T:" + rhoSrc.substring(0, rhoSrc.indexOf(">") - 1) +  " W:" +  this.edgeWeight);
 	}
@@ -49,13 +49,14 @@ public class GraphEdge {
 	}
 	
 	// method that computes edge weight, i.e. how many inputs cause a remote access
-	private  int computeEdgeWeight(String intersection, String phiRange) {
+	private  int computeEdgeWeight(String intersection, String phiRange, double prob) {
 		// get mathematica link
 		KernelLink link = MathematicaHandler.getInstance();
 		// compute how many inputs are in the overlap
 		String query = "Length[Flatten[Table[" + intersection + ", " + phiRange + "]]]";
 		String result = link.evaluateToOutputForm(query, 0);
-		return Integer.parseInt(result);
+		int probConverted = (int) (prob * 100);
+		return Integer.parseInt(result) * probConverted;
 	}
 	
 	// debug and presentation purposes

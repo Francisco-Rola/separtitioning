@@ -15,13 +15,23 @@ public class VertexRho {
 	private String rho = null;
 	// update resultant either from logical subtraction to ensure disjointness or splitting
 	private String update = null;
+	// probability of tho being used
+	private double prob = 1.0;
 	// set of variables comprised by this rho
 	private HashSet<String> variables = null;
 	
 	// default vertex rho constructor, receives string as input
 	public VertexRho(String rho) {
-		this.rho = rho;
-		
+		// check if probabilistic rho
+		if (rho.contains("#")) {
+			// split by delimiter
+			String[] probRho = rho.split("#");
+			this.rho = probRho[0];
+			this.prob = Double.valueOf(probRho[1]) / 100;
+		}
+		else {
+			this.rho = rho;
+		}
 		HashSet<String> variables = new HashSet<>();
 		Matcher m = Pattern.compile("(\\w+id[0-9]*)\\S*\\s*").matcher(rho);
 		while(m.find()) {
@@ -33,6 +43,7 @@ public class VertexRho {
 	// rho constructor for deep copy purpose
 	public VertexRho(VertexRho vertexRho) {
 		this.remote = vertexRho.isRemote();
+		this.prob = vertexRho.getProb();
 		this.rho = new String(vertexRho.getRho());
 		if (vertexRho.getRhoUpdate() != null)
 			this.update = new String(vertexRho.getRhoUpdate());
@@ -130,6 +141,11 @@ public class VertexRho {
 		return this.remote;
 	}
 	
+	// getter for rho prob
+	public Double getProb() {
+		return this.prob;
+	}
+	
 	// obtain rho update string
 	public String getRhoUpdate() {
 		return this.update;
@@ -145,21 +161,23 @@ public class VertexRho {
 		System.out.println("Rho: " + this.getRho());
 		System.out.println("Rho update: " + this.getRhoUpdate());
 		System.out.println("Remote: " + this.isRemote());
+		System.out.println("Probability: " + this.getProb());
 	}
 
-	// automatically generated hash code for vertex rho
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(prob);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + (remote ? 1231 : 1237);
 		result = prime * result + ((rho == null) ? 0 : rho.hashCode());
 		result = prime * result + ((update == null) ? 0 : update.hashCode());
 		result = prime * result + ((variables == null) ? 0 : variables.hashCode());
 		return result;
 	}
-	
-	// automatically generated equals for vertex rho
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -169,6 +187,8 @@ public class VertexRho {
 		if (getClass() != obj.getClass())
 			return false;
 		VertexRho other = (VertexRho) obj;
+		if (Double.doubleToLongBits(prob) != Double.doubleToLongBits(other.prob))
+			return false;
 		if (remote != other.remote)
 			return false;
 		if (rho == null) {
@@ -188,6 +208,7 @@ public class VertexRho {
 			return false;
 		return true;
 	}
+
 	
 	
 

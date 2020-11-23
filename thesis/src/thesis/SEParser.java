@@ -204,7 +204,17 @@ public class SEParser {
 			String[] readFormulas = line.split(", ");
 			HashSet<String> readSet = new HashSet<>();
 			for (String formula : readFormulas) {
-				readSet.add(formula);
+				// check if prob rho
+				String probRho = addProbRho(formula);
+				if (probRho != null) {
+					String[] probRhos = probRho.split("\\|");
+					readSet.add(probRhos[0]);
+					readSet.add(probRhos[1]);
+				}
+				else {
+					readSet.add(formula);
+				}
+				
 			}
 			// set read set
 			node.setReadSet(readSet);
@@ -222,7 +232,16 @@ public class SEParser {
 			String[] writeFormulas = line.split(", ");
 			HashSet<String> writeSet = new HashSet<>();
 			for (String formula : writeFormulas) {
-				writeSet.add(formula);
+				// check if prob rho
+				String probRho = addProbRho(formula);
+				if (probRho != null) {
+					String[] probRhos = probRho.split("\\|");
+					writeSet.add(probRhos[0]);
+					writeSet.add(probRhos[1]);
+				}
+				else {
+					writeSet.add(formula);
+				}
 			}
 			// set write set
 			node.setWriteSet(writeSet);
@@ -235,11 +254,64 @@ public class SEParser {
 		return vertices;
 	}
 	
+	// trick method to fix new order file to include prob rhos
+	private String addProbRho(String rho) {
+		if (rho.startsWith("9->")) {
+			String finalRho = rho + "#99|";
+			String copy = new String(rho);
+			// find which item is rho tied to
+			String itemID = "";
+			boolean foundItem = false;
+			for (int i = 0; i < copy.length(); i++) {
+				// found item ID
+				if (copy.charAt(i) == '[' && foundItem == false)  {
+					foundItem = true;
+				}
+				else if (foundItem == true && copy.charAt(i) != ']')  {
+					itemID += copy.charAt(i);
+				}
+				else if (foundItem == true && copy.charAt(i) == ']') {
+					foundItem = false;
+					break;
+				}
+			}
+			copy = copy.replaceAll("warehouse_id", "ol_supply_w_id" + "[" + itemID + "]");
+			finalRho += copy + "#1";
+			return finalRho;
+		}
+		else if (rho.startsWith("7->") && rho.contains("->10") && !(rho.contains("* 10000)"))) {
+			String finalRho = rho + "#99|";
+			String copy = new String(rho);
+			String itemID = "";
+			try {
+				char c = copy.charAt(116);
+				itemID += c;
+				c = copy.charAt(117);
+				if (c == '0') {
+					c = copy.charAt(121);
+					if (c == '0')
+						itemID += c;
+				}
+				else {
+					itemID += c;
+				}
+			}
+			catch (Exception e) {
+				// out of range so this is the 0 case
+				itemID += "0";
+			}
+			copy = copy.replaceFirst("warehouse_id", "ol_supply_w_id" + "[" + itemID + "]");
+			finalRho += copy + "#1";
+			return finalRho;
+		}
+		return null;
+	}
+	
 	
 	// main for debug purposes
 	public static void main(String[] args) {
 		try {
-			String[] files = {"delivery_simple.txt"};
+			String[] files = {"new_order_final.txt"};
 			new SEParser(files);
 			int vertexCount = 0;
 			for(Vertex vertex : vertices) {
