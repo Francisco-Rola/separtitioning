@@ -7,13 +7,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+
 import com.wolfram.jlink.KernelLink;
 
 
 // class performing vertex splitting and creating graph file for the partitioner
 public class Splitter {
 	
+	// how many parts does a table split go for
+	int tableSplitFactor = 2;
+	// how many splits does an input split go for, at most
+	int inputSplitFactor = 10;
 	// no edges in final graph
 	int noEdges = 0;
 	// no vertices in final graph
@@ -273,102 +280,148 @@ public class Splitter {
 
 	// method that applies a given split to a given vertex
 	private void applySplit(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
-		// give an ID to each vertex consisting of a byte array
-		ArrayList<String> ids = generateCombinations(splits.size(), new int[splits.size()], 0);
-		
-		// iterate over all split combinations
-		for (String id: ids) {
-			// create a new sub vertex sigma
-			VertexSigma newSigma = new VertexSigma(sigma);
-			// each ith element of the string is mapped to the ith parameter in splitVars
-			for (int i = 0; i < id.length(); i++) {
-				String splitParam = splits.get(i);
-				char paramValue = id.charAt(i);		
-				if (splitParam.startsWith("#")) {
-					// table split, check whether this param is a "lower" or "upper" split
-					if (paramValue == '0') {
-						// lower table split
-						newSigma = tableSplit(newSigma, splitParam, 0);
-					}
-					else {
-						//upper table split
-						newSigma = tableSplit(newSigma, splitParam, 1);
-					}
-				}
-				else {
-					// input split, check whether this param is a "lower" or "upper" split, get range
-					Pair<Integer, Integer> inputRange = getSplitRange(sigma.getRhos(), splitParam);
-					if (paramValue == '0') {
-						// lower input split
-						newSigma = rhoInputSplit(newSigma, splitParam, inputRange, 0);
-					}
-					else {
-						//upper input split
-						newSigma = rhoInputSplit(newSigma, splitParam, inputRange, 1);
-					}
-				}
-			}
+		// generate all the new sigmas for splits
+		ArrayList<VertexSigma> newSigmas = generateSigmas(sigma, splits, txProfile);
+		// go through sigmas and create new vertices
+		for (VertexSigma newSigma : newSigmas) {
 			// associate new sigma to a new vertex
 			GraphVertex gv = new GraphVertex(newSigma, txProfile, true);
-			
 			// other sub vertices need to be disjoint from previously existing ones
-			addVertex(gv, splitGraph);			
+			addVertex(gv, splitGraph);
 		}
-		
 	}
 	
-
-	private ArrayList<String> generateCombinations(int n, int comb[], int pos) {
-		ArrayList<String> ids = new ArrayList<>();
-		
-		if (pos == n) {
-			int temp = 0;
-			for (int i = n - 1; i >= 0; i--) { 
-				temp = (int)(Math.pow(10, i)*comb[i] + temp);
+	// method that receives split parameters and computes all sigma combinations
+	private ArrayList<VertexSigma> generateSigmas(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
+		// calculate how many splits per parameter
+		int noSplits = 1;
+		LinkedHashMap<String, Integer> splitsPerParameter = new LinkedHashMap<>();
+		for (String split : splits) {
+			// check if table split
+			if (split.startsWith("#")) {
+				noSplits *= tableSplitFactor;
+				splitsPerParameter.put(split, tableSplitFactor);
 			}
-			ids.add(String.format("%0"+ n +"d", temp));
-			return ids;
+			// input split case
+			else {
+				// check the range of this split variable
+				Pair<Integer, Integer> inputRange = getSplitRange(sigma.getRhos(), split);
+				// split range for this given parameter
+				int splitRange = (inputRange.getValue() - inputRange.getKey()) + 1;
+				// take into account input split factor
+				int splitFactor = inputSplitFactor;
+				while (((splitRange / splitFactor) < 1)) {
+					// split factor needs to be reduced to match range
+					splitFactor--;
+				}
+				// split factor found, update no splits
+				noSplits *= splitFactor;
+				System.out.println("Split factor for param: " + split + ": " + splitFactor);
+				splitsPerParameter.put(split, splitFactor);
+			}
 		}
-		comb[pos] = 0; 
-	    ids.addAll(generateCombinations(n, comb, pos + 1));
-	    comb[pos] = 1; 
-	    ids.addAll(generateCombinations(n, comb, pos + 1));
-	    return ids;
-	}
+		// knowing split parameters and no parts provided by each param we can generate sigmas
+		List<List<VertexSigma>> finalSigmas = new LinkedList<>();
+		List<VertexSigma> newSigmas = new LinkedList<>();
+		for (int i = 0; i < noSplits; i++) {
+			VertexSigma newSigma = new VertexSigma(sigma);
+			newSigmas.add(newSigma);
+		}
+		// initial set of sigmas before splitting is ready, all vertices equal
+		finalSigmas.add(newSigmas);
+		// apply splits
+		for (Map.Entry<String, Integer> split: splitsPerParameter.entrySet()) {
+			// how many partitions does this parameter generate
+			int noSplitsParameter = split.getValue();
+			// break arrays in final sigma into noSplitsPerParameter
+			List<List<VertexSigma>> temp = new LinkedList<>();
+			for (List<VertexSigma> partitions : finalSigmas) {
+				temp.addAll(partition(partitions, noSplitsParameter));
+			}
+			// update rhos in sublists
+			for (int i = 0; i < temp.size(); i++) {
+				// update all sigmas in each section, i represents the section
+				for (int j = 0; j < temp.get(i).size(); j++) {
+					// check if table split or input split
+					System.out.println(i % noSplitsParameter);
 
+					if (split.getKey().startsWith("#")) {
+						// input split case
+						VertexSigma newSigma = tableSplit(temp.get(i).get(j), split.getKey(), noSplitsParameter, i % noSplitsParameter);
+						temp.get(i).set(j, newSigma);
+					}
+					else {
+						VertexSigma newSigma = rhoInputSplit(temp.get(i).get(j), split.getKey(), 
+								getSplitRange(sigma.getRhos(), split.getKey()), noSplitsParameter, i % noSplitsParameter);
+						// update sigma
+						temp.get(i).set(j, newSigma);
+					}
+				}
+			}
+			// clear old final sigmas not updated
+			finalSigmas.clear();
+			// update final sigmas with temp
+			finalSigmas.addAll(temp);
+		}
+		// at this point each sublist in finalSigmas has a single element
+		ArrayList<VertexSigma> sigmas = new ArrayList<>();
+		// build return list
+		for (List<VertexSigma> entry : finalSigmas) {
+			// these lists have 1 element
+			sigmas.addAll(entry);
+		}
+		System.out.println("Splitting successful");
+		return sigmas;
+	}
 	
-	private VertexSigma rhoInputSplit(VertexSigma sigma, String splitParam, Pair<Integer, Integer> inputRange, int section) {
+	// method that breaks a list into n sublists
+	public List<List<VertexSigma>> partition(List<VertexSigma> originalList,int noParts){
+		// no elements per sublist
+		int partitionSize = originalList.size() / noParts;
+		List<List<VertexSigma>> partitions = new LinkedList<List<VertexSigma>>();
+		for (int i = 0; i < originalList.size(); i += partitionSize) {
+		    partitions.add(originalList.subList(i,
+		            Math.min(i + partitionSize, originalList.size())));
+		}
+		return partitions;
+	}
+	
+	// method that applies rho input split by manipulating phi ranges
+	private VertexSigma rhoInputSplit(VertexSigma sigma, String splitParam, Pair<Integer, Integer> inputRange, int noSplits, int section) {
 		// calculate cutoff for new vertex phis
-		int cutoff = (inputRange.getValue() - inputRange.getKey()) / 2;
+		int cutoff = (inputRange.getValue() - inputRange.getKey() + 1) / noSplits;
 		// update all phis in the vertex
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
 			// if the rho contains the split param its respective phi needs to be updated
 			if (rhoPhi.getKey().getVariables().contains(splitParam)) {
-				
 				if (section == 0) rhoPhi.getValue().getPhi().put(splitParam, 
-						new Pair<Integer, Integer>(inputRange.getKey(), cutoff));
+						new Pair<Integer, Integer>(inputRange.getKey(), cutoff - 1));
 				else 
 					rhoPhi.getValue().getPhi().put(splitParam, 
-							new Pair<Integer, Integer>(cutoff+1, inputRange.getValue()));
+							new Pair<Integer, Integer>(cutoff * section, (cutoff * (section) + 1) - 1));
 			}
 		}
 		return sigma;
 	}
-
 	
-	private VertexSigma tableSplit(VertexSigma sigma, String splitParam, int section) {
+	// method that applies table split based on rho output limitation
+	private VertexSigma tableSplit(VertexSigma sigma, String splitParam, int noSplits, int section) {
 		// obtain table number by trimming meta char
 		String tableNo = splitParam.substring(1);
 		// check the range of items in this table
 		int tableRange = VertexPhi.getTableRange(Integer.parseInt(tableNo));
+		// calculate cutoff for section
+		int cutoff = (tableRange / noSplits);
 		// update all phis in the vertex
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
 			// update every access to the table under split
 			if (rhoPhi.getKey().getRho().startsWith(tableNo)) {
 				if (section == 0) 
-					rhoPhi.getKey().splitRho(" <= " + tableRange / 2);
-				else
-					rhoPhi.getKey().splitRho(" > " + tableRange / 2);
+					rhoPhi.getKey().splitRho(" <= " + (cutoff));
+				else {
+					rhoPhi.getKey().splitRho(" > " + (cutoff * section));
+					rhoPhi.getKey().splitRho(" <= " + (cutoff * (section + 1)));				
+				}
 			}
 		}
 		return sigma;
