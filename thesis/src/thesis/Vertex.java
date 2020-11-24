@@ -15,7 +15,7 @@ public class Vertex {
 	public Vertex(int txProfile) {
 		this.txProfile = txProfile;
 	}
-	
+	 
 	// getter for tx profile
 	public int getTxProfile() {
 		return this.txProfile;

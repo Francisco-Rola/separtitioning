@@ -17,7 +17,9 @@ public class GraphVertex {
 	private int vertexWeight = 0;
 	// transaction profile that generated this vertex originally, inheried from parent in case of splitting
 	private int txProfile;
-	// formulas that represent the data items in this vertex
+	// consider transaction frequency
+	boolean frequency = true;
+	// formulas that represent the data items in this vertex	
 	private VertexSigma sigma;
 	
 	// default constructor for a graph vertex
@@ -54,10 +56,28 @@ public class GraphVertex {
 		return sigma;
 	}
 	
+	// transaction likelihood information
+	private static double getTXLikelihood(int txProfile) {
+		// payment
+		if (txProfile == 1) {
+			return 0.431;
+		}
+		else if (txProfile == 2) {
+			return 0.445;
+		}
+		else if (txProfile == 3) {
+			return 0.042;
+		}
+		else {
+			System.out.println("Invalid transaction profile");
+			return 0;
+		}
+	}
+	
 	// method that computes vertex weight, i.e. how many data items it stores
 	public void computeVertexWeight() {
 		// get mathematica endpoint
-		KernelLink link = MathematicaHandler.getInstance();
+		KernelLink link = MathematicaHandler.getInstance(); 
 		// auxiliary structure to compute vertex weight
 		HashMap<String, ArrayList<String>> tableAccesses = new HashMap<>();
 		// iterate through rho and respective phis
@@ -104,7 +124,13 @@ public class GraphVertex {
 			String mathQuery = "Length[DeleteDuplicates[Union[" + query + "]]]";
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			System.out.println("Table: " + entry.getKey() + " Weight: " + result);
-			vertexWeight += Integer.parseInt(result);
+			
+			if (frequency) {
+				int freqConverted = (int) (getTXLikelihood(this.txProfile) * 100);
+				vertexWeight += Integer.parseInt(result) * freqConverted;
+			}
+			else 
+				vertexWeight += Integer.parseInt(result);
 		}
 		
 	}

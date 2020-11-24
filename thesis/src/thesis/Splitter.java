@@ -16,7 +16,8 @@ import com.wolfram.jlink.KernelLink;
 
 // class performing vertex splitting and creating graph file for the partitioner
 public class Splitter {
-	
+	// replication wanted?
+	boolean replication = true;
 	// how many parts does a table split go for
 	int tableSplitFactor = 2;
 	// how many splits does an input split go for, at most
@@ -50,6 +51,7 @@ public class Splitter {
 			applySplit(v.getSigma(), splits, txProfile);
 			//increment vertex counter
 			counter++;
+			txProfile++;
 		}
 		// build metis graph
 		LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> metisGraph = buildMETISGraph();
@@ -132,10 +134,26 @@ public class Splitter {
 							possibleSplits.put(entry.getKey(), splits);
 						}
 						else {
-							// rhos overlap for some input, splitting the table instead
-							possibleSplits.remove(entry.getKey());
-							// mark possible splits for table as null to know it is a table split
-							possibleSplits.put(entry.getKey(), null);	
+							// check if replication is wanted
+							if (replication) {
+								// check whether this table is read only
+								if (VertexPhi.checkTableReadOnly(entry.getKey())) {
+									// do not consider this table
+									possibleSplits.remove(entry.getKey());
+								}
+								else {
+									// rhos overlap for some input, splitting the table instead
+									possibleSplits.remove(entry.getKey());
+									// mark possible splits for table as null to know it is a table split
+									possibleSplits.put(entry.getKey(), null);
+								}
+							}
+							else {
+								// rhos overlap for some input, splitting the table instead
+								possibleSplits.remove(entry.getKey());
+								// mark possible splits for table as null to know it is a table split
+								possibleSplits.put(entry.getKey(), null);	
+							}
 						}
 						// set stop variable, indicating table is dealt with
 						stop = true;
@@ -445,7 +463,13 @@ public class Splitter {
 			String rhoV = entryV.getKey().getRho();
 			String phiV = entryV.getValue().getPhiAsString();
 			
+			// dont compare remote rhos
 			if (entryV.getKey().isRemote()) continue;
+			
+			// if replication is enable and read only table, dont compare
+			if (replication && VertexPhi.checkTableReadOnly(Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)))) {
+				continue;
+			}
 			
 			for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
 				GraphVertex gv = node.getKey();

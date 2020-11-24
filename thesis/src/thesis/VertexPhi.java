@@ -113,6 +113,18 @@ public class VertexPhi {
 		}
 	}
 	
+	// schema helper, check if a table is read 
+	public static boolean checkTableReadOnly(int tableNo) {
+		switch (tableNo) {
+		case 8:
+			// table 8 is ready only
+			return true;
+		default:
+			// every other table has write accesses
+			return false;
+		}
+	}
+	
 	// debug method, prints phi, all its variables and ranges
 	public void printPhi() {
 		for (Map.Entry<String, Pair<Integer, Integer>> entry: this.getPhi().entrySet()) {
