@@ -12,7 +12,7 @@ public class VertexPhi {
 	private static int w = 1;
 	private static int order = 4;
 	private static int customer = 9;
-	private static int district = 4;
+	private static int district = 9;
 	
 	
 	// constructor for deep copy purpose

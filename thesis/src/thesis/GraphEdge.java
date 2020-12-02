@@ -6,40 +6,34 @@ import com.wolfram.jlink.KernelLink;
 public class GraphEdge {
 	
 	// source vertex for the edge
-	private GraphVertex src;
+	private int src;
 	// destiny vertex for the edge
-	private GraphVertex dest;
+	private int dest;
 	// number of inputs that cause a transaction to be executed remotely
 	private int edgeWeight = 0;
 	// rho on the source vertex (new vertex)
 	private String rhoSrc = null;
-	// rho on the destination vertex (older vertex)
-	private String rhoDest = null;
 	// set of inputs that cause vertices to overlap hence causing an edge (src inputs)
 	private String edgePhi = null;
-	// range of inputs
-	private String phiRange = null;
 	
 	// default constructor for graph edge
-	public GraphEdge(GraphVertex src, GraphVertex dest, String rhoSrc, String rhoDest, String intersection, String phiRange, double prob) {
+	public GraphEdge(int src, int dest, String rhoSrc, String intersection, String phiRange, double prob) {
 		this.src = src;
 		this.dest = dest;
 		this.rhoSrc = rhoSrc;
-		this.rhoDest = rhoDest;
-		this.phiRange = phiRange;
 		this.edgePhi = intersection;
 		this.edgeWeight = computeEdgeWeight(intersection, phiRange, prob);
-		System.out.println("Edge S:" + src.getVertexID() + " D:" + dest.getVertexID() +
+		System.out.println("Edge S:" + src + " D:" + dest+
 				" T:" + rhoSrc.substring(0, rhoSrc.indexOf(">") - 1) +  " W:" +  this.edgeWeight);
 	}
 	
 	// getter for vertex src
-	public GraphVertex getSrc() {
+	public int getSrc() {
 		return src;
 	}
 
 	// getter for vertex dest
-	public GraphVertex getDest() {
+	public int getDest() {
 		return dest;
 	}
 

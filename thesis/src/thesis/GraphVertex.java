@@ -17,8 +17,6 @@ public class GraphVertex {
 	private int vertexWeight = 0;
 	// transaction profile that generated this vertex originally, inheried from parent in case of splitting
 	private int txProfile;
-	// consider transaction frequency
-	boolean frequency = true;
 	// formulas that represent the data items in this vertex	
 	private VertexSigma sigma;
 	
@@ -125,14 +123,30 @@ public class GraphVertex {
 			String result = link.evaluateToOutputForm(mathQuery, 0);
 			System.out.println("Table: " + entry.getKey() + " Weight: " + result);
 			
-			if (frequency) {
-				int freqConverted = (int) (getTXLikelihood(this.txProfile) * 100);
-				vertexWeight += Integer.parseInt(result) * freqConverted;
-			}
-			else 
-				vertexWeight += Integer.parseInt(result);
-		}
+			vertexWeight += Integer.parseInt(result);
+		}	
+	}
+	
+	// method that checks if rho becomes remote after an update
+	public void checkRemoteAfterUpdate(VertexRho rho, VertexPhi phi) {
+		// get mathematica endpoint
+		KernelLink link = MathematicaHandler.getInstance(); 
 		
+		String phiQuery = phi.getPhiAsGroup();
+		String rhoQuery = rho.getRho().substring(rho.getRho().indexOf(">") + 1);
+		// check if rho is constrained by logical subtraction
+		if (rho.getRhoUpdate() != null) {
+			rhoQuery = "(" + rhoQuery +  ") && (" + rho.getRhoUpdate() + ")";
+		}
+		// check items accessed by rho given phi
+		String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
+		String result = link.evaluateToOutputForm(query, 0);
+		result = result.replaceAll("[, ]*False[, ]*", "");
+		// if empty result then this rho is remote
+		if (result.equals("{}")) {
+			//System.out.println("Empty rho, removing");
+			rho.setRemote();
+		}
 	}
 	
 	// debug and presentation print

@@ -93,14 +93,14 @@ public class VertexRho {
 					// need to add parenthesis in this case
 					ps = true;
 					// remove all components related to old vertex, those solutions are not important
-					conjunctionPhi.add(conjunctionParts[i].replaceAll("\\| \\w+idV", ""));
+					conjunctionPhi.add(conjunctionParts[i].replaceAll("\\s\\|\\s\\w+idGV", ""));
 				}
 			}
 			// if there is only one solution no need to add parenthesis
 			if (phiParts.length == 1)
 				updateParsed.add(conjunctionPhi.toString());
 			else if(ps) {
-				updateParsed.add("(" + conjunctionPhi.toString());
+				updateParsed.add(conjunctionPhi.toString() + ")");
 			}
 			else {
 				updateParsed.add(conjunctionPhi.toString() + ")");
@@ -118,16 +118,40 @@ public class VertexRho {
 		simplifyRho(update);
 	}
 	
+	
 	// method used to simplify a rho update formula
 	public void simplifyRho(String update) {
 		// get mathematica link
 		KernelLink link = MathematicaHandler.getInstance();
 		// simplify rho update expression for further computations
+		String copyUpdate = new String(this.update);
 		this.update = link.evaluateToOutputForm("Simplify[" + this.update + "]", 0);
 		// if there is an error, check what went wrong
 		if (this.update.equals("$Failed")) {
-			System.out.println(update);
+			System.out.println(copyUpdate);
 			System.out.println("Failed rho update ->" + update);
+		}
+	}
+	
+	// method that checks if rho becomes remote after an update
+	public void checkRemoteAfterUpdate(VertexRho rho, VertexPhi phi) {
+		// get mathematica endpoint
+		KernelLink link = MathematicaHandler.getInstance(); 
+		
+		String phiQuery = phi.getPhiAsGroup();
+		String rhoQuery = rho.getRho().substring(rho.getRho().indexOf(">") + 1);
+		// check if rho is constrained by logical subtraction
+		if (rho.getRhoUpdate() != null) {
+			rhoQuery = "(" + rhoQuery +  ") && (" + rho.getRhoUpdate() + ")";
+		}
+		// check items accessed by rho given phi
+		String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
+		String result = link.evaluateToOutputForm(query, 0);
+		result = result.replaceAll("[, ]*False[, ]*", "");
+		// if empty result then this rho is remote
+		if (result.equals("{}")) {
+			//System.out.println("Empty rho, removing");
+			rho.setRemote();
 		}
 	}
 	

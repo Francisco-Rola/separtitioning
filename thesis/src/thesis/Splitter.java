@@ -31,8 +31,6 @@ public class Splitter {
 	
 	// method that takes a graph as input and splits its vertices, returns the resulting graph
 	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
-		// for each vertex, iterate through its rhos
-		int counter = 1;
 		// tx profile identifier
 		int txProfile = 1;
 		// go through all vertices in graph
@@ -46,13 +44,14 @@ public class Splitter {
 			// get the shortest splitting variable set and table splits needed
 			ArrayList<String> splits = getSplits(possibleSplits);
 			// display the splits
-			printSplits(counter, splits);
+			printSplits(txProfile, splits);
 			// apply the split to the vertex
 			applySplit(v.getSigma(), splits, txProfile);
 			//increment vertex counter
-			counter++;
 			txProfile++;
 		}
+		// need to add probabilistic rhos and compute vertex weight
+		splitGraph = addProbRhos(splitGraph);
 		// build metis graph
 		LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> metisGraph = buildMETISGraph();
 		// print matrix
@@ -455,22 +454,19 @@ public class Splitter {
 	private void addVertex(GraphVertex newVertex, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// edges found during rho comparison
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
-	
 		// need to compare newly added vertex to every other vertex
 		HashMap<VertexRho, VertexPhi> rhosV = newVertex.getSigma().getRhos();
-		
+		// compare rho by rho
 		for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
 			String rhoV = entryV.getKey().getRho();
 			String phiV = entryV.getValue().getPhiAsString();
-			
-			// dont compare remote rhos
-			if (entryV.getKey().isRemote()) continue;
-			
+			// handle prob rhos later
+			if (entryV.getKey().getProb() < 0.6) continue;
 			// if replication is enable and read only table, dont compare
 			if (replication && VertexPhi.checkTableReadOnly(Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)))) {
 				continue;
 			}
-			
+			// compare new vertex to all vertices in the graph to ensure they are disjoint 
 			for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
 				GraphVertex gv = node.getKey();
 				// obtain all rhos in previously existing vertex
@@ -484,8 +480,9 @@ public class Splitter {
 					String phiGV = entryGV.getValue().getPhiAsString();
 					// if rhos are not on same table they do need to be compared
 					if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
-							|| entryGV.getKey().isRemote()) 
+							|| entryGV.getKey().isRemote()) {
 						continue;
+					}
 					//compute intersection between rhos given the phis
 					String result = null;
 					String phiVQ = preparePhi(phiV, entryV.getKey().getRhoUpdate());
@@ -493,30 +490,33 @@ public class Splitter {
 					result = rhoIntersection(rhoV, rhoGV, phiVQ, phiGVQ, entryV.getKey().getVariables(), entryGV.getKey().getVariables());
 					// check the intersection results
 					if (result.equals("False")) {
-						// no overlap so no subtraction needed
+						// no overlap so no subtraction needed, simply update weight
 						continue;
 					}
 					else {
 						// collision found, perform rho logical subtraction
 						entryV.getKey().updateRho(result);
 						// add edge between vertices whose rhos-phi overlapped
-						GraphEdge edgeSrcV = new GraphEdge(newVertex, gv,rhoV, rhoGV, 
+						GraphEdge edgeSrcV = new GraphEdge(newVertex.getVertexID(), gv.getVertexID(),rhoV, 
 								entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup(), entryV.getKey().getProb());
 						foundEdges.add(edgeSrcV);
+						// check if the rho is now fully remote after the update
+						entryV.getKey().checkRemoteAfterUpdate(entryV.getKey(), entryV.getValue());
+						if (entryV.getKey().isRemote())
+							break;
 					}
 				}
+				// if the new vertex's rho under analysis is already empty it does not need further analysis
+				if (entryV.getKey().isRemote())
+					break;
 			}
 		}
 		// in this stage the new vertex has been compared and updated regarding all previous vertices
 		graph.put(newVertex, new ArrayList<>());
-		
 		// add its edges to the graph as well
 		for (GraphEdge e : foundEdges) {
-			addEdge(e, graph);
+			addEdge(newVertex, e, graph);
 		}
-		// compute vertex weight
-		newVertex.computeVertexWeight();	
-		
 		System.out.println("Subvertex added successfully");
 	}
 	
@@ -554,7 +554,6 @@ public class Splitter {
 		// build mathematica query with simplifier
 		String query = "Reduce[" + "Simplify[(" + rhoQuery + ") && ("  + phiQuery + ")]" + ", " 
 					+ variables + ", Integers, Backsubstitution -> True]";	
-			
 		
 		String result = link.evaluateToOutputForm(query, 0);
 		
@@ -572,8 +571,8 @@ public class Splitter {
 	}
 
 	// method used to add an edge to a graph
-	private void addEdge(GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
-		graph.get(edge.getSrc()).add(edge);
+	private void addEdge(GraphVertex v, GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+		graph.get(v).add(edge);
 	}
 	
 	// method used to build adjacency matrix for graph presenting
@@ -587,7 +586,7 @@ public class Splitter {
 			// go through all the edges linked to a vertex
 			for (GraphEdge e : vertex.getValue()) {
 				// get edge destiny
-				int edgeDst = e.getDest().getVertexID();
+				int edgeDst = e.getDest();
 				// get edge weight
 				int edgeWeight = e.getEdgeWeight();
 				// add edge to the metis graph
@@ -743,6 +742,95 @@ public class Splitter {
 				splits.add(commonVar);
 		}
 		return splits;
+	}
+	
+	// method that adds probabilistic edges and computes final vertex weights
+	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> addProbRhos(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+		// create new graph with updated sigmas resultant from prob rhos
+		LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> newGraph = new LinkedHashMap<>();
+		// go over each vertex in the graph
+		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> nodeV: graph.entrySet()) {
+			GraphVertex v = nodeV.getKey();
+			// list of prob edges found
+			ArrayList<GraphEdge> foundEdges = new ArrayList<>();
+			// go over each rho in the vertex
+			for (Map.Entry<VertexRho, VertexPhi> entryV: v.getSigma().getRhos().entrySet()) {
+				
+				String rhoV = entryV.getKey().getRho();
+				String phiV = entryV.getValue().getPhiAsString();
+				
+				// check if prob rhi, skip non prob rhos handled before
+				if (entryV.getKey().getProb() >= 0.5) 
+					continue;
+				// check if read only table that is being replicated
+				if (replication && VertexPhi.checkTableReadOnly(Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)))) {
+					continue;
+				}
+				
+				// compare current vertex to all vertices in the graph to deal with prob rhos
+				for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> nodeGV : graph.entrySet()) {
+					// don't compare vertex against itself
+					if (nodeGV.getKey().getVertexID() == (nodeV.getKey().getVertexID()))
+						continue;
+					
+					GraphVertex gv = nodeGV.getKey();
+					// obtain all rhos in other existing vertex
+					HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
+					for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
+						// skip low prob rho
+						if (entryGV.getKey().getProb() < 0.5) {
+							continue;
+						}
+						String rhoGV = entryGV.getKey().getRho();
+						String phiGV = entryGV.getValue().getPhiAsString();
+						// if rhos are not on same table they do need to be compared
+						if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
+								|| entryGV.getKey().isRemote()) {
+							continue;
+						}
+						//compute intersection between rhos given the phis
+						String result = null;
+						String phiVQ = preparePhi(phiV, entryV.getKey().getRhoUpdate());
+						String phiGVQ = preparePhi(phiGV, entryGV.getKey().getRhoUpdate());
+						result = rhoIntersection(rhoV, rhoGV, phiVQ, phiGVQ, entryV.getKey().getVariables(), entryGV.getKey().getVariables());
+						// check the intersection results
+						if (result.equals("False")) {
+							// no overlap so no subtraction needed, simply update weight
+							continue;
+						}
+						else {
+							// collision found, perform rho logical subtraction
+							entryV.getKey().updateRho(result);
+							entryV.getKey().checkRemoteAfterUpdate(entryV.getKey(), entryV.getValue());
+							// add edge between vertices whose rhos-phi overlapped
+							GraphEdge edgeSrcV = new GraphEdge(v.getVertexID(), gv.getVertexID(),rhoV, 
+									entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup(), entryV.getKey().getProb());
+							foundEdges.add(edgeSrcV);
+							// check if the rho is now fully remote after the update
+							if (entryV.getKey().isRemote())
+								break;
+						}
+					}
+					// if the vertex rho under analysis is already empty it does not need further analysis
+					if (entryV.getKey().isRemote())
+						break;
+				}
+			}
+			// place a vertex in a new graph that contains all previously detected edges with the new updates
+			newGraph.put(v, new ArrayList<>());
+			for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> oldVertice : graph.entrySet()) {
+				if (v.getVertexID() == oldVertice.getKey().getVertexID()) {
+					newGraph.get(v).addAll(oldVertice.getValue());
+				}
+			}
+			// add its edges to the graph as well
+			for (GraphEdge e : foundEdges) {
+				addEdge(v, e, newGraph);
+			}
+			// compute vertex weight
+			v.computeVertexWeight(); 
+		}
+		return newGraph;
 	}
 }
 	

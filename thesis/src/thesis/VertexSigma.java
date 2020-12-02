@@ -16,7 +16,6 @@ public class VertexSigma {
 			this.rhos.put(rhoCopy, phiCopy);
 		}
 	}
-	
 	// default constructor for vertex sigma, built from a set of rho strings given by SE
 	public VertexSigma(HashSet<String> rhos) {
 		for (String rho: rhos) {
@@ -80,8 +79,10 @@ public class VertexSigma {
 	// debug purpose, prints all the sigma's rhos and phis
 	public void printSigma() {
 		for (Map.Entry<VertexRho, VertexPhi> entry: rhos.entrySet()) {
-			entry.getKey().printRho();
-			entry.getValue().printPhi();
+			if (!entry.getKey().isRemote()) {
+				entry.getKey().printRho();
+				entry.getValue().printPhi();
+			}
 		}
 	}
 	
