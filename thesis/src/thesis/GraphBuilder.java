@@ -67,7 +67,7 @@ public class GraphBuilder {
 		
 		System.out.println("Running graph partitioner");
 		
-		Partitioner partitioner = new Partitioner(graph);
+		new Partitioner(graph);
 		
 		Partitioner.partitionGraph();   
 

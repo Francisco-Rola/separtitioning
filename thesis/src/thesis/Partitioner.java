@@ -26,7 +26,7 @@ public class Partitioner {
 		String command = "gpmetis metis.txt " + noParts;
 		// run the command
         try {
-			Process proc = Runtime.getRuntime().exec(command);
+			Runtime.getRuntime().exec(command);
 			// output goes to a file
 			File metisOut = new File("metis.txt.part."+ noParts);
 		      Scanner myReader = new Scanner(metisOut);

@@ -3,7 +3,6 @@ package thesis;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.StringJoiner;
 
 import com.wolfram.jlink.KernelLink;
 
@@ -52,24 +51,6 @@ public class GraphVertex {
 	// getter for vertex sigma
 	public VertexSigma getSigma() {
 		return sigma;
-	}
-	
-	// transaction likelihood information
-	private static double getTXLikelihood(int txProfile) {
-		// payment
-		if (txProfile == 1) {
-			return 0.431;
-		}
-		else if (txProfile == 2) {
-			return 0.445;
-		}
-		else if (txProfile == 3) {
-			return 0.042;
-		}
-		else {
-			System.out.println("Invalid transaction profile");
-			return 0;
-		}
 	}
 	
 	// method that computes vertex weight, i.e. how many data items it stores
