@@ -47,10 +47,28 @@ public class GraphEdge {
 		// get mathematica link
 		KernelLink link = MathematicaHandler.getInstance();
 		// compute how many inputs are in the overlap
-		String query = "Length[Flatten[Table[" + intersection + ", " + phiRange + "]]]";
+		String query = "Flatten[Table[" + intersection + ", " + phiRange + "]]";
 		String result = link.evaluateToOutputForm(query, 0);
+		int noCollisions = countMatches(result, "False");
 		int probConverted = (int) (prob * 100);
-		return Integer.parseInt(result) * probConverted;
+		return noCollisions * probConverted;
+	}
+	
+	// methos used to count how many times a substring appears in a string
+	private int countMatches(String str, String query) {
+		int lastIndex = 0;
+		int count = 0;
+		
+		while(lastIndex != -1){
+
+		    lastIndex = str.indexOf(query,lastIndex);
+
+		    if(lastIndex != -1){
+		        count ++;
+		        lastIndex += query.length();
+		    }
+		}
+		return count;
 	}
 	
 	// debug and presentation purposes

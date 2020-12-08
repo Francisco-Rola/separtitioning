@@ -141,12 +141,28 @@ public class GraphVertex {
 		// check items accessed by rho given phi
 		String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
 		String result = link.evaluateToOutputForm(query, 0);
-		result = result.replaceAll("[, ]*False[, ]*", "");
-		// if empty result then this rho is remote
-		if (result.equals("{}")) {
+		// check if any items left on rho
+		if (countMatches(result, "True") == 0) {
 			//System.out.println("Empty rho, removing");
 			rho.setRemote();
 		}
+	}
+	
+	// methos used to count how many times a substring appears in a string
+	private int countMatches(String str, String query) {
+		int lastIndex = 0;
+		int count = 0;
+		
+		while(lastIndex != -1){
+
+		    lastIndex = str.indexOf(query,lastIndex);
+
+		    if(lastIndex != -1){
+		        count ++;
+		        lastIndex += query.length();
+		    }
+		}
+		return count;
 	}
 	
 	// debug and presentation print
