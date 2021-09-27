@@ -1,0 +1,114 @@
+symbolic.min_int=-2147483648
+symbolic.min_long=-9223372036854775808
+symbolic.min_short=-32768
+symbolic.min_byte=-128
+symbolic.min_char=0
+symbolic.max_int=2147483647
+symbolic.max_long=9223372036854775807
+symbolic.max_short=32767
+symbolic.max_byte=127
+symbolic.max_char=65535
+symbolic.min_double=4.9E-324
+symbolic.max_double=1.7976931348623157E308
+Begin of execution
+JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All rights reserved.
+
+
+====================================================== system under test
+tpcc.MainDelivery.main()
+
+====================================================== search started: 19-07-2021 12:07
+[PC_1_2521314] ROOT
+  --> [PC_5_-1984104348] 
+  --> [RWSET_-1709921686] 
+  --> [PC_2_-1402699861] 
+  <== [PC_0_2521314] 
+
+[PC_2_-1402699861] GET-0@Tpcc:428 != -1
+  --> [PC_3_819286998] 
+  --> [RWSET_1995476575] 
+  <== [PC_1_2521314] 
+
+[RWSET_1995476575] 
+R: 7->(((warehouse_id * 100) + (GET-0@Tpcc:426 * 1000000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 50000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 140000)) + 1), 6->(((warehouse_id * 100) + (GET-0@Tpcc:426 * 10000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 20000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 80000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 130000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 110000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 100000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 60000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 40000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 10000)) + 1), 3->(((warehouse_id * 100) + (GET-1@Tpcc:441(6->(((warehouse_id * 100) + (GET-0@Tpcc:426 * 10000)) + 1)->3) * 10000)) + 1), 10->(warehouse_id * 100), 5->((warehouse_id * 100) + (GET-1@Tpcc:426(10->(warehouse_id * 100)->1) * 10000)), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 30000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 120000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 70000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 90000)) + 1)
+W: 7->(((warehouse_id * 100) + (GET-0@Tpcc:426 * 1000000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 50000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 140000)) + 1), 6->(((warehouse_id * 100) + (GET-0@Tpcc:426 * 10000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 20000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 80000)) + 1), 5->(((warehouse_id * 100) + (GET-0@Tpcc:426 * 10000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 130000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 110000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 100000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 60000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 40000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 10000)) + 1), 3->(((warehouse_id * 100) + (GET-1@Tpcc:441(6->(((warehouse_id * 100) + (GET-0@Tpcc:426 * 10000)) + 1)->3) * 10000)) + 1), 10->((warehouse_id * 100) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 30000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 120000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 70000)) + 1), 7->(((warehouse_id * 100) + ((GET-0@Tpcc:426 * 1000000) + 90000)) + 1)
+  <== [PC_2_-1402699861] 
+
+[PC_3_819286998] GET-1@Tpcc:428 != -1 
+  --> [RWSET_114806468] 
+  <== [PC_2_-1402699861] 
+
+[RWSET_114806468] 
+R: 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 60000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 50000)), 6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 130000)), 7->((warehouse_id * 100) + (GET-1@Tpcc:426 * 1000000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 90000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 30000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 120000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 20000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 140000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 40000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 70000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 110000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 100000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 80000)), 3->((warehouse_id * 100) + (GET-2@Tpcc:441(6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000))->3) * 10000))
+W: 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 60000)), 5->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 50000)), 6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 130000)), 7->((warehouse_id * 100) + (GET-1@Tpcc:426 * 1000000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 90000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 30000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 120000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 20000)), 10->(warehouse_id * 100), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 140000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 40000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 70000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 110000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 100000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 80000)), 3->((warehouse_id * 100) + (GET-2@Tpcc:441(6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000))->3) * 10000))
+  <== [PC_3_819286998] 
+
+[RWSET_-1709921686] 
+R: 5->(((warehouse_id * 100) + (GET-0@Tpcc:426(10->((warehouse_id * 100) + 1)->1) * 10000)) + 1), 10->((warehouse_id * 100) + 1)
+  <== [PC_1_2521314] 
+
+[PC_5_-1984104348] GET-0@Tpcc:428 = -1
+  --> [RWSET_493331366] 
+  --> [PC_6_819286998] 
+  <== [PC_1_2521314] 
+
+[PC_6_819286998] GET-1@Tpcc:428 != -1 
+  --> [RWSET_196003274] 
+  <== [PC_5_-1984104348] 
+
+[RWSET_196003274] 
+R: 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 60000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 50000)), 6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 130000)), 7->((warehouse_id * 100) + (GET-1@Tpcc:426 * 1000000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 90000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 30000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 120000)), 3->((warehouse_id * 100) + (GET-5@Tpcc:441(6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000))->3) * 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 20000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 140000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 40000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 70000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 110000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 100000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 80000))
+W: 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 60000)), 5->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 50000)), 6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 130000)), 7->((warehouse_id * 100) + (GET-1@Tpcc:426 * 1000000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 90000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 30000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 120000)), 3->((warehouse_id * 100) + (GET-5@Tpcc:441(6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000))->3) * 10000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 20000)), 10->(warehouse_id * 100), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 140000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 40000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 70000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 110000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 100000)), 7->((warehouse_id * 100) + ((GET-1@Tpcc:426 * 1000000) + 80000))
+  <== [PC_6_819286998] 
+
+[RWSET_493331366] 
+R: 10->(warehouse_id * 100), 5->((warehouse_id * 100) + (GET-1@Tpcc:426(10->(warehouse_id * 100)->1) * 10000))
+  <== [PC_5_-1984104348] 
+
+Total Number of Merges: 0
+IR=GET-1@Tpcc:426=10->(warehouse_id * 100)->1
+IR=GET-2@Tpcc:441=6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000))->3
+IR=GET-5@Tpcc:441=6->((warehouse_id * 100) + (GET-1@Tpcc:426 * 10000))->3
+IR=GET-0@Tpcc:426=10->((warehouse_id * 100) + 1)->1
+IR=GET-1@Tpcc:441=6->(((warehouse_id * 100) + (GET-0@Tpcc:426 * 10000)) + 1)->3
+Time spent Symbolic Execution: 0.324
+Time spent Pruning: 39935.218
+Number of Different Read and Write-Set: 5
+Number of Leaves Before:0
+Max Depth: 7
+Min Depth: 0
+times 0:	362780
+times 1:	2718421
+times 2:	3425135
+times 3:	32229
+times 4:	0
+times 5:	1993139
+times 6:	27963919
+times 7:	42076429
+times 8:	2765294
+times 9:	650258
+times 10:	129963
+times 11:	296549
+times 12:	3420185
+times 13:	3170
+times 14:	281325
+times 15:	0
+indirect_variables: 0
+mapStateToNode: 3
+mapStateToRWSet: 0
+mapRWSetToNode: 5
+
+====================================================== results
+no errors detected
+
+====================================================== statistics
+elapsed time:       00:00:00
+states:             new=8,visited=0,backtracked=8,end=4
+search:             maxDepth=4,constraints=0
+choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=4
+heap:               new=640,released=94,maxLive=638,gcCycles=8
+instructions:       6069
+max memory:         117MB
+loaded code:        classes=64,methods=1321
+
+====================================================== search finished: 19-07-2021 12:07

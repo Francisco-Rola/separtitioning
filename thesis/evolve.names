@@ -1,0 +1,10 @@
+Partition.	|
+
+WarehouseId:	continuous.
+DistrictId:	continuous.
+CustomerId:	continuous.
+StockLevel:	continuous.
+NewOrder:	continuous.
+Order:	continuous.
+Orderline:	continuous.
+Partition:	0,1.

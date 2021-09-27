@@ -212,6 +212,7 @@ public class SEParser {
 					readSet.add(probRhos[1]);
 				}
 				else {
+					formula = formula.replaceAll("ol_supply_w_id\\[\\d+\\]", "warehouse_id");
 					readSet.add(formula);
 				}
 				
@@ -221,6 +222,8 @@ public class SEParser {
 		}
 		return node;
 	}
+	
+	
 	
 	// method to obtain writeSet for a given line
 	public SETreeNode getWSet(String line, SETreeNode node) {
@@ -240,6 +243,7 @@ public class SEParser {
 					writeSet.add(probRhos[1]);
 				}
 				else {
+					formula = formula.replaceAll("ol_supply_w_id\\[\\d+\\]", "warehouse_id");
 					writeSet.add(formula);
 				}
 			}
@@ -256,7 +260,7 @@ public class SEParser {
 	
 	// trick method to fix new order file to include prob rhos
 	private String addProbRho(String rho) {
-		if (rho.startsWith("9->")) {
+		/*if (rho.startsWith("9->")) {
 			String finalRho = rho + "#99|";
 			String copy = new String(rho);
 			// find which item is rho tied to
@@ -303,7 +307,7 @@ public class SEParser {
 			copy = copy.replaceFirst("warehouse_id", "ol_supply_w_id" + "[" + itemID + "]");
 			finalRho += copy + "#1";
 			return finalRho;
-		}
+		}*/
 		return null;
 	}
 	
@@ -311,7 +315,7 @@ public class SEParser {
 	// main for debug purposes
 	public static void main(String[] args) {
 		try {
-			String[] files = {"new_order_final.txt"};
+			String[] files = {"delivery_new.txt"};
 			new SEParser(files);
 			int vertexCount = 0;
 			for(Vertex vertex : vertices) {

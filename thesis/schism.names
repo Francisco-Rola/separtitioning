@@ -1,0 +1,6 @@
+Partition.	|
+
+WarehouseId:	continuous.
+DistrictId:	continuous.
+CustomerId:	continuous.
+Partition:	0,1.

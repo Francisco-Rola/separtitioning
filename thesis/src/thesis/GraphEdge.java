@@ -1,5 +1,8 @@
 package thesis;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import com.wolfram.jlink.KernelLink;
 
 // class that represents a edge in the graph
@@ -17,12 +20,12 @@ public class GraphEdge {
 	private String edgePhi = null;
 	
 	// default constructor for graph edge
-	public GraphEdge(int src, int dest, String rhoSrc, String intersection, String phiRange, double prob) {
+	public GraphEdge(int src, int dest, String rhoSrc, String intersection, String phiRange, double prob, int value) {
 		this.src = src;
 		this.dest = dest;
 		this.rhoSrc = rhoSrc;
 		this.edgePhi = intersection;
-		this.edgeWeight = computeEdgeWeight(intersection, phiRange, prob);
+		this.edgeWeight = computeEdgeWeight(intersection, phiRange, prob) * value;
 		System.out.println("Edge S:" + src + " D:" + dest+
 				" T:" + rhoSrc.substring(0, rhoSrc.indexOf(">") - 1) +  " W:" +  this.edgeWeight);
 	}
@@ -47,10 +50,13 @@ public class GraphEdge {
 		// get mathematica link
 		KernelLink link = MathematicaHandler.getInstance();
 		// compute how many inputs are in the overlap
+		Instant start = Instant.now();
 		String query = "Flatten[Table[" + intersection + ", " + phiRange + "]]";
 		String result = link.evaluateToOutputForm(query, 0);
+		Instant end = Instant.now();
+		System.out.println("Edge weight computation time: " + Duration.between(start, end).toMillis());
 		int noCollisions = countMatches(result, "False");
-		int probConverted = (int) (prob * 100);
+		int probConverted = (int) (prob * 1);
 		return noCollisions * probConverted;
 	}
 	

@@ -1,0 +1,73 @@
+symbolic.min_int=-100
+symbolic.min_long=-9223372036854775808
+symbolic.min_short=-32768
+symbolic.min_byte=-128
+symbolic.min_char=0
+symbolic.max_int=100
+symbolic.max_long=9223372036854775807
+symbolic.max_short=32767
+symbolic.max_byte=127
+symbolic.max_char=65535
+symbolic.min_double=4.9E-324
+symbolic.max_double=1.7976931348623157E308
+Begin of execution
+JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All rights reserved.
+
+
+====================================================== system under test
+tpcc.MainPayment.main()
+
+====================================================== search started: 19-07-2021 12:08
+-- start of payment
+-- end of payment
+[PC_1_2521314] ROOT
+  --> [RWSET_2059946360] 
+  <== [PC_0_2521314] 
+
+[RWSET_2059946360] 
+R: 3->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 2->(district_id + (warehouse_id * 100)), 1->warehouse_id
+W: 3->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 2->(district_id + (warehouse_id * 100)), 1->warehouse_id, 4->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))
+  <== [PC_1_2521314] 
+
+Total Number of Merges: 0
+Time spent Symbolic Execution: 0.247
+Time spent Pruning: 14.253
+Number of Different Read and Write-Set: 1
+Number of Leaves Before:0
+Max Depth: 1
+Min Depth: 0
+times 0:	299111
+times 1:	1089037
+times 2:	1509481
+times 3:	30175
+times 4:	0
+times 5:	1465988
+times 6:	15768982
+times 7:	21593484
+times 8:	2762125
+times 9:	222723
+times 10:	81232
+times 11:	9436
+times 12:	577662
+times 13:	1144
+times 14:	181008
+times 15:	0
+indirect_variables: 0
+mapStateToNode: 0
+mapStateToRWSet: 0
+mapRWSetToNode: 1
+
+====================================================== results
+no errors detected
+
+====================================================== statistics
+elapsed time:       00:00:00
+states:             new=2,visited=0,backtracked=2,end=1
+search:             maxDepth=2,constraints=0
+choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=1
+heap:               new=644,released=25,maxLive=638,gcCycles=2
+instructions:       4054
+max memory:         117MB
+loaded code:        classes=64,methods=1321
+
+====================================================== search finished: 19-07-2021 12:08

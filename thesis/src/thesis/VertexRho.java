@@ -15,10 +15,22 @@ public class VertexRho {
 	private String rho = null;
 	// update resultant either from logical subtraction to ensure disjointness or splitting
 	private String update = null;
+	// table associated to the rho
+	private String table = null;
 	// probability of tho being used
 	private double prob = 1.0;
 	// set of variables comprised by this rho
 	private HashSet<String> variables = null;
+	// value associated to a rho in case it is repeated over the verted OPTIMIZATION
+	private int value = 1;
+	
+	public int getValue() {
+		return this.value;
+	}
+	
+	public void setValue() {
+		this.value++;
+	}
 	
 	// default vertex rho constructor, receives string as input
 	public VertexRho(String rho) {
@@ -38,11 +50,14 @@ public class VertexRho {
 			variables.add((m.group(1)));
 		}
 		this.variables = variables;
+		
+		this.table = rho.substring(0, rho.indexOf(">") - 1);
 	}
 	
 	// rho constructor for deep copy purpose
 	public VertexRho(VertexRho vertexRho) {
 		this.remote = vertexRho.isRemote();
+		this.table = vertexRho.getTable();
 		this.prob = vertexRho.getProb();
 		this.rho = new String(vertexRho.getRho());
 		if (vertexRho.getRhoUpdate() != null)
@@ -54,6 +69,11 @@ public class VertexRho {
 	// get string formula associated with this vertex rho
 	public String getRho() {
 		return this.rho;
+	}
+	
+	// get table associated to rho
+	public String getTable() {
+		return this.table;
 	}
 	
 	// method used to split a rho based on a table range split

@@ -9,11 +9,27 @@ public class VertexPhi {
 	// set of variables and its ranges
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	// scale factor for TPC -C
-	private static int w = 1;
-	private static int order = 9;
+	private static int w = 9;
+	private static int order = 99;
 	private static int customer = 29;
 	private static int district = 9;
 	
+	// getterrs for scaling factors
+	public static int getScalingFactorW() {
+		return w + 1;
+	}
+	
+	public static int getScalingFactorD() {
+		return district + 1;
+	}
+	
+	public static int getScalingFactorC() {
+		return customer + 1;
+	}
+	
+	public static int getScalingFactorO() {
+		return order + 1;
+	}
 	
 	// constructor for deep copy purpose
 	public VertexPhi(VertexPhi vertexPhi) {
@@ -27,6 +43,9 @@ public class VertexPhi {
 	
 	// default constructor for vertex phi
 	public VertexPhi (HashSet<String> rhoVariables) {
+		
+		if (rhoVariables.size() == 0) System.out.println("bug");
+		
 		// initialize variables map
 		this.variables = new HashMap<>();
 		// from all the variables in the corresponding rho, initialize its range
@@ -64,6 +83,8 @@ public class VertexPhi {
 				System.out.println("Missing case -> " + variable);
 			}
 		}
+		if (this.variables.size() == 0) System.out.println("bug2");
+
 	}
 	
 	// method using to extract set of variables in a phi and its ranges

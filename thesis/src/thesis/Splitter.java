@@ -3,6 +3,8 @@ package thesis;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +23,7 @@ public class Splitter {
 	// how many parts does a table split go for
 	int tableSplitFactor = 2;
 	// how many splits does an input split go for, at most
-	int inputSplitFactor = 10;
+	int inputSplitFactor = 2;
 	// no edges in final graph
 	int noEdges = 0;
 	// no vertices in final graph
@@ -53,9 +55,9 @@ public class Splitter {
 		// need to add probabilistic rhos and compute vertex weight
 		splitGraph = addProbRhos(splitGraph);
 		// build metis graph
-		LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> metisGraph = buildMETISGraph();
+		LinkedHashMap<Integer, Pair<Integer, HashMap<Integer, Integer>>> metisGraph = buildMETISGraph();
 		// print matrix
-		printMatrix(metisGraph);
+		//printMatrix(metisGraph);
 		// print METIS file
 		printMETISfile(metisGraph);
 		return splitGraph;
@@ -69,6 +71,8 @@ public class Splitter {
 		for (Map.Entry<VertexRho, VertexPhi> entry : rhos.entrySet()) {
 			Pair<VertexRho, VertexPhi> rhoPhi = new Pair<VertexRho, VertexPhi>(entry.getKey(), entry.getValue());
 			Integer tableNo = Integer.parseInt(rhoPhi.getKey().getRho().substring(0, rhoPhi.getKey().getRho().indexOf(">") - 1));
+			// ignore extra indexes TPC C
+			if (tableNo > 9) continue;
 			// if buvcket exists for given table, add to it
 			if (buckets.containsKey(tableNo)) {
 				buckets.get(tableNo).add(rhoPhi);
@@ -305,6 +309,8 @@ public class Splitter {
 
 	// method that applies a given split to a given vertex
 	private void applySplit(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
+		
+		
 		// generate all the new sigmas for splits
 		ArrayList<VertexSigma> newSigmas = generateSigmas(sigma, splits, txProfile);
 		// go through sigmas and create new vertices
@@ -421,7 +427,7 @@ public class Splitter {
 						new Pair<Integer, Integer>(inputRange.getKey(), cutoff - 1));
 				else 
 					rhoPhi.getValue().getPhi().put(splitParam, 
-							new Pair<Integer, Integer>(cutoff * section, (cutoff * (section) + 1) - 1));
+							new Pair<Integer, Integer>(cutoff * section, (cutoff * (section + 1) - 1)));
 			}
 		}
 		return sigma;
@@ -498,8 +504,8 @@ public class Splitter {
 						entryV.getKey().updateRho(result);
 						// add edge between vertices whose rhos-phi overlapped
 						GraphEdge edgeSrcV = new GraphEdge(newVertex.getVertexID(), gv.getVertexID(),rhoV, 
-								entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup(), entryV.getKey().getProb());
-						foundEdges.add(edgeSrcV);
+								entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup(), entryV.getKey().getProb(), entryV.getKey().getValue());
+						if (edgeSrcV.getEdgeWeight() != 0) foundEdges.add(edgeSrcV);
 						// check if the rho is now fully remote after the update
 						entryV.getKey().checkRemoteAfterUpdate(entryV.getKey(), entryV.getValue());
 						if (entryV.getKey().isRemote())
@@ -550,13 +556,17 @@ public class Splitter {
 		}
 		// remove extra characters and finalize string
 		variables = variables.substring(0, variables.length() - 2) + "}";
-		
+		Instant start = Instant.now();
 		// build mathematica query with simplifier
 		String query = "Reduce[" + "Simplify[(" + rhoQuery + ") && ("  + phiQuery + ")]" + ", " 
 					+ variables + ", Integers, Backsubstitution -> True]";	
 		
 		String result = link.evaluateToOutputForm(query, 0);
-		
+		Instant end = Instant.now();
+		if (Duration.between(start, end).toMillis() > 100) {
+			System.out.println("Intersection computation time: " + Duration.between(start, end).toMillis());
+			System.out.println(query);
+		}
 		// debug cases, exceptions
 		if (result.equals("$Failed"))
 			System.out.println("Failed rho intersection query ->" + query);
@@ -576,9 +586,9 @@ public class Splitter {
 	}
 	
 	// method used to build adjacency matrix for graph presenting
-	private LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> buildMETISGraph() {
+	private LinkedHashMap<Integer, Pair<Integer,HashMap<Integer, Integer>>> buildMETISGraph() {
 		// final graph for METIS
-		LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> METISGraph = new LinkedHashMap<>();
+		LinkedHashMap<Integer, Pair<Integer,HashMap<Integer, Integer>>> METISGraph = new LinkedHashMap<>();
 		// iterate through every vertex
 		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> vertex : splitGraph.entrySet()) {
 			// map each edge destiny with a weight
@@ -600,10 +610,28 @@ public class Splitter {
 			}
 			// increment number of vertices
 			this.noVertices++;
-			METISGraph.put(new Pair<Integer, Integer>(vertex.getKey().getVertexID(), vertex.getKey().getVertexWeight()), edges);
+			METISGraph.put(vertex.getKey().getVertexID(), new Pair<Integer, HashMap<Integer, Integer>>(vertex.getKey().getVertexWeight(),edges));
 		}
+		
+		for (Map.Entry<Integer, Pair<Integer,HashMap<Integer, Integer>>> entry : METISGraph.entrySet()) {
+			int edgeDest = entry.getKey();
+			
+			for (Map.Entry<Integer, Integer> edge : entry.getValue().getValue().entrySet()) {
+				
+				HashMap<Integer, Integer> graphEdges = METISGraph.get(edge.getKey()).getValue();
+				
+				if (graphEdges.containsKey(edgeDest)) {
+					graphEdges.put(edgeDest, graphEdges.get(edgeDest) + edge.getValue());
+				}
+				else {
+					this.noEdges++;
+					graphEdges.put(edgeDest, edge.getValue());
+
+				}
+			}
+		}
+		
 		// edges are bidirectional
-		this.noEdges = this.noEdges / 2;
 		return METISGraph;
 	}
 	
@@ -623,10 +651,11 @@ public class Splitter {
 			}
 			System.out.print("\n");
 		}
+		System.out.println("----------------");
 	}
 	
 	// method to print input file for METIS given a graph
-	private void printMETISfile(LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> graph) {
+	private void printMETISfile(LinkedHashMap<Integer, Pair<Integer, HashMap<Integer, Integer>>> graph) {
 		// create METIS file
 		File metis = new File("metis.txt");
 		try {
@@ -643,14 +672,14 @@ public class Splitter {
 		try {
 			FileWriter metisFile = new FileWriter("metis.txt");
 			// first line contains no vertices, no edges and type of graph
-			metisFile.append(this.noVertices + " " +this.noEdges + " " + "011\n");
+			metisFile.append(this.noVertices + " " +this.noEdges/2 + " " + "011\n");
 			// iterate through all the vertices in the graph
-			for (Map.Entry<Pair<Integer, Integer>, HashMap<Integer, Integer>> vertex : graph.entrySet()) {
+			for (Map.Entry<Integer, Pair<Integer, HashMap<Integer, Integer>>> vertex : graph.entrySet()) {
 				// get vertex weight
-				int vertexWeight = vertex.getKey().getValue();
+				int vertexWeight = vertex.getValue().getKey();
 				// print vertex line
 				metisFile.append(String.valueOf(vertexWeight));
-				for (Map.Entry<Integer, Integer> edge : vertex.getValue().entrySet()) {
+				for (Map.Entry<Integer, Integer> edge : vertex.getValue().getValue().entrySet()) {
 					// get edge destination
 					int edgeDest = edge.getKey();
 					// get edge weight
@@ -750,7 +779,7 @@ public class Splitter {
 		LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> newGraph = new LinkedHashMap<>();
 		// go over each vertex in the graph
 		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> nodeV: graph.entrySet()) {
-			GraphVertex v = nodeV.getKey();
+			GraphVertex v = nodeV.getKey(); /*
 			// list of prob edges found
 			ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 			// go over each rho in the vertex
@@ -826,11 +855,11 @@ public class Splitter {
 			// add its edges to the graph as well
 			for (GraphEdge e : foundEdges) {
 				addEdge(v, e, newGraph);
-			}
+			}*/
 			// compute vertex weight
-			v.computeVertexWeight(); 
+			v.computeVertexWeight();  // v.compute
 		}
-		return newGraph;
+		return graph; //return new graph
 	}
 }
 	

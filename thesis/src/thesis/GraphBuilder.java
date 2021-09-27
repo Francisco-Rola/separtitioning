@@ -14,7 +14,8 @@ public class GraphBuilder {
 	private static void buildGraph() {
 		try {
 			// obtain vertices from SE tree
-			String[] files = {"payment_final.txt","new_order_final.txt", "delivery_final.txt"};			
+			String[] files = {"payment_new.txt","order_new.txt", "delivery_new.txt"};			
+			//String[] files = {"order_new.txt"};
 			new SEParser(files);
 			// after obtaining vertices from SE need to make them disjoint
 			ArrayList<Vertex> seVertices = SEParser.getVertices();
@@ -53,9 +54,13 @@ public class GraphBuilder {
 	// build graph and feed it to splitter and partitioner
 	public static void main(String[] args) {
 		
+		long startTime = System.currentTimeMillis();
+
 		System.out.println("Running graph builder");
 				
 		buildGraph();
+		
+		printGraph(graph);
 		
 		System.out.println("Running graph splitter");
 								
@@ -67,9 +72,15 @@ public class GraphBuilder {
 		
 		System.out.println("Running graph partitioner");
 		
-		new Partitioner(graph);
+		Partitioner partitioner = new Partitioner(graph);
 		
-		Partitioner.partitionGraph();   
+		partitioner.partitionGraph();   
+		
+	    long stopTime = System.currentTimeMillis();
+
+	    long elapsedTime = stopTime - startTime;
+
+	    System.out.println(elapsedTime); 
 
 	}
 }
