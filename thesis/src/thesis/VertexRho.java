@@ -156,6 +156,9 @@ public class VertexRho {
 	// method that checks if rho becomes remote after an update
 	public void checkRemoteAfterUpdate(VertexRho rho, VertexPhi phi) {
 		// get mathematica endpoint
+		
+		
+		
 		KernelLink link = MathematicaHandler.getInstance(); 
 		
 		String phiQuery = phi.getPhiAsGroup();
@@ -168,6 +171,7 @@ public class VertexRho {
 		String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
 		String result = link.evaluateToOutputForm(query, 0);
 		result = result.replaceAll("[, ]*False[, ]*", "");
+		
 		// if empty result then this rho is remote
 		if (result.equals("{}")) {
 			//System.out.println("Empty rho, removing");

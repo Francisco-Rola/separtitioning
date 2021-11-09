@@ -30,6 +30,17 @@ public class GraphEdge {
 				" T:" + rhoSrc.substring(0, rhoSrc.indexOf(">") - 1) +  " W:" +  this.edgeWeight);
 	}
 	
+	// special constructor for different Mathematica format
+	public GraphEdge(int src, int dest, String rhoSrc, int weight, double prob, int value) {
+		this.src = src;
+		this.dest = dest;
+		this.rhoSrc = rhoSrc;
+		this.edgePhi = "Mathematica invalid format";
+		this.edgeWeight = weight * value;
+		System.out.println("Edge S:" + src + " D:" + dest+
+				" T:" + rhoSrc.substring(0, rhoSrc.indexOf(">") - 1) +  " W:" +  this.edgeWeight);
+	}
+	
 	// getter for vertex src
 	public int getSrc() {
 		return src;

@@ -9,9 +9,9 @@ public class VertexPhi {
 	// set of variables and its ranges
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	// scale factor for TPC -C
-	private static int w = 9;
-	private static int order = 99;
-	private static int customer = 29;
+	private static int w = 0;
+	private static int item = 99999;
+	private static int customer = 2999;
 	private static int district = 9;
 	
 	// getterrs for scaling factors
@@ -27,8 +27,8 @@ public class VertexPhi {
 		return customer + 1;
 	}
 	
-	public static int getScalingFactorO() {
-		return order + 1;
+	public static int getScalingFactorI() {
+		return item + 1;
 	}
 	
 	// constructor for deep copy purpose
@@ -67,11 +67,11 @@ public class VertexPhi {
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("oliid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(order));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(item));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("iroliid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(order));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(customer));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("ircustomerid")) {
@@ -118,15 +118,15 @@ public class VertexPhi {
 		// compute max id of each table
 		switch (tableNo) {
 		case 5:
-			return w * 100 + order * 10000 + district;
+			return w * 100 + customer * 10000 + district;
 		case 6:
-			return w * 100 + order * 10000 + district;
+			return w * 100 + customer * 10000 + district;
 		case 7:
-			return w * 100 + order * 10000 + district;
+			return w * 100 + customer * 10000 + district + 15000;
 		case 8:
-			return order;
+			return item;
 		case 9:
-			return w + (order * 100);
+			return w + (item * 100);
 		default:
 			// debug scenario, if needed add more tables
 			System.out.println("\n\nTable range unknown\n\n" + tableNo);
@@ -140,6 +140,11 @@ public class VertexPhi {
 		case 8:
 			// table 8 is ready only
 			return true;
+		case 9:
+			if (w == 0) {
+				return false;
+			}
+			return false;
 		default:
 			// every other table has write accesses
 			return false;

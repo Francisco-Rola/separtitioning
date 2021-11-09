@@ -102,29 +102,73 @@ public class Splitter {
 			// check how many rhos for given table
 			if (entry.getValue().size() == 1) {
 				// only rho for table, must be split using one of its variables
-				splits.add(entry.getValue().iterator().next().getKey().getVariables());
-				possibleSplits.put(entry.getKey(), splits);
-				continue;
+				HashSet<String> possibleVars = entry.getValue().iterator().next().getKey().getVariables();
+				HashSet<String> verifiedVars = new HashSet<>();
+				// check the range of each of the variables
+				for (String possibleVar: possibleVars) {
+					Pair<Integer, Integer> varRange = entry.getValue().iterator().next().getValue().getPhi().get(possibleVar);
+					if (varRange.getValue()-varRange.getKey() > 0) {
+						// in this case this var can be a splitter
+						verifiedVars.add(possibleVar);
+					}
+				}
+				if (!verifiedVars.isEmpty()) {
+					splits.add(verifiedVars);
+					possibleSplits.put(entry.getKey(), splits);
+					continue;
+				}
+				else {
+					// check if replication is wanted
+					if (replication) {
+						// check whether this table is read only
+						if (VertexPhi.checkTableReadOnly(entry.getKey())) {
+							// do not consider this table
+							possibleSplits.remove(entry.getKey());
+							continue;
+						}
+					}
+					else {
+						// table does not have any valid split vars, proceed with table split
+						possibleSplits.remove(entry.getKey());
+						// mark possible splits for table as null to know it is a table split
+						possibleSplits.put(entry.getKey(), null);
+						continue;
+					}
+				}
+				
 			}
 			for (int i = 0; i < entry.getValue().size(); i++) {
 				// if an intersection was found on this table then it has been split
 				if (stop) break;
 				Pair<VertexRho, VertexPhi> rhoPhi1 = entry.getValue().get(i);
-				// skip low prob rhos, consider only yheir more probably counterpart
+				// skip low prob rhos, consider only their more probably counterpart
 				if (rhoPhi1.getKey().getProb() < 0.5) {
 					continue;
 				}
 				for (int j = i + 1; j < entry.getValue().size(); j++) {
 					Pair<VertexRho, VertexPhi> rhoPhi2 = entry.getValue().get(j);
-					// skip low prob rhos, consider only yheir more probably counterpart
+					// skip low prob rhos, consider only their more probably counterpart
 					if (rhoPhi2.getKey().getProb() < 0.5) {
 						continue;
 					}
 					boolean intersection = checkIntersection(rhoPhi1, rhoPhi2);
 					if (!intersection) {
 						// rhos do not overlap, add all the variables that can split them
-						splits.add(rhoPhi1.getKey().getVariables());
-						splits.add(rhoPhi2.getKey().getVariables());
+						HashSet<String> possibleVars = rhoPhi1.getKey().getVariables();
+						HashSet<String> verifiedVars = new HashSet<>();
+						for (String possibleVar: possibleVars) {
+							Pair<Integer, Integer> varRange = rhoPhi1.getValue().getPhi().get(possibleVar);
+							if (varRange.getValue() - varRange.getKey() > 0) 
+								verifiedVars.add(possibleVar);
+						}						
+						possibleVars = rhoPhi2.getKey().getVariables();
+						for (String possibleVar: possibleVars) {
+							Pair<Integer, Integer> varRange = rhoPhi2.getValue().getPhi().get(possibleVar);
+							if (varRange.getValue() - varRange.getKey() > 0) 
+								verifiedVars.add(possibleVar);
+						}
+						splits.add(verifiedVars);
+						
 						possibleSplits.put(entry.getKey(), splits);
 					}
 					else {
@@ -255,7 +299,7 @@ public class Splitter {
 			for (Integer i: toRemove)
 				rhoCoverage.remove(i);
 		}
-		// parameter that caps how many how many split vars a rho can have 
+		// parameter that caps how many split vars a rho can have 
 		int splitFactor = 1;
 		while (!rhoCoverage.isEmpty()) {
 			// obtain alternative splits considering rhos that can be split only by noAlternatives vars
@@ -309,6 +353,12 @@ public class Splitter {
 
 	// method that applies a given split to a given vertex
 	private void applySplit(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
+		// check whether we are in a 1w workload for delivery split
+		if (txProfile == 3 && splits.size() != 1) {
+			GraphVertex gv = new GraphVertex(sigma, txProfile, true);
+			addVertex(gv, splitGraph);
+			return;
+		}
 		
 		
 		// generate all the new sigmas for splits
@@ -465,13 +515,15 @@ public class Splitter {
 		// compare rho by rho
 		for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
 			String rhoV = entryV.getKey().getRho();
-			String phiV = entryV.getValue().getPhiAsString();
 			// handle prob rhos later
 			if (entryV.getKey().getProb() < 0.6) continue;
 			// if replication is enable and read only table, dont compare
 			if (replication && VertexPhi.checkTableReadOnly(Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)))) {
 				continue;
 			}
+			// Do not consider index cost
+			if (Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)) > 9) continue;
+			
 			// compare new vertex to all vertices in the graph to ensure they are disjoint 
 			for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
 				GraphVertex gv = node.getKey();
@@ -491,6 +543,7 @@ public class Splitter {
 					}
 					//compute intersection between rhos given the phis
 					String result = null;
+					String phiV = entryV.getValue().getPhiAsString();
 					String phiVQ = preparePhi(phiV, entryV.getKey().getRhoUpdate());
 					String phiGVQ = preparePhi(phiGV, entryGV.getKey().getRhoUpdate());
 					result = rhoIntersection(rhoV, rhoGV, phiVQ, phiGVQ, entryV.getKey().getVariables(), entryGV.getKey().getVariables());
@@ -498,6 +551,31 @@ public class Splitter {
 					if (result.equals("False")) {
 						// no overlap so no subtraction needed, simply update weight
 						continue;
+					}
+					else if (result.equals("Format")) {
+						// overlap detected but wrong format, need by hand changes
+						String phiUpdated = null;
+						int weight = VertexPhi.getScalingFactorI() / 2;
+						for (Map.Entry<String, Pair<Integer, Integer>> phiToUpdate: entryV.getValue().getPhi().entrySet()) {
+							if (phiToUpdate.getKey().startsWith("oliid")) {
+								phiUpdated = phiToUpdate.getKey();
+								Pair<Integer, Integer> newRange = new Pair<>(0, 0);
+								entryV.getValue().getPhi().put(phiUpdated, newRange);
+								break;
+							}
+						}
+						String update = phiUpdated + " == 0";
+						entryV.getKey().updateRho(update);
+						
+						GraphEdge edgeSrcV = new GraphEdge(newVertex.getVertexID(), gv.getVertexID(),rhoV, 
+								weight, entryV.getKey().getProb(), entryV.getKey().getValue());
+						foundEdges.add(edgeSrcV);
+						entryV.getKey().checkRemoteAfterUpdate(entryV.getKey(), entryV.getValue());
+						if (entryV.getKey().isRemote()) {
+							System.out.println("Remote rho, removing");
+							break;
+						}
+						
 					}
 					else {
 						// collision found, perform rho logical subtraction
@@ -572,11 +650,10 @@ public class Splitter {
 			System.out.println("Failed rho intersection query ->" + query);
 		if (result.contains("C[1]")) {
 			// Mathematica is not working in this case
-			System.out.println("Slow intersection due to negative numbers");
-			System.out.println(query);
-			return "False";
+			//System.out.println("Slow intersection due to Mathematica formatting");
+			//System.out.println(query);
+			return "Format";
 		}
-		
 		return result;
 	}
 
@@ -737,6 +814,13 @@ public class Splitter {
 				Pair<Integer, Integer> varRange = rho1.getValue().getPhi().get(commonVar);
 				// calculate cutoff for new simulated phi
 				int cutoff = (varRange.getValue() - varRange.getKey() + 1) / 2;
+				
+				// variable range is 0 so this variable cannot be a split var
+				if (cutoff == 0) {
+					overlap = true;
+					break;
+				}
+				
 				VertexRho rhoCopy1 = new VertexRho(rho1.getKey());
 				VertexPhi phiCopy1 = new VertexPhi(rho1.getValue());
 				// edit phi for sim 

@@ -65,6 +65,9 @@ public class GraphVertex {
 			if (entry.getKey().getProb() < 0.5) 
 				continue;
 			String table = entry.getKey().getRho().substring(0, entry.getKey().getRho().indexOf(">") - 1);
+			
+			if (Integer.valueOf(table) > 9) continue;
+			
 			String phiQuery = entry.getValue().getPhiAsGroup();
 			String rhoQuery = entry.getKey().getRho().substring(entry.getKey().getRho().indexOf(">") + 1);
 			// check if rho is constrained by logical subtraction
@@ -93,7 +96,9 @@ public class GraphVertex {
 		}
 		
 		// each table has its accesses computed, evaluate size of the access
+		System.out.println("Printing table weight for vertex: " + this.vertexID);
 		for (Map.Entry<String, ArrayList<String>> entry: tableAccesses.entrySet()) {
+			if (Integer.valueOf(entry.getKey()) > 9) continue;
 			String query = "";
 			for (String access: entry.getValue()) {
 				query += access + ", ";

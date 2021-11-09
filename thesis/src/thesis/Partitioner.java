@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 
@@ -14,13 +15,13 @@ import java.util.Scanner;
 public class Partitioner {
 	
 	// no partitions desired 
-	private int noParts = 2;
+	private static int noParts = 2;
 	
 	// graph under partitioning
-	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph;
+	private static LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph;
 	
 	// final merged graph, there should be as many vertices as partitions
-	private LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph = new LinkedHashMap<>();
+	private static LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph = new LinkedHashMap<>();
 	
 	// default constructor for partitioner, receives a graph and stores it
 	public Partitioner(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
@@ -28,7 +29,7 @@ public class Partitioner {
 	}
 
 	// method that invokes METIS to partition graph and prints result
-	public void partitionGraph() {
+	public static void partitionGraph() {
 		// command to run METIS
 		String command = "gpmetis metis.txt " + noParts;
 		// run the command
@@ -62,57 +63,24 @@ public class Partitioner {
 			System.out.println("Error while runnning METIS command");
 			e.printStackTrace();
 		}
-        // at this point we have the mergedGraph ready, need to merge formulas in vertices belonging to same part
-        mergeGraphFormulas(mergedGraph);
         
         // generate file with association between keys and vertex
-        generateAssociations(mergedGraph);
+        //generateAssociations(mergedGraph);
 
 	}
 	
-	public void mergeGraphFormulas(LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph) {
-		// merge the formulas if need be
-	}
 	
-	public void generateAssociations(LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph) {
-		// create a file for C5.0 names
-		File names = new File("evolve.names");
+	
+	public static void generateAssociations(LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph) {
+		
+		int dataThresh = 50;
+		int testThresh = 500;
+		
 		try {
-			if (names.createNewFile()) {
-			    System.out.println("File created: " + names.getName());
-			  } else {
-			    System.out.println("File already exists.");
-			  }
-		} catch (IOException e) {
-			System.out.println("Error while creating Names file!");
-			e.printStackTrace();
-		}
-		// write to C.50 names file
-		try {
-			FileWriter namesFile = new FileWriter("evolve.names");
-			// first line contains name of the relation
-			namesFile.append("Partition.\t|\n\n");
-			namesFile.append("WarehouseId:\tcontinuous.\n");
-			namesFile.append("DistrictId:\tcontinuous.\n");
-			namesFile.append("CustomerId:\tcontinuous.\n");
-			namesFile.append("StockLevel:\tcontinuous.\n");
-			namesFile.append("NewOrder:\tcontinuous.\n");
-			namesFile.append("Order:\tcontinuous.\n");
-			namesFile.append("Orderline:\tcontinuous.\n");
-
-			String partition = "Partition:\t";
-			for (int i = 0; i < noParts; i++) {
-				partition = partition + i + ",";
-			}
-			partition = partition.substring(0,partition.length() - 1);
-			partition += ".";
 			
-			namesFile.append(partition);
 			
-			namesFile.close();
-			
-			// create a file for C5.0 data
-			File data = new File("evolve.data");
+			// create a file for Weka training
+			File data = new File("evolvetrain.arff");
 			try {
 				if (data.createNewFile()) {
 				    System.out.println("File created: " + data.getName());
@@ -120,52 +88,272 @@ public class Partitioner {
 				    System.out.println("File already exists.");
 				  }
 			} catch (IOException e) {
-				System.out.println("Error while creating Data file!");
+				System.out.println("Error while creating train file!");
 				e.printStackTrace();
 			}
-			// write to C.50 data file
-			FileWriter dataFile = new FileWriter("evolve.data");
+			// write to weka train file
+			FileWriter dataFile = new FileWriter("evolvetrain.arff");
+			dataFile.append("@relation 'parts'\n");
+			dataFile.append("@attribute w numeric\n");
+			dataFile.append("@attribute d numeric\n");
+			dataFile.append("@attribute c numeric\n");
+			dataFile.append("@attribute i numeric\n");
+			dataFile.append("@attribute class {0,1}\n");
+			dataFile.append("@data\n");
+			
+			// create a file for C5.0 data
+			File test = new File("evolvetest.arff");
+			try {
+				if (test.createNewFile()) {
+				    System.out.println("File created: " + test.getName());
+				  } else {
+				    System.out.println("File already exists.");
+				  }
+			} catch (IOException e) {
+				System.out.println("Error while creating test file!");
+				e.printStackTrace();
+			}
+			// write to weka test file
+			FileWriter testFile = new FileWriter("evolvetest.arff");
+			testFile.append("@relation 'parts'\n");
+			testFile.append("@attribute w numeric\n");
+			testFile.append("@attribute d numeric\n");
+			testFile.append("@attribute c numeric\n");
+			testFile.append("@attribute i numeric\n");
+			testFile.append("@attribute class {0,1}\n");
+			testFile.append("@data\n");
 
 			// scaling factors
 			int noWarehouses = VertexPhi.getScalingFactorW();
 			int noDistricts = VertexPhi.getScalingFactorD();
+			int noCustomers = VertexPhi.getScalingFactorC();
+			int noItems = VertexPhi.getScalingFactorI();
+			
+			// random for thresholds
+			int randomNum;
+			
 			// generate table 1 -> warehouse keys
+			System.out.println("Generating table 1");
 			for (int w_id = 0; w_id < noWarehouses; w_id++) {
-				// lookup this key, find which vertex it belongs to
-				int keyValue = w_id;
-				String table = "1";
-				String key = String.valueOf(keyValue);
-				int vertex = lookupKey(key, table, mergedGraph);
-				String c50Line = buildC50Line(String.valueOf(w_id), null, null, null, null, null, null,
-						String.valueOf(vertex));
-				dataFile.append(c50Line);
-			}
-			// generate table 2 -> district keys
-			for (int w_id = 0; w_id < noWarehouses; w_id++) {
-				for (int d_id = 0; d_id < noDistricts; d_id++) {
-					int keyValue = (w_id * 100) + d_id;
-					String table = "2";
+				randomNum = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
+				if (randomNum <= dataThresh) {
+					int keyValue = w_id;
+					String table = "1";
 					String key = String.valueOf(keyValue);
 					int vertex = lookupKey(key, table, mergedGraph);
-					String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), null, 
-							null, null, null, null, String.valueOf(vertex));
+					String c50Line = buildC50Line(String.valueOf(w_id), null, null, null,
+							String.valueOf(vertex));
 					dataFile.append(c50Line);
+				}
+				else if (randomNum <= testThresh){
+					int keyValue = w_id;
+					String table = "1";
+					String key = String.valueOf(keyValue);
+					int vertex = lookupKey(key, table, mergedGraph);
+					String c50Line = buildC50Line(String.valueOf(w_id), null, null, null,
+							String.valueOf(vertex));
+					testFile.append(c50Line);
+				}
+			}
+			// generate table 2 -> district keys
+			System.out.println("Generating table 2");
+			for (int w_id = 0; w_id < noWarehouses; w_id++) {
+				for (int d_id = 0; d_id < noDistricts; d_id++) {
+					randomNum = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
+					if (randomNum <= dataThresh) {
+						int keyValue = (w_id * 100) + d_id;
+						String table = "2";
+						String key = String.valueOf(keyValue);
+						int vertex = lookupKey(key, table, mergedGraph);
+						String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), null, 
+								null, String.valueOf(vertex));
+						dataFile.append(c50Line);
+					}
+					else if (randomNum <= testThresh){
+						int keyValue = (w_id * 100) + d_id;
+						String table = "2";
+						String key = String.valueOf(keyValue);
+						int vertex = lookupKey(key, table, mergedGraph);
+						String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), null, 
+								null, String.valueOf(vertex));
+						testFile.append(c50Line);
+					}
+				}
+			}
+			// generate table 3 -> customer keys
+			System.out.println("Generating table 3");
+			for (int w_id = 0; w_id < noWarehouses; w_id++) {
+				for (int d_id = 0; d_id < noDistricts; d_id++) {
+					for (int c_id = 0; c_id < noCustomers; c_id++) {
+						randomNum = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
+						if (randomNum <= dataThresh) {
+							int keyValue = (w_id * 100) + d_id + (c_id * 10000);
+							String table = "3";
+							String key = String.valueOf(keyValue);
+							int vertex = lookupKey(key, table, mergedGraph);
+							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), String.valueOf(c_id), 
+									null, String.valueOf(vertex));
+							dataFile.append(c50Line);
+						}
+						else if (randomNum <= testThresh){
+							int keyValue = (w_id * 100) + d_id + (c_id * 10000);
+							String table = "3";
+							String key = String.valueOf(keyValue);
+							int vertex = lookupKey(key, table, mergedGraph);
+							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), String.valueOf(c_id), 
+									null, String.valueOf(vertex));
+							testFile.append(c50Line);
+						}
+					}
+				}
+			}
+			// generate table 5 -> new order keys
+			System.out.println("Generating table 5");
+			for (int w_id = 0; w_id < noWarehouses; w_id++) {
+				for (int d_id = 0; d_id < noDistricts; d_id++) {
+					for (int o_id = 0; o_id < noCustomers; o_id++) {
+						randomNum = ThreadLocalRandom.current().nextInt(0, 1000 + 1);
+						if (randomNum <= dataThresh) {
+							int keyValue = (w_id * 100) + d_id + (o_id * 10000);
+							String table = "5";
+							String key = String.valueOf(keyValue);
+							int vertex = lookupKey(key, table, mergedGraph);
+							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
+									String.valueOf(o_id), null, String.valueOf(vertex));
+							dataFile.append(c50Line);
+						}
+						else if (randomNum <= testThresh){
+							int keyValue = (w_id * 100) + d_id + (o_id * 10000);
+							String table = "5";
+							String key = String.valueOf(keyValue);
+							int vertex = lookupKey(key, table, mergedGraph);
+							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
+									String.valueOf(o_id), null, String.valueOf(vertex));
+							testFile.append(c50Line);
+						}
+					}
+				}
+			}
+			// generate table 6 ->  order keys
+			System.out.println("Generating table 6");
+			for (int w_id = 0; w_id < noWarehouses; w_id++) {
+				for (int d_id = 0; d_id < noDistricts; d_id++) {
+					for (int o_id = 0; o_id < noCustomers; o_id++) {
+						randomNum = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
+						if (randomNum <= dataThresh) {
+							int keyValue = (w_id * 100) + d_id + (o_id * 10000);
+							String table = "6";
+							String key = String.valueOf(keyValue);
+							int vertex = lookupKey(key, table, mergedGraph);
+							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
+									String.valueOf(o_id), null, String.valueOf(vertex));
+							dataFile.append(c50Line);
+						}
+						else if (randomNum <= testThresh){
+							int keyValue = (w_id * 100) + d_id + (o_id * 10000);
+							String table = "6";
+							String key = String.valueOf(keyValue);
+							int vertex = lookupKey(key, table, mergedGraph);
+							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
+									String.valueOf(o_id), null, String.valueOf(vertex));
+							testFile.append(c50Line);
+						}
+					}
+				}
+			}
+			// generate table 7 -> order line keys
+			System.out.println("Generating table 7");
+			for (int w_id = 0; w_id < noWarehouses; w_id++) {
+				for (int d_id = 0; d_id < noDistricts; d_id++) {
+					for (int o_id = 0; o_id < noCustomers; o_id++) {
+						for (int ol = 0; ol < 15; ol++) {
+							randomNum = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
+							if (randomNum <= dataThresh) {
+								int keyValue = (w_id * 100) + d_id + (o_id * 1000000) + (ol * 10000);
+								String table = "7";
+								String key = String.valueOf(keyValue);
+								int vertex = lookupKey(key, table, mergedGraph);
+								String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
+										String.valueOf(o_id), null, String.valueOf(vertex));
+								dataFile.append(c50Line);
+							}
+							else if (randomNum <= testThresh){
+								int keyValue = (w_id * 100) + d_id + (o_id * 1000000) + (ol * 10000);
+								String table = "7";
+								String key = String.valueOf(keyValue);
+								int vertex = lookupKey(key, table, mergedGraph);
+								String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
+										String.valueOf(o_id), null, String.valueOf(vertex));
+								testFile.append(c50Line);
+							}
+						}
+					}
+				}
+			}
+			// generate table 8 -> item table
+			System.out.println("Generating table 8");
+			for (int i_id = 0; i_id < noItems; i_id++) {	
+				randomNum = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
+				if (randomNum <= dataThresh) {
+					int keyValue = i_id;
+					String table = "8";
+					String key = String.valueOf(keyValue);
+					int vertex = lookupKey(key, table, mergedGraph);
+					String c50Line = buildC50Line(null, null, null, 
+							String.valueOf(i_id), String.valueOf(vertex));
+					dataFile.append(c50Line);
+				}
+				else if (randomNum <= testThresh){
+					int keyValue = i_id;
+					String table = "8";
+					String key = String.valueOf(keyValue);
+					int vertex = lookupKey(key, table, mergedGraph);
+					String c50Line = buildC50Line(null, null, null, 
+							String.valueOf(i_id), String.valueOf(vertex));
+					testFile.append(c50Line);
+				}
+			}
+			// generate table 9 -> stock keys
+			System.out.println("Generating table 9");
+			for (int w_id = 0; w_id < noWarehouses; w_id++) {
+				for (int i_id = 0; i_id < noItems; i_id++) {
+					randomNum = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
+					if (randomNum <= dataThresh) {
+						int keyValue = w_id + (i_id * 100);
+						String table = "9";
+						String key = String.valueOf(keyValue);
+						int vertex = lookupKey(key, table, mergedGraph);
+						String c50Line = buildC50Line(String.valueOf(w_id), null, null, 
+								String.valueOf(i_id), String.valueOf(vertex));
+						dataFile.append(c50Line);
+					}
+					else if (randomNum <= testThresh){
+						int keyValue = w_id + (i_id * 100);
+						String table = "9";
+						String key = String.valueOf(keyValue);
+						int vertex = lookupKey(key, table, mergedGraph);
+						String c50Line = buildC50Line(String.valueOf(w_id), null, null, 
+								String.valueOf(i_id), String.valueOf(vertex));
+						testFile.append(c50Line);
+					}
 				}
 			}
 			
+			
 			// close file
 			dataFile.close();
-			System.out.println("Successfully generated data file");
+			testFile.close();
+			System.out.println("Successfully generated data and test files");
 			
 			
 		} catch (IOException e) {
-			System.out.println("Error on generating c50 file!");
+			System.out.println("Error on generating weka file!");
 			e.printStackTrace();
 		}
 	}
 	
 	// method to lookup vertex of warehouse key
-	public int lookupKey(String key, String table, LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph) {
+	public static int lookupKey(String key, String table, LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph) {
 		// iterate over all partitions in mergedGraph
 		for (Map.Entry<Integer, ArrayList<GraphVertex>> partition : mergedGraph.entrySet()) {
 			// iterate over all vertices in each partition
@@ -176,11 +364,12 @@ public class Partitioner {
 				}
 			}
 		}
+		System.out.println("Couldn't find key on table " + table + "!\n");
 		return 0;
 	}
 
 	// method that writes a String for c50 file
-	public String buildC50Line(String w, String d, String c, String s, String n, String o, String l, String p) {
+	public static String buildC50Line(String w, String d, String c, String s, String n, String o, String l, String p) {
 		String line = "";
 		// attributes
 		line = (w != null) ? line + w + "," : line + "?,";
@@ -191,8 +380,27 @@ public class Partitioner {
 		line = (o != null) ? line + o + "," : line + "?,";
 		line = (l != null) ? line + l + "," : line + "?,";
 		// partition result is always there
-		line = line + p + ".\n";
+		line = line + p + "\n";
 		return line;
 	}
+	
+	// method that writes a String for c50 file
+	public static String buildC50Line(String w, String d, String c, String o, String p) {
+		String line = "";
+		// attributes
+		line = (w != null) ? line + w + "," : line + "?,";
+		line = (d != null) ? line + d + "," : line + "?,";
+		line = (c != null) ? line + c + "," : line + "?,";
+		line = (o != null) ? line + o + "," : line + "?,";
+		// partition result is always there
+		line = line + p + "\n";
+		return line;
+	}
+	
+	// main method for evaluation
+	public static void main(String[] args) {
+		partitionGraph();
+	}
+
 
 }
