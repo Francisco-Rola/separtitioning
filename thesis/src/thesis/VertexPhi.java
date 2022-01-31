@@ -9,7 +9,7 @@ public class VertexPhi {
 	// set of variables and its ranges
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	// scale factor for TPC -C
-	private static int w = 0;
+	private static int w = 9;
 	private static int item = 99999;
 	private static int customer = 2999;
 	private static int district = 9;

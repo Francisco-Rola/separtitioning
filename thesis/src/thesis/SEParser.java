@@ -38,8 +38,9 @@ public class SEParser {
 				if (root) {
 					// in root first line is its RWSet tag, discard it
 					line = file.readLine();
-					// obtain left subtree if it exists
-					line = file.readLine();
+					if (line.contains("RWSET"))	
+						// obtain left subtree if it exists
+						line = file.readLine();
 				}
 				else {
 					// outside of root node next line is children info
@@ -315,7 +316,7 @@ public class SEParser {
 	// main for debug purposes
 	public static void main(String[] args) {
 		try {
-			String[] files = {"order_new.txt"};
+			String[] files = {"delivery_new.txt"};
 			new SEParser(files);
 			int vertexCount = 0;
 			for(Vertex vertex : vertices) {

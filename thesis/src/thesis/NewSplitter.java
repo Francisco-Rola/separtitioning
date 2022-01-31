@@ -19,7 +19,12 @@ import com.wolfram.jlink.KernelLink;
 
 
 // class performing vertex splitting and creating graph file for the partitioner
-public class Splitter {
+public class NewSplitter {
+	
+	// counter for SMT file creation
+	int fileId = 1;
+	// count for SMT tags
+	int smtTag = 0;
 	// replication wanted?
 	boolean replication = true;
 	// how many parts does a table split go for
@@ -43,10 +48,14 @@ public class Splitter {
 			HashMap<VertexRho, VertexPhi> rhos = v.getSigma().getRhos();
 			// group together rhos that belong to the same table within a vertex
 			HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> buckets = groupRhos(rhos);
+			System.out.println("Group rhos, no buckets " + buckets.size() + " - DONE");
 			// after having rhos grouped by table, analyze each table and get possible splits
 			HashMap<Integer, ArrayList<HashSet<String>>> possibleSplits = analyseTables(buckets);
+			
+			System.out.println("Analyze Tables - DONE");
 			// get the shortest splitting variable set and table splits needed
 			ArrayList<String> splits = getSplits(possibleSplits);
+			System.out.println("Getting splits - DONE");
 			// display the splits
 			printSplits(txProfile, splits);
 			// apply the split to the vertex
@@ -54,12 +63,8 @@ public class Splitter {
 			//increment vertex counter
 			txProfile++;
 		}
-		// need to add probabilistic rhos and compute vertex weight
-		splitGraph = addProbRhos(splitGraph);
 		// build metis graph
 		LinkedHashMap<Integer, Pair<Integer, HashMap<Integer, Integer>>> metisGraph = buildMETISGraph();
-		// print matrix
-		//printMatrix(metisGraph);
 		// print METIS file
 		printMETISfile(metisGraph);
 		return splitGraph;
@@ -96,7 +101,7 @@ public class Splitter {
 		// possible split variables per tab
 		HashMap<Integer, ArrayList<HashSet<String>>> possibleSplits = new HashMap<>();
 		// go through all the buckets to analyze each table
-		for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> entry: buckets.entrySet()) {	
+		for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> entry: buckets.entrySet()) {					
 			// reset intersection flag
 			stop = false;
 			// list of variables that splits a table
@@ -143,16 +148,8 @@ public class Splitter {
 				// if an intersection was found on this table then it has been split
 				if (stop) break;
 				Pair<VertexRho, VertexPhi> rhoPhi1 = entry.getValue().get(i);
-				// skip low prob rhos, consider only their more probably counterpart
-				if (rhoPhi1.getKey().getProb() < 0.5) {
-					continue;
-				}
 				for (int j = i + 1; j < entry.getValue().size(); j++) {
 					Pair<VertexRho, VertexPhi> rhoPhi2 = entry.getValue().get(j);
-					// skip low prob rhos, consider only their more probably counterpart
-					if (rhoPhi2.getKey().getProb() < 0.5) {
-						continue;
-					}
 					boolean intersection = checkIntersection(rhoPhi1, rhoPhi2);
 					if (!intersection) {
 						// rhos do not overlap, add all the variables that can split them
@@ -243,7 +240,7 @@ public class Splitter {
 		
 		String query = "FindInstance[" + rhoQuery + " && " + phiQuery + ", " 
 				+ variableList + ", Integers]";
-		
+				
 		KernelLink link = MathematicaHandler.getInstance();
 		String result = link.evaluateToOutputForm(query, 0);
 		
@@ -254,6 +251,7 @@ public class Splitter {
 		else {
 			return true;
 		}
+
 	}
 	
 	// method that leverages regex for var renaming
@@ -355,13 +353,12 @@ public class Splitter {
 
 	// method that applies a given split to a given vertex
 	private void applySplit(VertexSigma sigma, ArrayList<String> splits, int txProfile) {
-		// check whether we are in a 1w workload for delivery split
+		// check whether we are in a 1w workload for delivery split LIMITATION?
 		if (txProfile == 3 && splits.size() != 1) {
 			GraphVertex gv = new GraphVertex(sigma, txProfile, true);
-			addVertex(gv, splitGraph);
+			addVertexSMT(gv, splitGraph);
 			return;
 		}
-		
 		
 		// generate all the new sigmas for splits
 		ArrayList<VertexSigma> newSigmas = generateSigmas(sigma, splits, txProfile);
@@ -370,8 +367,9 @@ public class Splitter {
 			// associate new sigma to a new vertex
 			GraphVertex gv = new GraphVertex(newSigma, txProfile, true);
 			// other sub vertices need to be disjoint from previously existing ones
-			addVertex(gv, splitGraph);
+			addVertexSMT(gv, splitGraph);
 		}
+		System.out.println("Applying splits - DONE");
 	}
 	
 	// method that receives split parameters and computes all sigma combinations
@@ -397,7 +395,7 @@ public class Splitter {
 					// split factor needs to be reduced to match range
 					splitFactor--;
 				}
-				// split factor found, update no splits
+				// split factor found, update number of splits
 				noSplits *= splitFactor;
 				System.out.println("Split factor for param: " + split + ": " + splitFactor);
 				splitsPerParameter.put(split, splitFactor);
@@ -427,7 +425,7 @@ public class Splitter {
 				for (int j = 0; j < temp.get(i).size(); j++) {
 					// check if table split or input split
 					if (split.getKey().startsWith("#")) {
-						// input split case
+						// table split case
 						VertexSigma newSigma = tableSplit(temp.get(i).get(j), split.getKey(), noSplitsParameter, i % noSplitsParameter);
 						temp.get(i).set(j, newSigma);
 					}
@@ -451,7 +449,7 @@ public class Splitter {
 			// these lists have 1 element
 			sigmas.addAll(entry);
 		}
-		System.out.println("Splitting successful");
+		System.out.println("Splitting successful - DONE");
 		return sigmas;
 	}
 	
@@ -493,6 +491,9 @@ public class Splitter {
 		int tableRange = VertexPhi.getTableRange(Integer.parseInt(tableNo));
 		// calculate cutoff for section
 		int cutoff = (tableRange / noSplits);
+		
+		/*
+		
 		// update all phis in the vertex
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
 			// update every access to the table under split
@@ -506,10 +507,25 @@ public class Splitter {
 			}
 		}
 		return sigma;
+		*/
+		
+		// update all phis in the vertex
+		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
+			// update every access to the table under split
+			if (rhoPhi.getKey().getRho().startsWith(tableNo)) {
+				if (section == 0) 
+					rhoPhi.getKey().splitRho(0,cutoff);
+				else {
+					rhoPhi.getKey().splitRho((cutoff * section), (cutoff * (section + 1)));
+				}
+			}
+		}
+		return sigma;
+		
 	}
 	
-	// method that adds a vertex to the graph, ensuring no vertex overlaps
-	private void addVertex(GraphVertex newVertex, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	// method that adds a vertex to the graph, ensuring no edge overlaps
+	private void addVertexSMT(GraphVertex newVertex, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// edges found during rho comparison
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 		// need to compare newly added vertex to every other vertex
@@ -517,13 +533,17 @@ public class Splitter {
 		// compare rho by rho
 		for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
 			String rhoV = entryV.getKey().getRho();
+			// compute weight of the rho, initally before any subtraction
+			int rhoVWeight = computeRhoWeight(entryV.getKey(), entryV.getValue());
+			// set the rho weight in a field 
+			entryV.getKey().setNoItems(rhoVWeight);
 			// handle prob rhos later
 			if (entryV.getKey().getProb() < 0.6) continue;
 			// if replication is enable and read only table, dont compare
 			if (replication && VertexPhi.checkTableReadOnly(Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)))) {
 				continue;
 			}
-			// Do not consider index cost
+			// do not consider index cost
 			if (Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)) > 9) continue;
 			
 			// compare new vertex to all vertices in the graph to ensure they are disjoint 
@@ -543,53 +563,55 @@ public class Splitter {
 							|| entryGV.getKey().isRemote()) {
 						continue;
 					}
-					//compute intersection between rhos given the phis
-					String result = null;
-					String phiV = entryV.getValue().getPhiAsString();
-					String phiVQ = preparePhi(phiV, entryV.getKey().getRhoUpdate());
-					String phiGVQ = preparePhi(phiGV, entryGV.getKey().getRhoUpdate());
-					result = rhoIntersection(rhoV, rhoGV, phiVQ, phiGVQ, entryV.getKey().getVariables(), entryGV.getKey().getVariables());
+					//compute intersection between rhos given the phis, compute weight of intersection
+					int result = rhoIntersection(entryV.getKey(), entryGV.getKey(), entryV.getValue(), entryGV.getValue());
 					// check the intersection results
-					if (result.equals("False")) {
+					if (result == 0) {
 						// no overlap so no subtraction needed, simply update weight
 						continue;
 					}
-					else if (result.equals("Format")) {
-						// overlap detected but wrong format, need by hand changes
-						String phiUpdated = null;
-						int weight = VertexPhi.getScalingFactorI() / 2;
-						for (Map.Entry<String, Pair<Integer, Integer>> phiToUpdate: entryV.getValue().getPhi().entrySet()) {
-							if (phiToUpdate.getKey().startsWith("oliid")) {
-								phiUpdated = phiToUpdate.getKey();
-								Pair<Integer, Integer> newRange = new Pair<>(0, 0);
-								entryV.getValue().getPhi().put(phiUpdated, newRange);
-								break;
+					else {
+						// variable to store edge weight
+						int edgeWeight = result;
+						// already have the weight of the edge, check if edges outgoing from V overlap with newly found edge
+						for (GraphEdge e : foundEdges) {
+							
+							int edgeOverlap = 0;
+							
+							// if rhos are not on same table they do need to be compared
+							if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(e.getEdgeRho().getRho().substring(0, 
+									e.getEdgeRho().getRho().indexOf(">") - 1))) {
+								continue;
+							}
+							else {
+								edgeOverlap = rhoIntersection(entryV.getKey(), e.getEdgeRho(), entryV.getValue(), e.getEdgePhi());
+							}
+							// if there is no overlap between edges continue
+							if (edgeOverlap == 0) {
+								continue;
+							}
+							// if there is overlap, update new edge weight
+							else {
+								edgeWeight = edgeWeight - edgeOverlap;
 							}
 						}
-						String update = phiUpdated + " == 0";
-						entryV.getKey().updateRho(update);
-						
-						GraphEdge edgeSrcV = new GraphEdge(newVertex.getVertexID(), gv.getVertexID(),rhoV, 
-								weight, entryV.getKey().getProb(), entryV.getKey().getValue());
-						foundEdges.add(edgeSrcV);
-						entryV.getKey().checkRemoteAfterUpdate(entryV.getKey(), entryV.getValue());
-						if (entryV.getKey().isRemote()) {
-							System.out.println("Remote rho, removing");
+						// create the edge with the remaining weight, unless its 0 then the edge does not exist
+						if (edgeWeight != 0) {
+							GraphEdge newEdge = new GraphEdge(newVertex.getVertexID(), gv.getVertexID(), entryV.getKey(), entryV.getValue(), edgeWeight);
+							foundEdges.add(newEdge);
+						}
+						// check how many items were in the rho
+						int noItemsRho = entryV.getKey().getNoItems();
+						// increase the number of remote items in the rho
+						entryV.getKey().setRemoteItems(entryV.getKey().getRemoteItems() + edgeWeight);
+						// decrease the number of items in the rho
+						entryV.getKey().setNoItems(noItemsRho - edgeWeight);
+						// if the rho is empty after this subtraction, set it to remote and stop analyzing it
+						if (entryV.getKey().getNoItems() == 0) {
+							System.out.println("Alert: Rho is now empty, setting it to remote!");
+							entryV.getKey().setRemote();
 							break;
 						}
-						
-					}
-					else {
-						// collision found, perform rho logical subtraction
-						entryV.getKey().updateRho(result);
-						// add edge between vertices whose rhos-phi overlapped
-						GraphEdge edgeSrcV = new GraphEdge(newVertex.getVertexID(), gv.getVertexID(),rhoV, 
-								entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup(), entryV.getKey().getProb(), entryV.getKey().getValue());
-						if (edgeSrcV.getEdgeWeight() != 0) foundEdges.add(edgeSrcV);
-						// check if the rho is now fully remote after the update
-						entryV.getKey().checkRemoteAfterUpdate(entryV.getKey(), entryV.getValue());
-						if (entryV.getKey().isRemote())
-							break;
 					}
 				}
 				// if the new vertex's rho under analysis is already empty it does not need further analysis
@@ -603,60 +625,453 @@ public class Splitter {
 		for (GraphEdge e : foundEdges) {
 			addEdge(newVertex, e, graph);
 		}
+		// compute vertex Weight
+		newVertex.computeVertexWeightSMT();
 		System.out.println("Subvertex added successfully");
 	}
 	
-	// method that prepares phi for mathematica query, appending any update if needed
-	private String preparePhi(String phi, String update) {
-		String preparedPhi = new String(phi);
-		if (update != null) {
-			// if there is a constraint on rho, phi needs an update
-			 preparedPhi = "(" + phi +  " && (" + update + "))";
+	// method that computes the weight of a given rho using aproxmc 
+	private int computeRhoWeight(VertexRho rho, VertexPhi phi) {
+		// obtain strings for query
+		String rho1 = rho.getRho(); 
+		String phi1 = phi.getPhiAsString(); 
+		HashSet<String> vars = rho.getVariables(); 
+		
+		// create SMT file
+		String fileName = "SMTfileVertex.smt2";
+		File smtFile = new File(fileName);
+		try {
+			smtFile.createNewFile();
+		} catch (IOException e) {
+			System.out.println("Error while creating SMT file!");
+			e.printStackTrace();
 		}
-		return preparedPhi;
-	}
+		// write to SMT file
+		try {
+			// reset tags for SMT vars in file
+			smtTag = 0;
+			
+			FileWriter smtWritter = new FileWriter(fileName);
+			// first line contains smt lib headers
+			smtWritter.append("(set-option :count-models true)\n");
+			smtWritter.append("(set-logic QF_BV)\n");
+			smtWritter.append("(set-option :print-clauses-file \"./counts.cnf\")");
+			smtWritter.append("(set-info :smt-lib-version 2.0)\n");
+			smtWritter.append("(declare-fun rho_1 () (_ BitVec 32))\n");
+			smtWritter.append("(declare-fun rho_2 () (_ BitVec 32))\n");
+			smtWritter.append("(declare-fun phi_1 () Bool)\n");
+			smtWritter.append("(declare-fun phi_2 () Bool)\n");
+			
+			for (String variable : vars) {
+				smtWritter.append("(declare-fun " + variable + " () (_ BitVec 32))\n");
+			}
+			
+			smtWritter.append("(assert (= rho_1 " + recursiveRhoToSMT(rho1.substring(rho1.indexOf(">") + 1), true) + "))\n");
+			if (rho.getRhoUpdate() != null) {
+				smtWritter.append(tableSplitSMT(rho, 1));
+			}
+			smtWritter.append("(assert (= rho_2 " + recursiveRhoToSMT(rho1.substring(rho1.indexOf(">") + 1), false) + "))\n");
+
+			
+			smtWritter.append("(assert (= phi_1 " + parsePhiIntoSmt(phi1) + "))\n");
+			smtWritter.append("(assert (= phi_2 " + parsePhiIntoSmt(phi1) + "))\n");
+
+			
+			smtWritter.append("(assert (and (= rho_1 rho_2) (and phi_1 phi_2)))\n");
+
+			
+			String varsCounting = "";
+			for (int i = 0; i < vars.size(); i++) {
+				varsCounting += "v" + (i + 1) + " ";
+			}
+			varsCounting = varsCounting.substring(0, varsCounting.length() - 1);
+			smtWritter.append("(count-models " + varsCounting + ")\n");
+			smtWritter.append("(exit)");
+			// close file
+			smtWritter.close();
+			
+			// SMT file is built, only need to count number of solutions using approxmc and opensmt			
+			Runtime rt = Runtime.getRuntime();
+			String[] commandsSMT = {"opensmt", "SMTfileVertex.smt2"};
+			Process proc = rt.exec(commandsSMT);
+
+			BufferedReader stdInput = new BufferedReader(new 
+			     InputStreamReader(proc.getInputStream()));
+
+			BufferedReader stdError = new BufferedReader(new 
+			     InputStreamReader(proc.getErrorStream()));
+			
+			
+			// Read the output from the command
+			String s = null;
+			while ((s = stdInput.readLine()) != null) {
+			    //System.out.println(s);
+			}
+			// Read any errors from the attempted command
+			while ((s = stdError.readLine()) != null) {
+				System.out.println("Error during openSMT phase");
+			    System.out.println(s);
+			}
+			
+			String[] commandsApprox = {"approxmc", "counts.cnf"};
+			proc = rt.exec(commandsApprox);
+			int rhoWeight = 0;
+			
+			stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+			stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+			
+			s = null;
+			while ((s = stdInput.readLine()) != null) {
+				if (s.startsWith("s mc")) {
+			    	String[] splits = s.split(" ");
+			    	rhoWeight = Integer.parseInt(splits[2]);
+			    	//System.out.println("Rho weight: " + rhoWeight);
+			    	return rhoWeight;
+			    }
+			}
+			// Read any errors from the attempted command
+			while ((s = stdError.readLine()) != null) {
+				System.out.println("Error during ApproxMC phase");
+			    System.out.println(s);
+			}
+			
+		} catch (IOException e) {
+			System.out.println("Error on generating SMT file!");
+			e.printStackTrace();
+		}
+		
+		return 0;
+}
 	
-	// method that computers rho intersection and outputs their symbolic intersection
-	private String rhoIntersection(String rho1, String rho2, String phi1, String phi2, HashSet<String> vars1, HashSet<String> vars2) {
-		KernelLink link = MathematicaHandler.getInstance();
+	// method that computes the weight of the intersection between two rhos given each associated phi
+	private int rhoIntersection(VertexRho rhoV, VertexRho rhoGV, VertexPhi phiV, VertexPhi phiGV) {
+		// obtain strings for query
+		String rho1 = rhoV.getRho(); // new vertex
+		String rho2 = rhoGV.getRho(); // old vertex
 		
 		rho2 = variableRename(rho2);
+		
+		String phi1 = phiV.getPhiAsString(); // new vertex
+		String phi2 = phiGV.getPhiAsString(); // old vertex
+		
 		phi2 = variableRename(phi2);
 		
-		String rhoQuery = rho1.substring(rho1.indexOf(">") + 1) + " == " + rho2.substring(rho2.indexOf(">") + 1);
-		String phiQuery = "(" + phi1 + ") && (" + phi2 + ")";		
-				
-		// build variables string for mathematica query
-		String variables = "{";
-		for (String variable: vars1) {
-			variables += variable + ", ";
-		}
-		for (String variable: vars2) {
-			variables += variable.replaceAll("id", "idGV") + ", ";
-		}
-		// remove extra characters and finalize string
-		variables = variables.substring(0, variables.length() - 2) + "}";
-		Instant start = Instant.now();
-		// build mathematica query with simplifier
-		String query = "Reduce[" + "Simplify[(" + rhoQuery + ") && ("  + phiQuery + ")]" + ", " 
-					+ variables + ", Integers, Backsubstitution -> True]";	
+		HashSet<String> vars1 = rhoV.getVariables(); // new vertex
+		HashSet<String> vars2 = rhoGV.getVariables(); // old vertex
 		
-		String result = link.evaluateToOutputForm(query, 0);
-		Instant end = Instant.now();
-		if (Duration.between(start, end).toMillis() > 100) {
-			System.out.println("Intersection computation time: " + Duration.between(start, end).toMillis());
-			System.out.println(query);
+		if (!checkIntersection(new Pair<VertexRho, VertexPhi>(rhoV, phiV), new Pair<VertexRho, VertexPhi>(rhoGV, phiGV))) {
+			return 0;
 		}
-		// debug cases, exceptions
-		if (result.equals("$Failed"))
-			System.out.println("Failed rho intersection query ->" + query);
-		if (result.contains("C[1]")) {
-			// Mathematica is not working in this case
-			//System.out.println("Slow intersection due to Mathematica formatting");
-			//System.out.println(query);
-			return "Format";
+		
+		// create SMT file
+		String fileName = "SMTfile.smt2";
+		File smtFile = new File(fileName);
+		try {
+			smtFile.createNewFile();
+		} catch (IOException e) {
+			System.out.println("Error while creating SMT file!");
+			e.printStackTrace();
 		}
-		return result;
+		// write to SMT file
+		try {
+			// reset tags for SMT vars in file
+			smtTag = 0;
+			
+			FileWriter smtWritter = new FileWriter(fileName);
+			// first line contains smt lib headers
+			smtWritter.append("(set-option :count-models true)\n");
+			smtWritter.append("(set-logic QF_BV)\n");
+			smtWritter.append("(set-option :print-clauses-file \"./counts.cnf\")");
+			smtWritter.append("(set-info :smt-lib-version 2.0)\n");
+			smtWritter.append("(declare-fun rho_1 () (_ BitVec 32))\n");
+			smtWritter.append("(declare-fun rho_2 () (_ BitVec 32))\n");
+			smtWritter.append("(declare-fun phi_1 () Bool)\n");
+			smtWritter.append("(declare-fun phi_2 () Bool)\n");
+			
+			for (String variable : vars1) {
+				smtWritter.append("(declare-fun " + variable + " () (_ BitVec 32))\n");
+			}
+			for (String variable : vars2) {
+				variable = variable.replaceAll("id", "idGV");
+				smtWritter.append("(declare-fun " + variable + " () (_ BitVec 32))\n");
+			}
+			
+			smtWritter.append("(assert (= rho_1 " + recursiveRhoToSMT(rho1.substring(rho1.indexOf(">") + 1), true) + "))\n");
+			if (rhoV.getRhoUpdate() != null) {
+				smtWritter.append(tableSplitSMT(rhoV, 1));
+			}
+			smtWritter.append("(assert (= rho_2 " + recursiveRhoToSMT(rho2.substring(rho2.indexOf(">") + 1), false) + "))\n");
+			if (rhoGV.getRhoUpdate() != null) {
+				smtWritter.append(tableSplitSMT(rhoGV, 2));
+			}
+			smtWritter.append("(assert (= phi_1 " + parsePhiIntoSmt(phi1) + "))\n");
+			smtWritter.append("(assert (= phi_2 " + parsePhiIntoSmt(phi2) + "))\n");
+
+			
+			smtWritter.append("(assert (and (= rho_1 rho_2) (and phi_1 phi_2)))\n");
+			
+			String varsCounting = "";
+			for (int i = 0; i < vars1.size(); i++) {
+				varsCounting += "v" + (i + 1) + " ";
+			}
+			varsCounting = varsCounting.substring(0, varsCounting.length() - 1);
+			smtWritter.append("(count-models " + varsCounting + ")\n");
+			smtWritter.append("(exit)");
+			// close file
+			smtWritter.close();
+			fileId++;
+			
+			// SMT file is built, only need to count number of solutions using approxmc and opensmt
+			Runtime rt = Runtime.getRuntime();
+			String[] commandsSMT = {"opensmt", "SMTfile.smt2"};
+			Process proc = rt.exec(commandsSMT);
+
+			BufferedReader stdInput = new BufferedReader(new 
+			     InputStreamReader(proc.getInputStream()));
+
+			BufferedReader stdError = new BufferedReader(new 
+			     InputStreamReader(proc.getErrorStream()));
+			
+			
+			// Read the output from the command
+			String s = null;
+			while ((s = stdInput.readLine()) != null) {
+			    //System.out.println(s);
+			}
+			// Read any errors from the attempted command
+			while ((s = stdError.readLine()) != null) {
+				System.out.println("Error during openSMT phase");
+			    System.out.println(s);
+			}
+			
+			String[] commandsApprox = {"approxmc", "counts.cnf"};
+			proc = rt.exec(commandsApprox);
+			int intersectionSize = 0;
+			
+			stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+			stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+			
+			s = null;
+			while ((s = stdInput.readLine()) != null) {
+				if (s.startsWith("s mc")) {
+			    	String[] splits = s.split(" ");
+			    	intersectionSize = Integer.parseInt(splits[2]);
+			    	//System.out.println("Intersection size: " + intersectionSize);
+			    	return intersectionSize;
+			    }
+			}
+			// Read any errors from the attempted command
+			while ((s = stdError.readLine()) != null) {
+				System.out.println("Error during ApproxMC phase");
+			    System.out.println(s);
+			}	
+			
+		} catch (IOException e) {
+			System.out.println("Error on generating SMT file!");
+			e.printStackTrace();
+		}
+		
+		return 0;
+	}
+	
+	// method that builds extra smt line for table splits
+	private String tableSplitSMT(VertexRho rho, int rhoNumber) {
+		// get lower table limit
+		int lower = rho.getLowerTableLimit() - 1;
+		// get upper table limit
+		int upper = rho.getUpperTableLimit() + 1;
+		// convert lower to binary
+		String lowerBin = Integer.toBinaryString(lower);
+		// convert upper to binary
+		String upperBin = Integer.toBinaryString(upper);
+		// build formatted string
+		if (lower != -1) {
+			return "(assert (and (bvult " + countAndFixBin(lowerBin) + " rho" + rhoNumber 
+					+ ") (bvult rho" + rhoNumber + " " + countAndFixBin(upperBin) + ")))"; 
+		}
+		else {
+			return "(assert (bvult rho" + rhoNumber + " " + countAndFixBin(upperBin) + "))";
+		}
+	}
+	
+	// method that converts phis into smt lib format
+	private String parsePhiIntoSmt(String phi) {
+		
+		String[] parts = phi.split("&&");
+		
+		String smtString = "";
+		
+		String memberCounting = "";
+		for (int i = 0; i < parts.length - 1; i++) {
+			memberCounting += "(and ";
+		}
+		
+		smtString += memberCounting;
+		
+		for (String part: parts) {
+			String member = "(and (bvult ";
+			
+			String leftLimit = "";
+			String variable = "";
+			String rightLimit = "";
+			boolean variableDone = false;
+			
+			for (int i = 0; i < part.length(); i++){ 
+			    char c = part.charAt(i);
+			    
+				// left limit building
+				if (Character.isDigit(c) && variable == "") {
+			    	leftLimit += c;
+			    }
+				// right limit building
+				else if (Character.isDigit(c) && variableDone) {
+			    	rightLimit += c;
+			    }
+				// variable building
+				else if (Character.isLetter(c) || (Character.isDigit(c) && !variableDone)) {
+					variable += c;
+				}
+				//operators
+				else if (c == '<' || c == '=') {
+					continue;
+				}
+				// end of a member
+				else if (c == ' ' || Character.isWhitespace(c)) {
+					if (variable != "") {
+						variableDone = true;
+					}
+					continue;
+				}
+			}
+			
+			int leftLimitInt = Integer.parseInt(leftLimit);
+			
+			if (leftLimitInt != 0) {
+			
+				String leftLimitBin = Integer.toBinaryString(Integer.parseInt(leftLimit) - 1);
+				String rightLimitBin = Integer.toBinaryString(Integer.parseInt(rightLimit) + 1);
+				
+				member += countAndFixBin(leftLimitBin) + " " + variable + ") (bvult " + variable + " " + countAndFixBin(rightLimitBin) + "))";  
+				
+				smtString += member;
+			}
+			
+			else {
+				
+				String rightLimitBin = Integer.toBinaryString(Integer.parseInt(rightLimit) + 1);
+
+				member = "(bvult " + variable + " " + countAndFixBin(rightLimitBin) + ")";
+				
+				smtString += member;
+			}
+			
+		}
+		
+		for (int i = 0; i < parts.length - 1; i++) {
+			smtString += ")";
+		}
+		return smtString;
+	}
+	
+	// method that coverts rho into smt lib format
+	private String recursiveRhoToSMT(String rho, boolean rho1) {
+		// find splitting index related to external operation
+		int splitIndex = findExternalOperation(rho);
+		
+		// if splitIndex is -1 then we reached an operand
+		if (splitIndex == -1) {
+			return findOperand(rho, rho1);
+		}		
+		// find which operation has been found as external
+		if (rho.charAt(splitIndex) == '+') {
+			return "(bvadd " + recursiveRhoToSMT(rho.substring(1, splitIndex - 1), rho1) + " " 
+					+ recursiveRhoToSMT(rho.substring(splitIndex + 2, rho.length() - 1), rho1) + ")";
+		}
+		else if (rho.charAt(splitIndex) == '*') {
+			return "(bvmul " + recursiveRhoToSMT(rho.substring(1, splitIndex - 1), rho1) + " " 
+					+ recursiveRhoToSMT(rho.substring(splitIndex + 2, rho.length() - 1), rho1) + ")";
+		}
+		
+		// shouldn't happen
+		System.out.println("Buggy conversion from rho to smt rho");
+		return null;
+	}
+	
+	// method that finds an operand and prints in SMT format
+	private String findOperand(String rho, boolean rho1) {
+		
+		
+		// build the operand string
+		String operand = "";
+		for (int i = 0; i < rho.length(); i++){
+			// read each char
+		    char c = rho.charAt(i);
+		    // check if next char is a letter or a digit
+		    if (Character.isLetter(c) || Character.isDigit(c)) {
+		    	operand += c;
+		    }
+		    else {
+				System.out.println(rho);
+		    	System.out.println("Unknown operand character");
+		    	System.out.println(c);
+		    }
+		}
+		// check if operand is a number or a variable
+		if (Character.isDigit(operand.charAt(0))) {
+			String operandBin = Integer.toBinaryString(Integer.parseInt(operand));
+			return countAndFixBin(operandBin);
+		}
+		else {
+			// check if its related to rho1 or rho2
+			if (rho1) {
+				smtTag++;
+				return "(! " + operand + " :named v" + smtTag + ")";
+			}
+
+			return operand;
+		}
+
+	}
+	
+	// method that finds external operation in rho, inclusion index = 1
+	private int findExternalOperation(String rho) {
+		// inclusion index to count for nested operations
+		int inclIndex = 0;
+		// iterate through rho and find external operation
+		for (int i = 0; i < rho.length(); i++){
+			// read each char
+		    char c = rho.charAt(i);
+		    // if its a parenthesis opening increase incl index
+		    if (c == '(') {
+		    	inclIndex++;
+		    }
+		    // if its a paranthesis closing decrease incl index
+		    if (c == ')') {
+		    	inclIndex--;
+		    }
+		    // if we found an operation with inclusion index == 1, return its index in rho
+		    if ((c == '+' || c == '*') && inclIndex == 1) {
+		    	return i;
+		    }
+		    else 
+		    	continue;
+		}
+		// error situation, should be impossible, throws -1
+		return -1;
+	}
+	
+	// method to build 32-bit binary number
+	private String countAndFixBin(String bin) {
+		int count = 0;
+		for (int i = 0, len = bin.length(); i < len; i++) {
+		    if (Character.isDigit(bin.charAt(i))) {
+		        count++;
+		    }
+		}
+		String fixedString = new String(new char[32-count]).replaceAll("\0", "0");
+		return "#b" + fixedString + bin;
 	}
 
 	// method used to add an edge to a graph
@@ -712,25 +1127,6 @@ public class Splitter {
 		
 		// edges are bidirectional
 		return METISGraph;
-	}
-	
-	// method to print adjacency matrix given graph
-	private void printMatrix(LinkedHashMap<Pair<Integer, Integer>, HashMap<Integer, Integer>> graph) {
-		// number of vertices in graph
-		int noVertices = graph.size();
-		// iterate through each vertex
-		for (Map.Entry<Pair<Integer, Integer>, HashMap<Integer, Integer>> vertex : graph.entrySet()) {
-			int i = 1;
-			while (i <= noVertices) {
-				int entry = 0;
-				if (graph.get(vertex.getKey()).containsKey(i)) entry = graph.get(vertex.getKey()).get(i);
-				if (i != 1) System.out.print(", " + entry);
-				else System.out.print(entry);
-				i++;
-			}
-			System.out.print("\n");
-		}
-		System.out.println("----------------");
 	}
 	
 	// method to print input file for METIS given a graph
@@ -859,179 +1255,7 @@ public class Splitter {
 		return splits;
 	}
 	
-	// method that adds probabilistic edges and computes final vertex weights
-	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> addProbRhos(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
-		// create new graph with updated sigmas resultant from prob rhos
-		LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> newGraph = new LinkedHashMap<>();
-		// go over each vertex in the graph
-		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> nodeV: graph.entrySet()) {
-			GraphVertex v = nodeV.getKey(); /*
-			// list of prob edges found
-			ArrayList<GraphEdge> foundEdges = new ArrayList<>();
-			// go over each rho in the vertex
-			for (Map.Entry<VertexRho, VertexPhi> entryV: v.getSigma().getRhos().entrySet()) {
-				
-				String rhoV = entryV.getKey().getRho();
-				String phiV = entryV.getValue().getPhiAsString();
-				
-				// check if prob rhi, skip non prob rhos handled before
-				if (entryV.getKey().getProb() >= 0.5) 
-					continue;
-				// check if read only table that is being replicated
-				if (replication && VertexPhi.checkTableReadOnly(Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)))) {
-					continue;
-				}
-				
-				// compare current vertex to all vertices in the graph to deal with prob rhos
-				for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> nodeGV : graph.entrySet()) {
-					// don't compare vertex against itself
-					if (nodeGV.getKey().getVertexID() == (nodeV.getKey().getVertexID()))
-						continue;
-					
-					GraphVertex gv = nodeGV.getKey();
-					// obtain all rhos in other existing vertex
-					HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
-					for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
-						// skip low prob rho
-						if (entryGV.getKey().getProb() < 0.5) {
-							continue;
-						}
-						String rhoGV = entryGV.getKey().getRho();
-						String phiGV = entryGV.getValue().getPhiAsString();
-						// if rhos are not on same table they do need to be compared
-						if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
-								|| entryGV.getKey().isRemote()) {
-							continue;
-						}
-						//compute intersection between rhos given the phis
-						String result = null;
-						String phiVQ = preparePhi(phiV, entryV.getKey().getRhoUpdate());
-						String phiGVQ = preparePhi(phiGV, entryGV.getKey().getRhoUpdate());
-						result = rhoIntersection(rhoV, rhoGV, phiVQ, phiGVQ, entryV.getKey().getVariables(), entryGV.getKey().getVariables());
-						// check the intersection results
-						if (result.equals("False")) {
-							// no overlap so no subtraction needed, simply update weight
-							continue;
-						}
-						else {
-							// collision found, perform rho logical subtraction
-							entryV.getKey().updateRho(result);
-							entryV.getKey().checkRemoteAfterUpdate(entryV.getKey(), entryV.getValue());
-							// add edge between vertices whose rhos-phi overlapped
-							GraphEdge edgeSrcV = new GraphEdge(v.getVertexID(), gv.getVertexID(),rhoV, 
-									entryV.getKey().getRhoUpdate(), entryV.getValue().getPhiAsGroup(), entryV.getKey().getProb());
-							foundEdges.add(edgeSrcV);
-							// check if the rho is now fully remote after the update
-							if (entryV.getKey().isRemote())
-								break;
-						}
-					}
-					// if the vertex rho under analysis is already empty it does not need further analysis
-					if (entryV.getKey().isRemote())
-						break;
-				}
-			}
-			// place a vertex in a new graph that contains all previously detected edges with the new updates
-			newGraph.put(v, new ArrayList<>());
-			for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> oldVertice : graph.entrySet()) {
-				if (v.getVertexID() == oldVertice.getKey().getVertexID()) {
-					newGraph.get(v).addAll(oldVertice.getValue());
-				}
-			}
-			// add its edges to the graph as well
-			for (GraphEdge e : foundEdges) {
-				addEdge(v, e, newGraph);
-			}*/
-			// compute vertex weight
-			v.computeVertexWeight();  // v.compute
-		}
-		return graph; //return new graph
-	}
 	
-	/*
-	 
-		// create SMT file
-		String fileName = "SMTSATfile.smt2";
-		File smtFile = new File(fileName);
-		
-		try {
-			smtFile.createNewFile();
-		} catch (IOException e) {
-			System.out.println("Error while creating SMT-SAT file!");
-			e.printStackTrace();
-		}
-		// write to SMT file
-		try {
-			// reset tags for SMT vars in file
-			smtTag = 0;
-			
-			FileWriter smtWritter = new FileWriter(fileName);
-			// first line contains smt lib headers
-			smtWritter.append("(set-logic QF_BV)\n");
-			smtWritter.append("(set-info :smt-lib-version 2.0)\n");
-			smtWritter.append("(declare-fun rho_1 () (_ BitVec 32))\n");
-			smtWritter.append("(declare-fun rho_2 () (_ BitVec 32))\n");
-			smtWritter.append("(declare-fun phi_1 () Bool)\n");
-			smtWritter.append("(declare-fun phi_2 () Bool)\n");
-			
-			for (String variable : vars1) {
-				smtWritter.append("(declare-fun " + variable + " () (_ BitVec 32))\n");
-			}
-			for (String variable : vars2) {
-				variable = variable.replaceAll("id", "idGV");
-				smtWritter.append("(declare-fun " + variable + " () (_ BitVec 32))\n");
-			}
-			
-			smtWritter.append("(assert (= rho_1 " + recursiveRhoToSMT(rho1.substring(rho1.indexOf(">") + 1), false) + "))\n");
-			if (rhoV.getRhoUpdate() != null) {
-				smtWritter.append(tableSplitSMT(rhoV, 1));
-			}
-			smtWritter.append("(assert (= rho_2 " + recursiveRhoToSMT(rho2.substring(rho2.indexOf(">") + 1), false) + "))\n");
-			if (rhoGV.getRhoUpdate() != null) {
-				smtWritter.append(tableSplitSMT(rhoGV, 2));
-			}
-			smtWritter.append("(assert (= phi_1 " + parsePhiIntoSmt(phi1) + "))\n");
-			smtWritter.append("(assert (= phi_2 " + parsePhiIntoSmt(phi2) + "))\n");
-
-			
-			smtWritter.append("(assert (and (= rho_1 rho_2) (and phi_1 phi_2)))\n");
-			
-			smtWritter.append("(check-sat)\n");
-			smtWritter.append("(exit)");
-			// close file
-			smtWritter.close();
-			
-			// SMT file is built, only need to count number of solutions using approxmc and opensmt
-			Runtime rt = Runtime.getRuntime();
-			String[] commandsSMT = {"opensmt", "SMTSATfile.smt2"};
-			Process proc = rt.exec(commandsSMT);
-
-			BufferedReader stdInput = new BufferedReader(new 
-			     InputStreamReader(proc.getInputStream()));
-
-			BufferedReader stdError = new BufferedReader(new 
-			     InputStreamReader(proc.getErrorStream()));
-			
-			
-			// Read the output from the command
-			String s = null;
-			while ((s = stdInput.readLine()) != null) {
-				// if collision is not possible return 0 as the size of intersection
-				if(s.equals("unsat")) {
-			    	return 0;
-			    }
-			}
-			// Read any errors from the attempted command
-			while ((s = stdError.readLine()) != null) {
-				System.out.println("Error during openSMT phase");
-			    System.out.println(s);
-			}
-			
-		} catch (IOException e) {
-			System.out.println("Error on generating SMT file!");
-			e.printStackTrace();
-		}
-	 */
 }
 	
 	

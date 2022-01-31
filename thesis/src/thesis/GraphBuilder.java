@@ -14,7 +14,7 @@ public class GraphBuilder {
 	private static void buildGraph() {
 		try {
 			// obtain vertices from SE tree
-			String[] files = {"order_new.txt","payment_new.txt", "deliveryfix.txt"};	
+			String[] files = {"payment_new.txt", "order_new.txt", "delivery_new.txt"};	
 			//String[] files = {"order_new.txt"};
 			new SEParser(files);
 			// after obtaining vertices from SE need to make them disjoint
@@ -59,10 +59,12 @@ public class GraphBuilder {
 		System.out.println("Running graph builder");
 				
 		buildGraph();
-				
+		
+		printGraph(graph);
+						
 		System.out.println("Running graph splitter");
 								
-		Splitter splitter = new Splitter();
+		NewSplitter splitter = new NewSplitter();
 		
 		graph = splitter.splitGraph(graph);
 		

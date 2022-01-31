@@ -18,6 +18,10 @@ public class GraphEdge {
 	private String rhoSrc = null;
 	// set of inputs that cause vertices to overlap hence causing an edge (src inputs)
 	private String edgePhi = null;
+	// rho associated to this edge
+	private VertexRho eRho = null;
+	// phi associated to this edge
+	private VertexPhi ePhi = null;
 	
 	// default constructor for graph edge
 	public GraphEdge(int src, int dest, String rhoSrc, String intersection, String phiRange, double prob, int value) {
@@ -25,9 +29,22 @@ public class GraphEdge {
 		this.dest = dest;
 		this.rhoSrc = rhoSrc;
 		this.edgePhi = intersection;
-		this.edgeWeight = computeEdgeWeight(intersection, phiRange, prob) * value;
+		//this.edgeWeight = computeEdgeWeight(intersection, phiRange, prob) * value;
+		System.out.println(rhoSrc);
+		System.out.println(edgePhi);
 		System.out.println("Edge S:" + src + " D:" + dest+
 				" T:" + rhoSrc.substring(0, rhoSrc.indexOf(">") - 1) +  " W:" +  this.edgeWeight);
+	}
+	
+	// constructor for SMT graph edge
+	public GraphEdge(int src, int dest, VertexRho eRho, VertexPhi ePhi, int weight) {
+		this.src = src;
+		this.dest = dest;
+		this.eRho = eRho;
+		this.ePhi = ePhi;
+		this.edgeWeight = weight;
+		System.out.println("Edge S:" + src + " D:" + dest+
+				" T:" + eRho.getRho().substring(0, eRho.getRho().indexOf(">") - 1) +  " W:" +  this.edgeWeight);
 	}
 	
 	// special constructor for different Mathematica format
@@ -41,6 +58,16 @@ public class GraphEdge {
 				" T:" + rhoSrc.substring(0, rhoSrc.indexOf(">") - 1) +  " W:" +  this.edgeWeight);
 	}
 	
+	// getter for edge rho
+	public VertexRho getEdgeRho() {
+		return this.eRho;
+	}
+	
+	// getter for edge phi
+	public VertexPhi getEdgePhi() {
+		return this.ePhi;
+	}
+	
 	// getter for vertex src
 	public int getSrc() {
 		return src;
@@ -50,10 +77,20 @@ public class GraphEdge {
 	public int getDest() {
 		return dest;
 	}
+	
+	// getter for intersection
+	public String getIntersection() {
+		return this.edgePhi;
+	}
 
 	// getter for edge weight
 	public int getEdgeWeight() {
 		return this.edgeWeight;
+	}
+	
+	// incrementor for edge weight 
+	public void addEdgeWeight() {
+		this.edgeWeight++;
 	}
 	
 	// method that computes edge weight, i.e. how many inputs cause a remote access
@@ -63,6 +100,7 @@ public class GraphEdge {
 		// compute how many inputs are in the overlap
 		Instant start = Instant.now();
 		String query = "Flatten[Table[" + intersection + ", " + phiRange + "]]";
+		System.out.println(query);
 		String result = link.evaluateToOutputForm(query, 0);
 		Instant end = Instant.now();
 		System.out.println("Edge weight computation time: " + Duration.between(start, end).toMillis());
@@ -90,8 +128,8 @@ public class GraphEdge {
 	
 	// debug and presentation purposes
 	public void printEdge() {
-		System.out.println("Edge rho: " + this.rhoSrc);
-		System.out.println("Edge phi: " + this.edgePhi);
+		System.out.println("Edge rho: " + this.eRho.getRho());
+		System.out.println("Edge phi: " + this.ePhi.getPhiAsString());
 		System.out.println("Edge weight: " + this.edgeWeight);
 	}
 	

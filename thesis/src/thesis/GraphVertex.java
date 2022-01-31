@@ -2,6 +2,7 @@ package thesis;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.wolfram.jlink.KernelLink;
@@ -53,6 +54,17 @@ public class GraphVertex {
 		return sigma;
 	}
 	
+	// method that computes vertex weight in SMT implementation
+	public void computeVertexWeightSMT() {
+		// temp variable for vertex weight
+		int vertexWeightTemp = 0;
+		// iterate over all the rhos in the vertex
+		for (Map.Entry<VertexRho, VertexPhi> entry: this.getSigma().getRhos().entrySet()) {
+			vertexWeightTemp += (entry.getKey().getNoItems() * entry.getKey().getValue());
+		}
+		this.vertexWeight = vertexWeightTemp;		
+	}
+	
 	// method that computes vertex weight, i.e. how many data items it stores
 	public void computeVertexWeight() {
 		// get mathematica endpoint
@@ -76,6 +88,7 @@ public class GraphVertex {
 			}
 			// check items accessed by rho given phi
 			String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
+			System.out.println(query);
 			String result = link.evaluateToOutputForm(query, 0);
 			result = result.replaceAll("[, ]*False[, ]*", "");
 			// if empty result then this rho is remote
@@ -160,15 +173,40 @@ public class GraphVertex {
 		System.out.println("--------------------------");
 
 	}
-	
-	// automatically generated hash code for vertex sigma
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((sigma == null) ? 0 : sigma.hashCode());
 		result = prime * result + txProfile;
+		result = prime * result + vertexID;
 		result = prime * result + vertexWeight;
 		return result;
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		GraphVertex other = (GraphVertex) obj;
+		if (sigma == null) {
+			if (other.sigma != null)
+				return false;
+		} else if (!sigma.equals(other.sigma))
+			return false;
+		if (txProfile != other.txProfile)
+			return false;
+		if (vertexID != other.vertexID)
+			return false;
+		if (vertexWeight != other.vertexWeight)
+			return false;
+		return true;
+	}
+	
+	
 }

@@ -17,11 +17,19 @@ public class VertexRho {
 	private String update = null;
 	// table associated to the rho
 	private String table = null;
+	// lower value associated to table split
+	private int lowerTableLimit = 0;
+	// upper value associated to table split
+	private int upperTableLimit = 0;
+	// estimated number of remote items that would otherwise be in this rho
+	private int remoteItems = 0;
+	// estimated number of items in this rho
+	private int noItems = 0;
 	// probability of tho being used
 	private double prob = 1.0;
 	// set of variables comprised by this rho
 	private HashSet<String> variables = null;
-	// value associated to a rho in case it is repeated over the verted OPTIMIZATION
+	// value associated to a rho in case it is repeated over the vertex OPTIMIZATION
 	private int value = 1;
 	
 	public int getValue() {
@@ -64,6 +72,8 @@ public class VertexRho {
 			this.update = new String(vertexRho.getRhoUpdate());
 		this.variables = new HashSet<>();
 		this.variables.addAll(vertexRho.getVariables());
+		this.lowerTableLimit = vertexRho.getLowerTableLimit();
+		this.upperTableLimit = vertexRho.getUpperTableLimit();
 	}
 	
 	// get string formula associated with this vertex rho
@@ -74,6 +84,36 @@ public class VertexRho {
 	// get table associated to rho
 	public String getTable() {
 		return this.table;
+	}
+	
+	// get number of remote items in this rho
+	public int getRemoteItems() {
+		return this.remoteItems;
+	}
+	
+	// setter for number of remote items in this rho
+	public void setRemoteItems(int remoteItems) {
+		this.remoteItems = remoteItems;
+	}
+	
+	// get number of items in this rho
+	public int getNoItems() {
+		return this.noItems;
+	}
+	
+	// setter for number of items in this rho
+	public void setNoItems(int noItems) {
+		this.noItems = noItems;
+	}
+	
+	// get lower table limit
+	public int getLowerTableLimit() {
+		return this.lowerTableLimit;
+	}
+	
+	// get upper table limit
+	public int getUpperTableLimit() {
+		return this.upperTableLimit;
 	}
 	
 	// method used to split a rho based on a table range split
@@ -88,6 +128,12 @@ public class VertexRho {
 		// simplify rho update to aid future queries
 		simplifyRho(split);
 				
+	}
+	
+	// method used to split a rho based on a table range split
+	public void splitRho(int lower, int upper) {
+		this.lowerTableLimit = lower;
+		this.upperTableLimit = upper;
 	}
 
 	// method used to update a rho upon detecting a remote access, ensures disjointness
@@ -153,11 +199,10 @@ public class VertexRho {
 		}
 	}
 	
+	
 	// method that checks if rho becomes remote after an update
 	public void checkRemoteAfterUpdate(VertexRho rho, VertexPhi phi) {
 		// get mathematica endpoint
-		
-		
 		
 		KernelLink link = MathematicaHandler.getInstance(); 
 		

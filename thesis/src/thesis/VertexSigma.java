@@ -28,17 +28,15 @@ public class VertexSigma {
 			// translate indirect reads into variables
 			if (rhoUpdated.contains("GET") || rhoUpdated.startsWith("12->")) {
 				// table 7 indirect read, new order
-				if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("->10")) {
-					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
+				if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("Tpcc:79")) {
+					rhoUpdated = rhoUpdated.replaceAll("GET-0@Tpcc:79"
 							, "iroliid"); 
-					if (rhoUpdated.contains("1000000"))
-						continue;
 				}
 	
 				// table 7 indirect read, delivery
 				else if (rhoUpdated.startsWith("7->"))
-					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)\\s"
-						, "(iroliid ");
+					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->1\\)"
+						, "(iroliid");
 				// table 5 indirect read, new order
 				else if (rhoUpdated.startsWith("5->") && rhoUpdated.contains("->10"))
 					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
@@ -47,17 +45,18 @@ public class VertexSigma {
 				else if (rhoUpdated.startsWith("5->") && rhoUpdated.contains("->1"))
 					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->1\\)"
 							, "iroliid");
+				// table 5 indirect reads, delivery v2
 				else if (rhoUpdated.startsWith("5->"))
 					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)\\s"
-							, "(iroliid "); 
+							, "(iroliid"); 
 				// table 6 indirect reads, new order
 				else if (rhoUpdated.startsWith("6->") && rhoUpdated.contains("->10"))
 					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
 						, "iroliid");
 				// table 6 indirect reads, delivery
 				else if (rhoUpdated.startsWith("6->"))
-					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)\\s"
-							, "(iroliid ");				
+					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->1\\)"
+							, "(iroliid");				
 				// delivery table 3 indirect reads
 				else if (rhoUpdated.startsWith("3->"))
 					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->3\\)"
@@ -68,7 +67,6 @@ public class VertexSigma {
 			}
 			
 			if (rhoRepeated(rhoUpdated)) {
-				System.out.println("Rho repeated, increased value");
 				continue;
 			}
 			
