@@ -1,0 +1,99 @@
+symbolic.min_int=-100
+symbolic.min_long=-9223372036854775808
+symbolic.min_short=-32768
+symbolic.min_byte=-128
+symbolic.min_char=0
+symbolic.max_int=100
+symbolic.max_long=9223372036854775807
+symbolic.max_short=32767
+symbolic.max_byte=127
+symbolic.max_char=65535
+symbolic.min_double=4.9E-324
+symbolic.max_double=1.7976931348623157E308
+Begin of execution
+JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All rights reserved.
+
+
+====================================================== system under test
+rubis.MainStoreBuyNow.main()
+
+====================================================== search started: 25-02-2022 12:38
+-- start of store buy now
+-- end of store buy now
+-- end of store buy now
+-- end of store buy now
+-- end of store buy now
+-- end of store buy now
+-- end of store buy now
+[PC_1_2521314] ROOT
+  --> [PC_2_1343042990] 
+  <== [PC_0_2521314] 
+
+[PC_2_1343042990] userId != -1
+  --> [PC_3_-977821206] 
+  <== [PC_1_2521314] 
+
+[PC_3_-977821206] itemId != -1 
+  --> [PC_5_-178415166] 
+  <== [PC_2_1343042990] 
+
+[PC_5_-178415166] qty != -1 
+  --> [PC_7_-909382215] 
+  <== [PC_3_-977821206] 
+
+[PC_7_-909382215] qty <= maxQty 
+  --> [RWSET_-2098729630] 
+  --> [RWSET_1332495984] 
+  <== [PC_5_-178415166] 
+
+[RWSET_1332495984] 
+W: 2->itemId, 6->(GET-5@Rubis:106 + (itemId * 100))
+  <== [PC_7_-909382215] 
+
+[RWSET_-2098729630] 
+R: 2->itemId
+W: 2->itemId
+  <== [PC_7_-909382215] 
+
+Total Number of Merges: 0
+Time spent Symbolic Execution: 0.444
+Time spent Pruning: 55100.55
+Number of Different Read and Write-Set: 2
+Number of Leaves Before:1
+Max Depth: 11
+Min Depth: 0
+times 0:	483802
+times 1:	972084
+times 2:	1799987
+times 3:	47328
+times 4:	0
+times 5:	3110338
+times 6:	17437007
+times 7:	26023273
+times 8:	4313231
+times 9:	111681
+times 10:	81820
+times 11:	49543
+times 12:	1553994
+times 13:	823
+times 14:	185733
+times 15:	0
+indirect_variables: 0
+mapStateToNode: 5
+mapStateToRWSet: 0
+mapRWSetToNode: 2
+
+====================================================== results
+no errors detected
+
+====================================================== statistics
+elapsed time:       00:00:00
+states:             new=12,visited=0,backtracked=12,end=6
+search:             maxDepth=7,constraints=0
+choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=6
+heap:               new=654,released=141,maxLive=639,gcCycles=9
+instructions:       3834
+max memory:         117MB
+loaded code:        classes=64,methods=1318
+
+====================================================== search finished: 25-02-2022 12:38

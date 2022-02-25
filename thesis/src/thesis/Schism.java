@@ -26,7 +26,7 @@ public class Schism {
 		int noVertices = 0;
 		int noEdges = 0;
 		
-		try (BufferedReader br = new BufferedReader(new FileReader("../calvin/schism.txt"))) {
+		try (BufferedReader br = new BufferedReader(new FileReader("schism.txt"))) {
 		    String line;
 		    while ((line = br.readLine()) != null) {
 		       String[] items = line.split(" ");
@@ -240,8 +240,8 @@ public class Schism {
 	
 	public static void main(String[] args) {
 		
-		
-		parseTrace("metis.txt", 2);
+		TPCCWorkloadGenerator.buildSchismTrace(100);
+		parseTrace("metis.txt", 10);
 
 	}
 

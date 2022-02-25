@@ -28,15 +28,17 @@ public class NewSplitter {
 	// replication wanted?
 	boolean replication = true;
 	// how many parts does a table split go for
-	int tableSplitFactor = 2;
+	public int tableSplitFactor = 2;
 	// how many splits does an input split go for, at most
-	int inputSplitFactor = 2;
+	public int inputSplitFactor = 2;
 	// no edges in final graph
 	int noEdges = 0;
 	// no vertices in final graph
 	int noVertices = 0;
 	// graph resultant from splitting
 	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new LinkedHashMap<>();
+	
+	private LinkedHashMap<Integer, ArrayList<String>> splits = new LinkedHashMap<>();
 	
 	// method that takes a graph as input and splits its vertices, returns the resulting graph
 	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
@@ -114,7 +116,7 @@ public class NewSplitter {
 				// check the range of each of the variables
 				for (String possibleVar: possibleVars) {
 					Pair<Integer, Integer> varRange = entry.getValue().iterator().next().getValue().getPhi().get(possibleVar);
-					if (varRange.getValue()-varRange.getKey() > 0) {
+					if (varRange.getValue()-varRange.getKey() > 0 && !possibleVar.startsWith("ir")) {
 						// in this case this var can be a splitter
 						verifiedVars.add(possibleVar);
 					}
@@ -127,10 +129,17 @@ public class NewSplitter {
 				else {
 					// check if replication is wanted
 					if (replication) {
-						// check whether this table is read only
-						if (VertexPhi.checkTableReadOnly(entry.getKey())) {
+						// check whether this table is possible to replicate
+						if (VertexPhi.checkTableReplicated(entry.getKey())) {
 							// do not consider this table
 							possibleSplits.remove(entry.getKey());
+							continue;
+						}
+						else {
+							// rhos overlap for some input, splitting the table instead
+							possibleSplits.remove(entry.getKey());
+							// mark possible splits for table as null to know it is a table split
+							possibleSplits.put(entry.getKey(), null);
 							continue;
 						}
 					}
@@ -157,18 +166,20 @@ public class NewSplitter {
 						HashSet<String> verifiedVars = new HashSet<>();
 						for (String possibleVar: possibleVars) {
 							Pair<Integer, Integer> varRange = rhoPhi1.getValue().getPhi().get(possibleVar);
-							if (varRange.getValue() - varRange.getKey() > 0) 
+							if (varRange.getValue() - varRange.getKey() > 0 && !possibleVar.startsWith("ir")) 
 								verifiedVars.add(possibleVar);
 						}						
 						possibleVars = rhoPhi2.getKey().getVariables();
 						for (String possibleVar: possibleVars) {
 							Pair<Integer, Integer> varRange = rhoPhi2.getValue().getPhi().get(possibleVar);
-							if (varRange.getValue() - varRange.getKey() > 0) 
+							if (varRange.getValue() - varRange.getKey() > 0 && !possibleVar.startsWith("ir")) 
 								verifiedVars.add(possibleVar);
+						}						
+						if (!verifiedVars.isEmpty()) {
+							splits.add(verifiedVars);
+							possibleSplits.put(entry.getKey(), splits);
+							continue;
 						}
-						splits.add(verifiedVars);
-						
-						possibleSplits.put(entry.getKey(), splits);
 					}
 					else {
 						// check if there is a split variable common amongst all rhos
@@ -182,8 +193,8 @@ public class NewSplitter {
 						else {
 							// check if replication is wanted
 							if (replication) {
-								// check whether this table is read only
-								if (VertexPhi.checkTableReadOnly(entry.getKey())) {
+								// check whether this table is possible to replicate
+								if (VertexPhi.checkTableReplicated(entry.getKey())) {
 									// do not consider this table
 									possibleSplits.remove(entry.getKey());
 								}
@@ -338,6 +349,7 @@ public class NewSplitter {
 	
 	// method that prints the splitting parameters for a given vertex
 	private void printSplits(int counter, ArrayList<String> splitVars) {
+		splits.put(counter, splitVars);
 		System.out.println("Split parameters for vertex no" + counter + " -> " + splitVars); 
 	}
 	
@@ -420,8 +432,10 @@ public class NewSplitter {
 				temp.addAll(partition(partitions, noSplitsParameter));
 			}
 			// update rhos in sublists
+			System.out.println("I: " + temp.size());
 			for (int i = 0; i < temp.size(); i++) {
 				// update all sigmas in each section, i represents the section
+				System.out.println("J: " + temp.get(i).size());
 				for (int j = 0; j < temp.get(i).size(); j++) {
 					// check if table split or input split
 					if (split.getKey().startsWith("#")) {
@@ -462,6 +476,7 @@ public class NewSplitter {
 		    partitions.add(originalList.subList(i,
 		            Math.min(i + partitionSize, originalList.size())));
 		}
+		
 		return partitions;
 	}
 	
@@ -480,6 +495,19 @@ public class NewSplitter {
 							new Pair<Integer, Integer>(cutoff * section, (cutoff * (section + 1) - 1)));
 			}
 		}
+		
+		if (section == 0) {
+			Split split = new Split(splitParam, inputRange.getKey(), cutoff - 1);
+			sigma.addSplit(split);
+		}
+		else {
+			Split split = new Split(splitParam, cutoff * section, (cutoff * (section + 1) - 1));
+			sigma.addSplit(split);
+		}
+		
+		
+		System.out.println("Applied split param: " + splitParam);
+		
 		return sigma;
 	}
 	
@@ -493,7 +521,6 @@ public class NewSplitter {
 		int cutoff = (tableRange / noSplits);
 		
 		/*
-		
 		// update all phis in the vertex
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
 			// update every access to the table under split
@@ -513,13 +540,26 @@ public class NewSplitter {
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
 			// update every access to the table under split
 			if (rhoPhi.getKey().getRho().startsWith(tableNo)) {
-				if (section == 0) 
+				if (section == 0) {
 					rhoPhi.getKey().splitRho(0,cutoff);
+				}
 				else {
 					rhoPhi.getKey().splitRho((cutoff * section), (cutoff * (section + 1)));
 				}
 			}
 		}
+		
+		if (section == 0) {
+			Split split = new Split(splitParam, 0, cutoff);
+			sigma.addSplit(split);
+		}
+		else {
+			Split split = new Split(splitParam, (cutoff * section), (cutoff * (section + 1)));
+			sigma.addSplit(split);
+		}
+		
+		System.out.println("Applied table split!");
+		
 		return sigma;
 		
 	}
@@ -529,7 +569,9 @@ public class NewSplitter {
 		// edges found during rho comparison
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 		// need to compare newly added vertex to every other vertex
-		HashMap<VertexRho, VertexPhi> rhosV = newVertex.getSigma().getRhos();
+		LinkedHashMap<VertexRho, VertexPhi> rhosV = newVertex.getSigma().getRhos();
+		// need to store which rhos have been analyzed for vertex weight computation
+		LinkedHashMap<VertexRho, VertexPhi> prevRhos = new LinkedHashMap<>();
 		// compare rho by rho
 		for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
 			String rhoV = entryV.getKey().getRho();
@@ -537,87 +579,155 @@ public class NewSplitter {
 			int rhoVWeight = computeRhoWeight(entryV.getKey(), entryV.getValue());
 			// set the rho weight in a field 
 			entryV.getKey().setNoItems(rhoVWeight);
-			// handle prob rhos later
-			if (entryV.getKey().getProb() < 0.6) continue;
-			// if replication is enable and read only table, dont compare
-			if (replication && VertexPhi.checkTableReadOnly(Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)))) {
-				continue;
-			}
-			// do not consider index cost
-			if (Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)) > 9) continue;
-			
-			// compare new vertex to all vertices in the graph to ensure they are disjoint 
-			for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
-				GraphVertex gv = node.getKey();
-				// obtain all rhos in previously existing vertex
-				HashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
-				for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
-					// skip low prob rho
-					if (entryGV.getKey().getProb() < 0.5) {
-						continue;
-					}
-					String rhoGV = entryGV.getKey().getRho();
-					String phiGV = entryGV.getValue().getPhiAsString();
-					// if rhos are not on same table they do need to be compared
-					if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
-							|| entryGV.getKey().isRemote()) {
-						continue;
-					}
-					//compute intersection between rhos given the phis, compute weight of intersection
-					int result = rhoIntersection(entryV.getKey(), entryGV.getKey(), entryV.getValue(), entryGV.getValue());
-					// check the intersection results
-					if (result == 0) {
-						// no overlap so no subtraction needed, simply update weight
-						continue;
-					}
-					else {
-						// variable to store edge weight
-						int edgeWeight = result;
-						// already have the weight of the edge, check if edges outgoing from V overlap with newly found edge
-						for (GraphEdge e : foundEdges) {
+			// if replication is enabled and read only table, dont compare
+			if (replication && VertexPhi.checkTableReplicated(Integer.parseInt(rhoV.substring(0, rhoV.indexOf(">") - 1)))) {
+				// no need to consider item removal;
+			}	
+			else {
+				// compare new vertex to all vertices in the graph to ensure they are disjoint 
+				for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> node : graph.entrySet()) {
+					GraphVertex gv = node.getKey();
+					// obtain all rhos in previously existing vertex
+					LinkedHashMap<VertexRho, VertexPhi> rhosGV = gv.getSigma().getRhos();
+					for (Map.Entry<VertexRho, VertexPhi> entryGV: rhosGV.entrySet()) {
+						// skip low prob rho
+						if (entryGV.getKey().getProb() < 0.5) {
+							continue;
+						}
+						String rhoGV = entryGV.getKey().getRho();
+						String phiGV = entryGV.getValue().getPhiAsString();
+						// if rhos are not on same table they do need to be compared
+						if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
+								|| entryGV.getKey().isRemote()) {
+							continue;
+						}
+						//compute intersection between rhos given the phis, compute weight of intersection
+						int result = rhoIntersection(entryV.getKey(), entryGV.getKey(), entryV.getValue(), entryGV.getValue());
+						// check the intersection results
+						if (result == 0) {
+							// no overlap so no subtraction needed
+							continue;
+						}
+						if (result < 0) {
+							System.out.println("This would be very bad");
+						}
+						else {
+							// variable to store edge weight
+							int edgeWeight = result;
+							// already have the weight of the edge, check if edges outgoing from V overlap with newly found edge
+							for (GraphEdge e : foundEdges) {
+								int edgeOverlap = 0;
+								// if rhos are not on same table they do need to be compared
+								if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(e.getEdgeRho().getRho().substring(0, 
+										e.getEdgeRho().getRho().indexOf(">") - 1))) {
+									continue;
+								}
+								else {
+									edgeOverlap = rhoIntersection(entryV.getKey(), e.getEdgeRho(), entryV.getValue(), e.getEdgePhi());
+								}
+								// if there is no overlap between edges continue
+								if (edgeOverlap == 0) {
+									continue;
+								}
+								// approximation shows that the edge provides no value
+								else if (edgeWeight - edgeOverlap < 0) {
+									edgeWeight = 0;
+									break;
+								}
+								// if there is overlap, update new edge weight
+								else {
+									edgeWeight = edgeWeight - edgeOverlap;
+								}
+							}
+							// create the edge with the remaining weight, unless its 0 then the edge does not exist
+							if (edgeWeight != 0) {
+								GraphEdge newEdge = new GraphEdge(newVertex.getVertexID(), gv.getVertexID(), entryV.getKey(), entryV.getValue(), edgeWeight);
+								foundEdges.add(newEdge);
+							}
+							int noItemsRho = entryV.getKey().getNoItems();
+							noItemsRho = noItemsRho - result;
+							// check if below 0 due to approximations
+							if (noItemsRho < 0) {
+								noItemsRho = 0;
+							}
+							// decrease the number of items in the rho
+							entryV.getKey().setNoItems(noItemsRho);
 							
-							int edgeOverlap = 0;
-							
-							// if rhos are not on same table they do need to be compared
-							if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(e.getEdgeRho().getRho().substring(0, 
-									e.getEdgeRho().getRho().indexOf(">") - 1))) {
-								continue;
-							}
-							else {
-								edgeOverlap = rhoIntersection(entryV.getKey(), e.getEdgeRho(), entryV.getValue(), e.getEdgePhi());
-							}
-							// if there is no overlap between edges continue
-							if (edgeOverlap == 0) {
-								continue;
-							}
-							// if there is overlap, update new edge weight
-							else {
-								edgeWeight = edgeWeight - edgeOverlap;
-							}
-						}
-						// create the edge with the remaining weight, unless its 0 then the edge does not exist
-						if (edgeWeight != 0) {
-							GraphEdge newEdge = new GraphEdge(newVertex.getVertexID(), gv.getVertexID(), entryV.getKey(), entryV.getValue(), edgeWeight);
-							foundEdges.add(newEdge);
-						}
-						// check how many items were in the rho
-						int noItemsRho = entryV.getKey().getNoItems();
-						// increase the number of remote items in the rho
-						entryV.getKey().setRemoteItems(entryV.getKey().getRemoteItems() + edgeWeight);
-						// decrease the number of items in the rho
-						entryV.getKey().setNoItems(noItemsRho - edgeWeight);
-						// if the rho is empty after this subtraction, set it to remote and stop analyzing it
-						if (entryV.getKey().getNoItems() == 0) {
-							System.out.println("Alert: Rho is now empty, setting it to remote!");
-							entryV.getKey().setRemote();
-							break;
+							// if the rho is empty after this subtraction, set it to remote and stop analyzing it
+							if (entryV.getKey().getNoItems() == 0) {
+								//System.out.println("Alert: Rho is now empty, setting it to remote!");
+								entryV.getKey().setRemote();
+								break;
+							} 
 						}
 					}
+					// if the new vertex's rho under analysis is already empty it does not need further analysis
+					if (entryV.getKey().isRemote())
+						break;
 				}
-				// if the new vertex's rho under analysis is already empty it does not need further analysis
-				if (entryV.getKey().isRemote())
-					break;
 			}
+			// remove duplicate items from rho weight
+			int itemsToRemove = 0;
+			// need to update no items in this rho after computing all its edges, compare to previous rhos
+			
+			//System.out.println("Rho: " + entryV.getKey().getRho());
+			//System.out.println("Weight: " + entryV.getKey().getNoItems());
+			
+			if (entryV.getKey().isRemote()) continue;
+			
+			for (Map.Entry<VertexRho, VertexPhi> prevRho: prevRhos.entrySet()) {
+				// check if rhos belong to same table
+				if (prevRho.getKey().getTable().equals(entryV.getKey().getTable())) {
+					// if same table compare overlaps
+					int overlap = rhoIntersection(entryV.getKey(), prevRho.getKey(), entryV.getValue(), prevRho.getValue());					
+					// check how many of the overlapping items are remote
+					int remote = 0;
+					for (GraphEdge e : foundEdges) {
+						if (e.getEdgeRho().equals(entryV.getKey())) {
+							// edges originated in the current rho
+							remote += rhoIntersection(prevRho.getKey(), e.getEdgeRho(), prevRho.getValue(), e.getEdgePhi());
+						}
+						else if (e.getEdgeRho().equals(prevRho.getKey())) {
+							// edges originated in previous rhos
+							remote += rhoIntersection(entryV.getKey(), e.getEdgeRho(), entryV.getValue(), e.getEdgePhi());
+						}
+					}
+					// from the overlap between the two rhos, remove the remote items in both rhos
+					overlap = overlap - remote;
+					// check if overlap went below 0 due to approximations
+					if (overlap < 0)
+						overlap = 0;
+					// add overlap size to items to remove
+					itemsToRemove += overlap;
+					// if more items to remove than size of rho we can proceed
+					if (itemsToRemove >= entryV.getKey().getNoItems())
+						break;
+				}
+				else {
+					// no overlaps between rhos
+					continue;
+				}
+			}
+			// System.out.println("Removed duplicates: " + itemsToRemove);
+			
+			prevRhos.put(entryV.getKey(), entryV.getValue());
+			// current rho weight will be equal to the its original weight - duplicate items
+			int noItemsRho = entryV.getKey().getNoItems();
+			noItemsRho = noItemsRho - itemsToRemove;
+			// check if below 0 due to approximations
+			if (noItemsRho < 0) {
+				noItemsRho = 0;
+			}
+			// System.out.println("Final: " + noItemsRho);
+			// set the new number of items in the rho
+			entryV.getKey().setNoItems(noItemsRho);
+			// if the rho is empty afterwards set it to remote and stop analyzing it
+			if (entryV.getKey().getNoItems() == 0) {
+				//System.out.println("Alert: Rho is now empty, setting it to remote!");
+				entryV.getKey().setRemote();
+			} 
+			
+			
 		}
 		// in this stage the new vertex has been compared and updated regarding all previous vertices
 		graph.put(newVertex, new ArrayList<>());
@@ -637,8 +747,10 @@ public class NewSplitter {
 		String phi1 = phi.getPhiAsString(); 
 		HashSet<String> vars = rho.getVariables(); 
 		
+		
 		// create SMT file
 		String fileName = "SMTfileVertex.smt2";
+		
 		File smtFile = new File(fileName);
 		try {
 			smtFile.createNewFile();
@@ -667,7 +779,7 @@ public class NewSplitter {
 			}
 			
 			smtWritter.append("(assert (= rho_1 " + recursiveRhoToSMT(rho1.substring(rho1.indexOf(">") + 1), true) + "))\n");
-			if (rho.getRhoUpdate() != null) {
+			if (rho.tableSplitExists()) {
 				smtWritter.append(tableSplitSMT(rho, 1));
 			}
 			smtWritter.append("(assert (= rho_2 " + recursiveRhoToSMT(rho1.substring(rho1.indexOf(">") + 1), false) + "))\n");
@@ -741,10 +853,13 @@ public class NewSplitter {
 			e.printStackTrace();
 		}
 		
+	
+		
 		return 0;
-}
+	}
 	
 	// method that computes the weight of the intersection between two rhos given each associated phi
+	
 	private int rhoIntersection(VertexRho rhoV, VertexRho rhoGV, VertexPhi phiV, VertexPhi phiGV) {
 		// obtain strings for query
 		String rho1 = rhoV.getRho(); // new vertex
@@ -798,11 +913,11 @@ public class NewSplitter {
 			}
 			
 			smtWritter.append("(assert (= rho_1 " + recursiveRhoToSMT(rho1.substring(rho1.indexOf(">") + 1), true) + "))\n");
-			if (rhoV.getRhoUpdate() != null) {
+			if (rhoV.tableSplitExists()) {
 				smtWritter.append(tableSplitSMT(rhoV, 1));
 			}
 			smtWritter.append("(assert (= rho_2 " + recursiveRhoToSMT(rho2.substring(rho2.indexOf(">") + 1), false) + "))\n");
-			if (rhoGV.getRhoUpdate() != null) {
+			if (rhoGV.tableSplitExists()) {
 				smtWritter.append(tableSplitSMT(rhoGV, 2));
 			}
 			smtWritter.append("(assert (= phi_1 " + parsePhiIntoSmt(phi1) + "))\n");
@@ -877,6 +992,7 @@ public class NewSplitter {
 	}
 	
 	// method that builds extra smt line for table splits
+	
 	private String tableSplitSMT(VertexRho rho, int rhoNumber) {
 		// get lower table limit
 		int lower = rho.getLowerTableLimit() - 1;
@@ -888,11 +1004,12 @@ public class NewSplitter {
 		String upperBin = Integer.toBinaryString(upper);
 		// build formatted string
 		if (lower != -1) {
-			return "(assert (and (bvult " + countAndFixBin(lowerBin) + " rho" + rhoNumber 
-					+ ") (bvult rho" + rhoNumber + " " + countAndFixBin(upperBin) + ")))"; 
+			return "(assert (and (bvult " + countAndFixBin(lowerBin) + " rho_" 
+						+ rhoNumber + ") (bvult rho_" 
+						+ rhoNumber + " "+ countAndFixBin(upperBin) + ")))\n"; 
 		}
 		else {
-			return "(assert (bvult rho" + rhoNumber + " " + countAndFixBin(upperBin) + "))";
+			return "(assert (bvult rho_" + rhoNumber + " " + countAndFixBin(upperBin) + "))\n";
 		}
 	}
 	
@@ -993,6 +1110,10 @@ public class NewSplitter {
 			return "(bvmul " + recursiveRhoToSMT(rho.substring(1, splitIndex - 1), rho1) + " " 
 					+ recursiveRhoToSMT(rho.substring(splitIndex + 2, rho.length() - 1), rho1) + ")";
 		}
+		else if (rho.charAt(splitIndex) == '-') {
+			return "(bvsub " + recursiveRhoToSMT(rho.substring(1, splitIndex - 1), rho1) + " " 
+					+ recursiveRhoToSMT(rho.substring(splitIndex + 2, rho.length() - 1), rho1) + ")";
+		}
 		
 		// shouldn't happen
 		System.out.println("Buggy conversion from rho to smt rho");
@@ -1052,7 +1173,7 @@ public class NewSplitter {
 		    	inclIndex--;
 		    }
 		    // if we found an operation with inclusion index == 1, return its index in rho
-		    if ((c == '+' || c == '*') && inclIndex == 1) {
+		    if ((c == '+' || c == '*' || c == '-') && inclIndex == 1) {
 		    	return i;
 		    }
 		    else 
@@ -1253,6 +1374,10 @@ public class NewSplitter {
 				splits.add(commonVar);
 		}
 		return splits;
+	}
+	
+	public LinkedHashMap<Integer, ArrayList<String>> getSplits() {
+		return this.splits;
 	}
 	
 	

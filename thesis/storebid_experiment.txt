@@ -1,0 +1,144 @@
+symbolic.min_int=-100
+symbolic.min_long=-9223372036854775808
+symbolic.min_short=-32768
+symbolic.min_byte=-128
+symbolic.min_char=0
+symbolic.max_int=100
+symbolic.max_long=9223372036854775807
+symbolic.max_short=32767
+symbolic.max_byte=127
+symbolic.max_char=65535
+symbolic.min_double=4.9E-324
+symbolic.max_double=1.7976931348623157E308
+Begin of execution
+JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All rights reserved.
+
+
+====================================================== system under test
+rubis.MainStoreBid.main()
+
+====================================================== search started: 25-02-2022 12:15
+-- start of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+-- end of store bid
+[PC_1_2521314] ROOT
+  --> [PC_2_1343042990] 
+  <== [PC_0_2521314] 
+
+[PC_2_1343042990] userId != -1
+  --> [PC_3_-977821206] 
+  <== [PC_1_2521314] 
+
+[PC_3_-977821206] itemId != -1 
+  --> [PC_4_-412890739] 
+  <== [PC_2_1343042990] 
+
+[PC_4_-412890739] minBid != -1 
+  --> [PC_5_-1062828645] 
+  <== [PC_3_-977821206] 
+
+[PC_5_-1062828645] bid != -1 
+  --> [PC_6_2059770399] 
+  <== [PC_4_-412890739] 
+
+[PC_6_2059770399] maxBid != -1 
+  --> [PC_7_-1350783418] 
+  <== [PC_5_-1062828645] 
+
+[PC_7_-1350783418] maxQty != -1 
+  --> [PC_9_-178415166] 
+  <== [PC_6_2059770399] 
+
+[PC_9_-178415166] qty != -1 
+  --> [PC_10_-909382215] 
+  <== [PC_7_-1350783418] 
+
+[PC_10_-909382215] qty <= maxQty 
+  --> [PC_11_-1572928553] 
+  <== [PC_9_-178415166] 
+
+[PC_11_-1572928553] bid >= minBid 
+  --> [PC_12_1442330203] 
+  <== [PC_10_-909382215] 
+
+[PC_12_1442330203] maxBid >= minBid 
+  --> [PC_14_-602189219] 
+  <== [PC_11_-1572928553] 
+
+[PC_14_-602189219] maxBid >= bid 
+  --> [RWSET_-1049364815] 
+  --> [PC_16_123870910] 
+  <== [PC_12_1442330203] 
+
+[PC_16_123870910] GET-12@Rubis:157 != -1 
+  --> [RWSET_1198606308] 
+  --> [RWSET_-1067191525] 
+  <== [PC_14_-602189219] 
+
+[RWSET_-1067191525] 
+W: 51->itemId
+  <== [PC_16_123870910] 
+
+[RWSET_1198606308] 
+R: 51->itemId
+W: 5->(GET-12@Rubis:157 + (itemId * 1000)), 2->itemId
+  <== [PC_16_123870910] 
+
+[RWSET_-1049364815] 
+R: 2->itemId
+  <== [PC_14_-602189219] 
+
+Total Number of Merges: 0
+Time spent Symbolic Execution: 0.485
+Time spent Pruning: 59822.768
+Number of Different Read and Write-Set: 3
+Number of Leaves Before:1
+Max Depth: 27
+Min Depth: 0
+times 0:	447705
+times 1:	809289
+times 2:	1645312
+times 3:	61335
+times 4:	0
+times 5:	3029145
+times 6:	21802982
+times 7:	30028122
+times 8:	4615019
+times 9:	117754
+times 10:	55655
+times 11:	38950
+times 12:	1813545
+times 13:	700
+times 14:	241726
+times 15:	0
+indirect_variables: 0
+mapStateToNode: 13
+mapStateToRWSet: 0
+mapRWSetToNode: 3
+
+====================================================== results
+no errors detected
+
+====================================================== statistics
+elapsed time:       00:00:00
+states:             new=28,visited=0,backtracked=28,end=14
+search:             maxDepth=15,constraints=0
+choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=14
+heap:               new=670,released=325,maxLive=639,gcCycles=18
+instructions:       4003
+max memory:         117MB
+loaded code:        classes=64,methods=1318
+
+====================================================== search finished: 25-02-2022 12:15

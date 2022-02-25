@@ -71,10 +71,13 @@ public class SEParser {
 						// get next line with read or write set info
 						line = file.readLine();
 						// check if there is a read set
-						node = getRSet(line, node);
+						if (line.startsWith("R:")) {
+							node = getRSet(line, node);
+							line = file.readLine();
+						}
 						// check if there is a write set
-						line = file.readLine();
-						node = getWSet(line, node);
+						if (line.startsWith("W:"))
+							node = getWSet(line, node);
 						// add node to the tree
 						tree.put(pc, node);
 					}
@@ -93,10 +96,13 @@ public class SEParser {
 					// get next line with read or write set info
 					line = file.readLine();
 					// check if there is a read set
-					node = getRSet(line, node);
+					if (line.startsWith("R:")) {
+						node = getRSet(line, node);
+						line = file.readLine();
+					}
 					// check if there is a write set
-					line = file.readLine();
-					node = getWSet(line, node);
+					if (line.startsWith("W:"))
+						node = getWSet(line, node);
 					// add node to the tree, if root add tag
 					if (root) {
 						tree.put("root", node);
@@ -316,9 +322,9 @@ public class SEParser {
 	// main for debug purposes
 	public static void main(String[] args) {
 		try {
-			String[] files = {"delivery_new.txt"};
+			String[] files = {"order_status_experiment.txt"};
 			new SEParser(files);
-			int vertexCount = 0;
+			int vertexCount = 0; 
 			for(Vertex vertex : vertices) {
 				vertexCount++;
 				System.out.println("Vertex no " + vertexCount);

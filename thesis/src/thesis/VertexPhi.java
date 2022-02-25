@@ -9,7 +9,7 @@ public class VertexPhi {
 	// set of variables and its ranges
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	// scale factor for TPC -C
-	private static int w = 9;
+	private static int w = 1; 
 	private static int item = 99999;
 	private static int customer = 2999;
 	private static int district = 9;
@@ -70,8 +70,12 @@ public class VertexPhi {
 				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(item));
 				this.variables.put(variable, range);
 			}
-			else if (variable.equals("iroliid")) {
+			else if (variable.equals("irorderid")) {
 				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(customer));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("iroliid")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(item));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("ircustomerid")) {
@@ -135,16 +139,15 @@ public class VertexPhi {
 	}
 	
 	// schema helper, check if a table is read 
-	public static boolean checkTableReadOnly(int tableNo) {
+	public static boolean checkTableReplicated(int tableNo) {
 		switch (tableNo) {
+		case 1:
+			if (w == 0) {
+				return true;
+			}
 		case 8:
 			// table 8 is ready only
 			return true;
-		case 9:
-			if (w == 0) {
-				return false;
-			}
-			return false;
 		default:
 			// every other table has write accesses
 			return false;

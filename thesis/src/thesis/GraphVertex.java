@@ -55,115 +55,23 @@ public class GraphVertex {
 	}
 	
 	// method that computes vertex weight in SMT implementation
-	public void computeVertexWeightSMT() {
+	public void computeVertexWeightSMT() { 
 		// temp variable for vertex weight
 		int vertexWeightTemp = 0;
 		// iterate over all the rhos in the vertex
 		for (Map.Entry<VertexRho, VertexPhi> entry: this.getSigma().getRhos().entrySet()) {
+			System.out.println("T: " + entry.getKey().getTable() + " rho weight: " + 
+						entry.getKey().getNoItems() + " value: " + entry.getKey().getValue());
 			vertexWeightTemp += (entry.getKey().getNoItems() * entry.getKey().getValue());
 		}
-		this.vertexWeight = vertexWeightTemp;		
-	}
-	
-	// method that computes vertex weight, i.e. how many data items it stores
-	public void computeVertexWeight() {
-		// get mathematica endpoint
-		KernelLink link = MathematicaHandler.getInstance(); 
-		// auxiliary structure to compute vertex weight
-		HashMap<String, ArrayList<String>> tableAccesses = new HashMap<>();
-		// iterate through rho and respective phis
-		for (Map.Entry<VertexRho, VertexPhi> entry: this.getSigma().getRhos().entrySet()) {
-			// skip low prob rhos they are always remote
-			if (entry.getKey().getProb() < 0.5) 
-				continue;
-			String table = entry.getKey().getRho().substring(0, entry.getKey().getRho().indexOf(">") - 1);
-			
-			if (Integer.valueOf(table) > 9) continue;
-			
-			String phiQuery = entry.getValue().getPhiAsGroup();
-			String rhoQuery = entry.getKey().getRho().substring(entry.getKey().getRho().indexOf(">") + 1);
-			// check if rho is constrained by logical subtraction
-			if (entry.getKey().getRhoUpdate() != null) {
-				rhoQuery = "(" + rhoQuery +  ") && (" + entry.getKey().getRhoUpdate() + ")";
-			}
-			// check items accessed by rho given phi
-			String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
-			System.out.println(query);
-			String result = link.evaluateToOutputForm(query, 0);
-			result = result.replaceAll("[, ]*False[, ]*", "");
-			// if empty result then this rho is remote
-			if (result.equals("{}")) {
-				//System.out.println("Empty rho, removing");
-				entry.getKey().setRemote();
-				continue;
-			}
-			// add accesses to its corresponding table entry
-			if (!tableAccesses.containsKey(table)) {
-				ArrayList<String> accesses = new ArrayList<>();
-				accesses.add(result);
-				tableAccesses.put(table, accesses);
-			}
-			else {
-				tableAccesses.get(table).add(result);
-			}
-		}
+		this.vertexWeight = vertexWeightTemp;	
 		
-		// each table has its accesses computed, evaluate size of the access
-		System.out.println("Printing table weight for vertex: " + this.vertexID);
-		for (Map.Entry<String, ArrayList<String>> entry: tableAccesses.entrySet()) {
-			if (Integer.valueOf(entry.getKey()) > 9) continue;
-			String query = "";
-			for (String access: entry.getValue()) {
-				query += access + ", ";
-			}
-			query = query.substring(0, query.length() - 2);
-			// size given by union of all the accesses, no duplicates
-			String mathQuery = "Length[DeleteDuplicates[Union[" + query + "]]]";
-			String result = link.evaluateToOutputForm(mathQuery, 0);
-			System.out.println("Table: " + entry.getKey() + " Weight: " + result);
-			
-			vertexWeight += Integer.parseInt(result);
-		}	
+		// cannot be less than 0, if so its because of an over aproximation, fix it
+		if (this.vertexWeight < 0) {
+			this.vertexWeight = 0;
+		}
 	}
-	
-	// method that checks if rho becomes remote after an update
-	public void checkRemoteAfterUpdate(VertexRho rho, VertexPhi phi) {
-		// get mathematica endpoint
-		KernelLink link = MathematicaHandler.getInstance(); 
 		
-		String phiQuery = phi.getPhiAsGroup();
-		String rhoQuery = rho.getRho().substring(rho.getRho().indexOf(">") + 1);
-		// check if rho is constrained by logical subtraction
-		if (rho.getRhoUpdate() != null) {
-			rhoQuery = "(" + rhoQuery +  ") && (" + rho.getRhoUpdate() + ")";
-		}
-		// check items accessed by rho given phi
-		String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
-		String result = link.evaluateToOutputForm(query, 0);
-		// check if any items left on rho
-		if (countMatches(result, "True") == 0) {
-			//System.out.println("Empty rho, removing");
-			rho.setRemote();
-		}
-	}
-	
-	// methos used to count how many times a substring appears in a string
-	private int countMatches(String str, String query) {
-		int lastIndex = 0;
-		int count = 0;
-		
-		while(lastIndex != -1){
-
-		    lastIndex = str.indexOf(query,lastIndex);
-
-		    if(lastIndex != -1){
-		        count ++;
-		        lastIndex += query.length();
-		    }
-		}
-		return count;
-	}
-	
 	// debug and presentation print
 	public void printVertex() {
 		System.out.println("--------------------------");

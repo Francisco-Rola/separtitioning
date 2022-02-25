@@ -1,0 +1,104 @@
+symbolic.min_int=-100
+symbolic.min_long=-9223372036854775808
+symbolic.min_short=-32768
+symbolic.min_byte=-128
+symbolic.min_char=0
+symbolic.max_int=100
+symbolic.max_long=9223372036854775807
+symbolic.max_short=32767
+symbolic.max_byte=127
+symbolic.max_char=65535
+symbolic.min_double=4.9E-324
+symbolic.max_double=1.7976931348623157E308
+Begin of execution
+JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All rights reserved.
+
+
+====================================================== system under test
+rubis.MainRegisterItem.main()
+
+====================================================== search started: 25-02-2022 12:15
+-- start of register Item
+-- end of register Item
+-- end of register Item
+-- end of register Item
+-- end of register Item
+-- end of register Item
+-- end of register Item
+-- end of register Item
+[PC_1_2521314] ROOT
+  --> [PC_2_2008709683] 
+  <== [PC_0_2521314] 
+
+[PC_2_2008709683] name != -1
+  --> [PC_3_-448040516] 
+  <== [PC_1_2521314] 
+
+[PC_3_-448040516] description != -1 
+  --> [PC_4_1055852851] 
+  <== [PC_2_2008709683] 
+
+[PC_4_1055852851] initialPrice != -1 
+  --> [PC_5_-479515356] 
+  <== [PC_3_-448040516] 
+
+[PC_5_-479515356] duration != -1 
+  --> [PC_6_1558487629] 
+  <== [PC_4_1055852851] 
+
+[PC_6_1558487629] quantity != -1 
+  --> [PC_8_212610248] 
+  <== [PC_5_-479515356] 
+
+[PC_8_212610248] buyNow != -1 
+  --> [RWSET_-746079762] 
+  <== [PC_6_1558487629] 
+
+[RWSET_-746079762] 
+R: 3->categoryId
+W: 3->categoryId, 2->(GET-6@Rubis:285(3->categoryId->2) + (categoryId * 100000))
+  <== [PC_8_212610248] 
+
+Total Number of Merges: 0
+IR=GET-6@Rubis:285=3->categoryId->2
+Time spent Symbolic Execution: 0.474
+Time spent Pruning: 67147.808
+Number of Different Read and Write-Set: 1
+Number of Leaves Before:0
+Max Depth: 13
+Min Depth: 0
+times 0:	453450
+times 1:	1039390
+times 2:	1644378
+times 3:	88243
+times 4:	0
+times 5:	2823592
+times 6:	22453656
+times 7:	30722293
+times 8:	4971457
+times 9:	164317
+times 10:	58515
+times 11:	301060
+times 12:	1527008
+times 13:	768
+times 14:	188920
+times 15:	0
+indirect_variables: 0
+mapStateToNode: 6
+mapStateToRWSet: 0
+mapRWSetToNode: 1
+
+====================================================== results
+no errors detected
+
+====================================================== statistics
+elapsed time:       00:00:00
+states:             new=14,visited=0,backtracked=14,end=7
+search:             maxDepth=8,constraints=0
+choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=7
+heap:               new=655,released=163,maxLive=639,gcCycles=9
+instructions:       3917
+max memory:         117MB
+loaded code:        classes=64,methods=1318
+
+====================================================== search finished: 25-02-2022 12:15

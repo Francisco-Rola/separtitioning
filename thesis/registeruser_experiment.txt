@@ -1,0 +1,99 @@
+symbolic.min_int=-100
+symbolic.min_long=-9223372036854775808
+symbolic.min_short=-32768
+symbolic.min_byte=-128
+symbolic.min_char=0
+symbolic.max_int=100
+symbolic.max_long=9223372036854775807
+symbolic.max_short=32767
+symbolic.max_byte=127
+symbolic.max_char=65535
+symbolic.min_double=4.9E-324
+symbolic.max_double=1.7976931348623157E308
+Begin of execution
+JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All rights reserved.
+
+
+====================================================== system under test
+rubis.MainRegisterUser.main()
+
+====================================================== search started: 25-02-2022 12:16
+-- start of regsiter user
+-- end of regsiter user
+-- end of regsiter user
+-- end of regsiter user
+-- end of regsiter user
+-- end of regsiter user
+-- end of regsiter user
+[PC_1_2521314] ROOT
+  --> [PC_2_-2101900029] 
+  <== [PC_0_2521314] 
+
+[PC_2_-2101900029] firstName != -1
+  --> [PC_3_32737239] 
+  <== [PC_1_2521314] 
+
+[PC_3_32737239] lastName != -1 
+  --> [PC_4_868206858] 
+  <== [PC_2_-2101900029] 
+
+[PC_4_868206858] nickname != -1 
+  --> [PC_5_2044515868] 
+  <== [PC_3_32737239] 
+
+[PC_5_2044515868] email != -1 
+  --> [PC_7_331962941] 
+  <== [PC_4_868206858] 
+
+[PC_7_331962941] password != -1 
+  --> [RWSET_-2026250957] 
+  <== [PC_5_2044515868] 
+
+[RWSET_-2026250957] 
+R: 4->regionId
+W: 4->regionId, 1->(GET-5@Rubis:256(4->regionId->2) + (regionId * 1000000))
+  <== [PC_7_331962941] 
+
+Total Number of Merges: 0
+IR=GET-5@Rubis:256=4->regionId->2
+Time spent Symbolic Execution: 0.437
+Time spent Pruning: 56534.103
+Number of Different Read and Write-Set: 1
+Number of Leaves Before:0
+Max Depth: 11
+Min Depth: 0
+times 0:	443299
+times 1:	651641
+times 2:	1416422
+times 3:	47473
+times 4:	0
+times 5:	2480836
+times 6:	15251625
+times 7:	22050604
+times 8:	3900902
+times 9:	146253
+times 10:	44268
+times 11:	196968
+times 12:	1170255
+times 13:	510
+times 14:	225948
+times 15:	0
+indirect_variables: 0
+mapStateToNode: 5
+mapStateToRWSet: 0
+mapRWSetToNode: 1
+
+====================================================== results
+no errors detected
+
+====================================================== statistics
+elapsed time:       00:00:00
+states:             new=12,visited=0,backtracked=12,end=6
+search:             maxDepth=7,constraints=0
+choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=6
+heap:               new=653,released=140,maxLive=639,gcCycles=8
+instructions:       3766
+max memory:         117MB
+loaded code:        classes=64,methods=1318
+
+====================================================== search finished: 25-02-2022 12:16

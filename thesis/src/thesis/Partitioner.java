@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -15,21 +16,25 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Partitioner {
 	
 	// no partitions desired 
-	private static int noParts = 2;
+	private int noParts = 2; 
 	
 	// graph under partitioning
-	private static LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph;
+	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph;
 	
-	// final merged graph, there should be as many vertices as partitions
-	private static LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph = new LinkedHashMap<>();
+	// splitter used
+	private NewSplitter splitter;
+	
+	// mapping between vertex and part
+	private LinkedHashMap<GraphVertex, Integer> vertexPart = new LinkedHashMap<>();
 	
 	// default constructor for partitioner, receives a graph and stores it
-	public Partitioner(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+	public Partitioner(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph, NewSplitter splitter) {
 		this.graph = graph;
+		this.splitter = splitter;
 	}
 
 	// method that invokes METIS to partition graph and prints result
-	public static void partitionGraph() {
+	public void partitionGraph() {
 		// command to run METIS
 		String command = "gpmetis metis.txt " + noParts;
 		// run the command
@@ -42,39 +47,108 @@ public class Partitioner {
 		      while (myReader.hasNextLine()) {
 		    	// each vertex gets an assigned partition
 		        String data = myReader.nextLine();
+		        // data contains part for vertex 
 		        System.out.println(data);
-		        for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> gv : graph.entrySet()) {
-		        	if (vertex == gv.getKey().getVertexID()) {
-	 	        		int partNumber = Integer.parseInt(data);
-		        		if (mergedGraph.containsKey(partNumber)) {
-		        			mergedGraph.get(partNumber).add(gv.getKey());
-		        		}
-		        		else {
-		        			ArrayList<GraphVertex> verticesInPart = new ArrayList<>();
-		        			verticesInPart.add(gv.getKey());
-		        			mergedGraph.put(partNumber, verticesInPart);
-		        		}
-		        	}
+		        for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> entry : graph.entrySet()) {
+		        	if (vertex == entry.getKey().getVertexID()) {
+		        		 // store mapping between vertex and part
+				        vertexPart.put(entry.getKey(), Integer.parseInt(data));
+				        vertex++;
+				        break;
+		        	}		
 		        }
-		        vertex++;
 		      }
 		      myReader.close();
 		} catch (IOException e) {
 			System.out.println("Error while runnning METIS command");
 			e.printStackTrace();
 		}
-        
-        // generate file with association between keys and vertex
-        //generateAssociations(mergedGraph);
-
+           
+        buildPartFunction();
 	}
 	
-	
-	
-	public static void generateAssociations(LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph) {
+	// method that builds partitioning function from splits and metis results
+	public void buildPartFunction() {
+		LinkedHashMap<Integer,LinkedHashMap<String, Pair<Integer, Integer>>> splitRules = new LinkedHashMap<>();
 		
-		int dataThresh = 50;
-		int testThresh = 500;
+		for (Map.Entry<GraphVertex, Integer> entry : vertexPart.entrySet()) {
+			// get partition
+			int part = entry.getValue().intValue();
+			// get txProfile
+			int txProfile = entry.getKey().getTxProfile();
+			// get splits
+			ArrayList<Split> splits = entry.getKey().getSigma().getSplits();
+			// build rules
+			ArrayList<String> rules = new ArrayList<>();
+			for (Split split: splits) {
+				String splitRule = "";
+				String splitVar = split.getSplitParam();
+				// check type of split
+				if (splitVar.startsWith("#")) {
+					// table split
+					String table = splitVar.substring(1);
+					splitVar = "key";
+					
+					splitRule += "if (table == " + table + " && (" +
+					split.getLowerBound() + " <= key <= " + split.getUpperBound() + "))";
+					
+					rules.add(splitRule);
+				}
+				else {
+					// input split
+					splitRule += "if (" + split.getLowerBound() + " <= " + 
+							splitVar + " <= " + split.getUpperBound() + "))";
+					
+					rules.add(splitRule);
+				}	
+			}
+			for (String splitRule : rules) {
+				// check if this txProfile has splitrules associated
+				if (splitRules.containsKey(txProfile)) {
+					// check if this splitrule is known
+					if (splitRules.get(txProfile).containsKey(splitRule)) {
+						// if a lower id vertex has a rule, that one should be kept
+						if (splitRules.get(txProfile).get(splitRule).getKey() > entry.getKey().getVertexID()) {
+							// update split rule if need be
+							Pair<Integer, Integer> newRule = new Pair<>(entry.getKey().getVertexID(), part);
+							splitRules.get(txProfile).put(splitRule, newRule);
+						}
+					}
+					else {
+						Pair<Integer, Integer> newRule = new Pair<>(entry.getKey().getVertexID(), part);
+						splitRules.get(txProfile).put(splitRule, newRule);
+					}
+				}
+				else {
+					LinkedHashMap<String, Pair<Integer,Integer>> rulesForProfile = new LinkedHashMap<>();
+					Pair<Integer, Integer> newRule = new Pair<>(entry.getKey().getVertexID(), part);
+					rulesForProfile.put(splitRule, newRule);
+					splitRules.put(txProfile, rulesForProfile);
+				}
+			}
+		}
+		
+		// at this point we have collected all the splits per txProfile
+		for (Map.Entry<Integer, LinkedHashMap<String , Pair<Integer, Integer>>> entry : splitRules.entrySet()) {
+			System.out.println("TxProfile: " + entry.getKey());
+			// print all the rules for given tx profile
+			for (Map.Entry<String, Pair<Integer, Integer>> rule : entry.getValue().entrySet()) {
+				System.out.println(rule.getKey());
+				System.out.println("\tpart = " + rule.getValue().getValue() + ";\n");
+			}
+		}
+	}
+	
+	// method that returns a partition given a vertex
+	public int getPart(int vertex) {
+		return vertexPart.get(vertex);
+	}
+	
+	// method that starts the ML pipeline for Catalyst
+	public void generateAssociations(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+		
+		int dataThresh = 1000;
+		int testThresh = 1000;
 		
 		try {
 			
@@ -140,7 +214,7 @@ public class Partitioner {
 					int keyValue = w_id;
 					String table = "1";
 					String key = String.valueOf(keyValue);
-					int vertex = lookupKey(key, table, mergedGraph);
+					int vertex = lookupKey(key, table);
 					String c50Line = buildC50Line(String.valueOf(w_id), null, null, null,
 							String.valueOf(vertex));
 					dataFile.append(c50Line);
@@ -149,7 +223,7 @@ public class Partitioner {
 					int keyValue = w_id;
 					String table = "1";
 					String key = String.valueOf(keyValue);
-					int vertex = lookupKey(key, table, mergedGraph);
+					int vertex = lookupKey(key, table);
 					String c50Line = buildC50Line(String.valueOf(w_id), null, null, null,
 							String.valueOf(vertex));
 					testFile.append(c50Line);
@@ -164,7 +238,7 @@ public class Partitioner {
 						int keyValue = (w_id * 100) + d_id;
 						String table = "2";
 						String key = String.valueOf(keyValue);
-						int vertex = lookupKey(key, table, mergedGraph);
+						int vertex = lookupKey(key, table);
 						String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), null, 
 								null, String.valueOf(vertex));
 						dataFile.append(c50Line);
@@ -173,7 +247,7 @@ public class Partitioner {
 						int keyValue = (w_id * 100) + d_id;
 						String table = "2";
 						String key = String.valueOf(keyValue);
-						int vertex = lookupKey(key, table, mergedGraph);
+						int vertex = lookupKey(key, table);
 						String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), null, 
 								null, String.valueOf(vertex));
 						testFile.append(c50Line);
@@ -190,7 +264,7 @@ public class Partitioner {
 							int keyValue = (w_id * 100) + d_id + (c_id * 10000);
 							String table = "3";
 							String key = String.valueOf(keyValue);
-							int vertex = lookupKey(key, table, mergedGraph);
+							int vertex = lookupKey(key, table);
 							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), String.valueOf(c_id), 
 									null, String.valueOf(vertex));
 							dataFile.append(c50Line);
@@ -199,7 +273,7 @@ public class Partitioner {
 							int keyValue = (w_id * 100) + d_id + (c_id * 10000);
 							String table = "3";
 							String key = String.valueOf(keyValue);
-							int vertex = lookupKey(key, table, mergedGraph);
+							int vertex = lookupKey(key, table);
 							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), String.valueOf(c_id), 
 									null, String.valueOf(vertex));
 							testFile.append(c50Line);
@@ -217,7 +291,7 @@ public class Partitioner {
 							int keyValue = (w_id * 100) + d_id + (o_id * 10000);
 							String table = "5";
 							String key = String.valueOf(keyValue);
-							int vertex = lookupKey(key, table, mergedGraph);
+							int vertex = lookupKey(key, table);
 							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
 									String.valueOf(o_id), null, String.valueOf(vertex));
 							dataFile.append(c50Line);
@@ -226,7 +300,7 @@ public class Partitioner {
 							int keyValue = (w_id * 100) + d_id + (o_id * 10000);
 							String table = "5";
 							String key = String.valueOf(keyValue);
-							int vertex = lookupKey(key, table, mergedGraph);
+							int vertex = lookupKey(key, table);
 							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
 									String.valueOf(o_id), null, String.valueOf(vertex));
 							testFile.append(c50Line);
@@ -244,7 +318,7 @@ public class Partitioner {
 							int keyValue = (w_id * 100) + d_id + (o_id * 10000);
 							String table = "6";
 							String key = String.valueOf(keyValue);
-							int vertex = lookupKey(key, table, mergedGraph);
+							int vertex = lookupKey(key, table);
 							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
 									String.valueOf(o_id), null, String.valueOf(vertex));
 							dataFile.append(c50Line);
@@ -253,7 +327,7 @@ public class Partitioner {
 							int keyValue = (w_id * 100) + d_id + (o_id * 10000);
 							String table = "6";
 							String key = String.valueOf(keyValue);
-							int vertex = lookupKey(key, table, mergedGraph);
+							int vertex = lookupKey(key, table);
 							String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
 									String.valueOf(o_id), null, String.valueOf(vertex));
 							testFile.append(c50Line);
@@ -263,25 +337,25 @@ public class Partitioner {
 			}
 			// generate table 7 -> order line keys
 			System.out.println("Generating table 7");
-			for (int w_id = 0; w_id < noWarehouses; w_id++) {
-				for (int d_id = 0; d_id < noDistricts; d_id++) {
-					for (int o_id = 0; o_id < noCustomers; o_id++) {
-						for (int ol = 0; ol < 15; ol++) {
+			for (long w_id = 0; w_id < noWarehouses; w_id++) {
+				for (long d_id = 0; d_id < noDistricts; d_id++) {
+					for (long o_id = 0; o_id < noCustomers; o_id++) {
+						for (long ol = 0; ol < 15; ol++) {
 							randomNum = ThreadLocalRandom.current().nextInt(0, 10000 + 1);
 							if (randomNum <= dataThresh) {
-								int keyValue = (w_id * 100) + d_id + (o_id * 1000000) + (ol * 10000);
+								long keyValue = (w_id * 100) + d_id + (o_id * 1000000) + (ol * 10000);
 								String table = "7";
 								String key = String.valueOf(keyValue);
-								int vertex = lookupKey(key, table, mergedGraph);
+								int vertex = lookupKey(key, table);
 								String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
 										String.valueOf(o_id), null, String.valueOf(vertex));
 								dataFile.append(c50Line);
 							}
 							else if (randomNum <= testThresh){
-								int keyValue = (w_id * 100) + d_id + (o_id * 1000000) + (ol * 10000);
+								long keyValue = (w_id * 100) + d_id + (o_id * 1000000) + (ol * 10000);
 								String table = "7";
 								String key = String.valueOf(keyValue);
-								int vertex = lookupKey(key, table, mergedGraph);
+								int vertex = lookupKey(key, table);
 								String c50Line = buildC50Line(String.valueOf(w_id), String.valueOf(d_id), 
 										String.valueOf(o_id), null, String.valueOf(vertex));
 								testFile.append(c50Line);
@@ -298,7 +372,7 @@ public class Partitioner {
 					int keyValue = i_id;
 					String table = "8";
 					String key = String.valueOf(keyValue);
-					int vertex = lookupKey(key, table, mergedGraph);
+					int vertex = lookupKey(key, table);
 					String c50Line = buildC50Line(null, null, null, 
 							String.valueOf(i_id), String.valueOf(vertex));
 					dataFile.append(c50Line);
@@ -307,7 +381,7 @@ public class Partitioner {
 					int keyValue = i_id;
 					String table = "8";
 					String key = String.valueOf(keyValue);
-					int vertex = lookupKey(key, table, mergedGraph);
+					int vertex = lookupKey(key, table);
 					String c50Line = buildC50Line(null, null, null, 
 							String.valueOf(i_id), String.valueOf(vertex));
 					testFile.append(c50Line);
@@ -322,7 +396,7 @@ public class Partitioner {
 						int keyValue = w_id + (i_id * 100);
 						String table = "9";
 						String key = String.valueOf(keyValue);
-						int vertex = lookupKey(key, table, mergedGraph);
+						int vertex = lookupKey(key, table);
 						String c50Line = buildC50Line(String.valueOf(w_id), null, null, 
 								String.valueOf(i_id), String.valueOf(vertex));
 						dataFile.append(c50Line);
@@ -331,7 +405,7 @@ public class Partitioner {
 						int keyValue = w_id + (i_id * 100);
 						String table = "9";
 						String key = String.valueOf(keyValue);
-						int vertex = lookupKey(key, table, mergedGraph);
+						int vertex = lookupKey(key, table);
 						String c50Line = buildC50Line(String.valueOf(w_id), null, null, 
 								String.valueOf(i_id), String.valueOf(vertex));
 						testFile.append(c50Line);
@@ -353,18 +427,15 @@ public class Partitioner {
 	}
 	
 	// method to lookup vertex of warehouse key
-	public static int lookupKey(String key, String table, LinkedHashMap<Integer, ArrayList<GraphVertex>> mergedGraph) {
-		// iterate over all partitions in mergedGraph
-		for (Map.Entry<Integer, ArrayList<GraphVertex>> partition : mergedGraph.entrySet()) {
-			// iterate over all vertices in each partition
-			for (GraphVertex v : partition.getValue()) {
-				// check whether v contains this key
-				if (v.getSigma().containsKey(key, table)) {
-					return partition.getKey().intValue();
-				}
+	public int lookupKey(String key, String table) {
+		// iterate over all vertices in graph
+		for (Map.Entry<GraphVertex, ArrayList<GraphEdge>> entry : graph.entrySet()) {
+			// check whether this vertex contains the key
+			if (entry.getKey().getSigma().containsKey(key, table)) {
+				return getPart(entry.getKey().getVertexID());
 			}
 		}
-		System.out.println("Couldn't find key on table " + table + "!\n");
+		System.out.println("Couldn't find key " + key + " on table " + table);
 		return 0;
 	}
 
@@ -397,10 +468,4 @@ public class Partitioner {
 		return line;
 	}
 	
-	// main method for evaluation
-	public static void main(String[] args) {
-		partitionGraph();
-	}
-
-
 }

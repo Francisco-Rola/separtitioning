@@ -18,9 +18,9 @@ public class VertexRho {
 	// table associated to the rho
 	private String table = null;
 	// lower value associated to table split
-	private int lowerTableLimit = 0;
+	private int lowerTableLimit = -1;
 	// upper value associated to table split
-	private int upperTableLimit = 0;
+	private int upperTableLimit = -1;
 	// estimated number of remote items that would otherwise be in this rho
 	private int remoteItems = 0;
 	// estimated number of items in this rho
@@ -68,8 +68,6 @@ public class VertexRho {
 		this.table = vertexRho.getTable();
 		this.prob = vertexRho.getProb();
 		this.rho = new String(vertexRho.getRho());
-		if (vertexRho.getRhoUpdate() != null)
-			this.update = new String(vertexRho.getRhoUpdate());
 		this.variables = new HashSet<>();
 		this.variables.addAll(vertexRho.getVariables());
 		this.lowerTableLimit = vertexRho.getLowerTableLimit();
@@ -106,6 +104,20 @@ public class VertexRho {
 		this.noItems = noItems;
 	}
 	
+	// method that checks if rho has been table splitted
+	public boolean tableSplitExists() {
+		if (this.lowerTableLimit != -1)
+			return true;
+		else
+			return false;
+	}
+	
+	// getter for mathematica string containing limits
+	public String getTableSplitMath(String rhoQuery) {
+		return "" + this.getLowerTableLimit() +
+				" <= " + rhoQuery + " <= " + this.getUpperTableLimit();
+	}
+	
 	// get lower table limit
 	public int getLowerTableLimit() {
 		return this.lowerTableLimit;
@@ -117,112 +129,10 @@ public class VertexRho {
 	}
 	
 	// method used to split a rho based on a table range split
-	public void splitRho(String split) {
-		// check if there is a previous update to concatenate
-		if (update != null) {	
-			this.update = "(" + this.update + ") && " + this.rho.substring(this.rho.indexOf(">") + 1) + split;
-		}
-		else {
-			this.update = this.rho.substring(this.rho.indexOf(">") + 1) + split;
-		}
-		// simplify rho update to aid future queries
-		simplifyRho(split);
-				
-	}
-	
-	// method used to split a rho based on a table range split
-	public void splitRho(int lower, int upper) {
+	public void splitRho(int lower, int upper) { 
 		this.lowerTableLimit = lower;
 		this.upperTableLimit = upper;
-	}
-
-	// method used to update a rho upon detecting a remote access, ensures disjointness
-	public void updateRho(String update) {
-		StringJoiner updateParsed = new StringJoiner(" || ");
-		// split update on each disjunction
-		String[] phiParts = update.split(" \\|\\| ");
-		// check if parenthesis missing
-		boolean ps = false;
-		// iterate over disjunctions
-		for (String disjunction: phiParts) {
-			StringJoiner conjunctionPhi = new StringJoiner(" && ");
-			// split conjunctions within disjunction
-			String[] conjunctionParts = disjunction.split(" && ");
-			// iterate over conjunctions
-			for (int i = 0; i < conjunctionParts.length; i++) {
-				// if conjunction does not contain idGV it is from the new vertex
-				if (!conjunctionParts[i].contains("idGV")) {
-					conjunctionPhi.add(conjunctionParts[i]);
-				}
-				// case for Mathematica compressions
-				else if (conjunctionParts[i].contains("Integers")) {
-					// need to add parenthesis in this case
-					ps = true;
-					// remove all components related to old vertex, those solutions are not important
-					conjunctionPhi.add(conjunctionParts[i].replaceAll("\\s\\|\\s\\w+idGV", ""));
-				}
-			}
-			// if there is only one solution no need to add parenthesis
-			if (phiParts.length == 1)
-				updateParsed.add(conjunctionPhi.toString());
-			else if(ps) {
-				updateParsed.add(conjunctionPhi.toString() + ")");
-			}
-			else {
-				updateParsed.add(conjunctionPhi.toString() + ")");
-			}
-			ps = false;
-		}
-		// check if there is update to concatenate
-		if (this.update == null) {
-			this.update = "!(" + updateParsed.toString() + ")";
-		}
-		else {
-			this.update = "(" + this.update + ") && !(" + updateParsed.toString() + ")";
-		}
-		// simplify rho update to aid further queries
-		simplifyRho(update);
-	}
-	
-	
-	// method used to simplify a rho update formula
-	public void simplifyRho(String update) {
-		// get mathematica link
-		KernelLink link = MathematicaHandler.getInstance();
-		// simplify rho update expression for further computations
-		String copyUpdate = new String(this.update);
-		this.update = link.evaluateToOutputForm("Simplify[" + this.update + "]", 0);
-		// if there is an error, check what went wrong
-		if (this.update.equals("$Failed")) {
-			System.out.println(copyUpdate);
-			System.out.println("Failed rho update ->" + update);
-		}
-	}
-	
-	
-	// method that checks if rho becomes remote after an update
-	public void checkRemoteAfterUpdate(VertexRho rho, VertexPhi phi) {
-		// get mathematica endpoint
-		
-		KernelLink link = MathematicaHandler.getInstance(); 
-		
-		String phiQuery = phi.getPhiAsGroup();
-		String rhoQuery = rho.getRho().substring(rho.getRho().indexOf(">") + 1);
-		// check if rho is constrained by logical subtraction
-		if (rho.getRhoUpdate() != null) {
-			rhoQuery = "(" + rhoQuery +  ") && (" + rho.getRhoUpdate() + ")";
-		}
-		// check items accessed by rho given phi
-		String query = "Flatten[Table[" + rhoQuery + ", " + phiQuery + "]]";
-		String result = link.evaluateToOutputForm(query, 0);
-		result = result.replaceAll("[, ]*False[, ]*", "");
-		
-		// if empty result then this rho is remote
-		if (result.equals("{}")) {
-			//System.out.println("Empty rho, removing");
-			rho.setRemote();
-		}
-	}
+	}	
 	
 	// sets a rho as remote
 	public void setRemote() {
@@ -239,11 +149,6 @@ public class VertexRho {
 		return this.prob;
 	}
 	
-	// obtain rho update string
-	public String getRhoUpdate() {
-		return this.update;
-	}
-	
 	// obtain rho variables
 	public HashSet<String> getVariables() {
 		return this.variables;
@@ -252,7 +157,7 @@ public class VertexRho {
 	// debug method, prints rho fields
 	public void printRho() {
 		System.out.println("Rho: " + this.getRho());
-		System.out.println("Rho update: " + this.getRhoUpdate());
+		System.out.println("Rho update: " + this.getLowerTableLimit() + "|" + this.getUpperTableLimit());
 		System.out.println("Remote: " + this.isRemote());
 		System.out.println("Probability: " + this.getProb());
 	}
@@ -261,12 +166,18 @@ public class VertexRho {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + lowerTableLimit;
+		result = prime * result + noItems;
 		long temp;
 		temp = Double.doubleToLongBits(prob);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + (remote ? 1231 : 1237);
+		result = prime * result + remoteItems;
 		result = prime * result + ((rho == null) ? 0 : rho.hashCode());
+		result = prime * result + ((table == null) ? 0 : table.hashCode());
 		result = prime * result + ((update == null) ? 0 : update.hashCode());
+		result = prime * result + upperTableLimit;
+		result = prime * result + value;
 		result = prime * result + ((variables == null) ? 0 : variables.hashCode());
 		return result;
 	}
@@ -280,19 +191,34 @@ public class VertexRho {
 		if (getClass() != obj.getClass())
 			return false;
 		VertexRho other = (VertexRho) obj;
+		if (lowerTableLimit != other.lowerTableLimit)
+			return false;
+		if (noItems != other.noItems)
+			return false;
 		if (Double.doubleToLongBits(prob) != Double.doubleToLongBits(other.prob))
 			return false;
 		if (remote != other.remote)
+			return false;
+		if (remoteItems != other.remoteItems)
 			return false;
 		if (rho == null) {
 			if (other.rho != null)
 				return false;
 		} else if (!rho.equals(other.rho))
 			return false;
+		if (table == null) {
+			if (other.table != null)
+				return false;
+		} else if (!table.equals(other.table))
+			return false;
 		if (update == null) {
 			if (other.update != null)
 				return false;
 		} else if (!update.equals(other.update))
+			return false;
+		if (upperTableLimit != other.upperTableLimit)
+			return false;
+		if (value != other.value)
 			return false;
 		if (variables == null) {
 			if (other.variables != null)
@@ -301,6 +227,8 @@ public class VertexRho {
 			return false;
 		return true;
 	}
+
+	
 
 	
 	
