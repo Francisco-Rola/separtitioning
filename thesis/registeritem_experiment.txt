@@ -17,7 +17,7 @@ JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All ri
 ====================================================== system under test
 rubis.MainRegisterItem.main()
 
-====================================================== search started: 25-02-2022 12:15
+====================================================== search started: 26-02-2022 18:49
 -- start of register Item
 -- end of register Item
 -- end of register Item
@@ -51,37 +51,37 @@ rubis.MainRegisterItem.main()
   <== [PC_5_-479515356] 
 
 [PC_8_212610248] buyNow != -1 
-  --> [RWSET_-746079762] 
+  --> [RWSET_-1290918737] 
   <== [PC_6_1558487629] 
 
-[RWSET_-746079762] 
+[RWSET_-1290918737] 
 R: 3->categoryId
-W: 3->categoryId, 2->(GET-6@Rubis:285(3->categoryId->2) + (categoryId * 100000))
+W: 3->categoryId, 2->(GET-6@Rubis:273(3->categoryId->2) + (categoryId * 100000))
   <== [PC_8_212610248] 
 
 Total Number of Merges: 0
-IR=GET-6@Rubis:285=3->categoryId->2
-Time spent Symbolic Execution: 0.474
-Time spent Pruning: 67147.808
+IR=GET-6@Rubis:273=3->categoryId->2
+Time spent Symbolic Execution: 0.338
+Time spent Pruning: 42943.339
 Number of Different Read and Write-Set: 1
 Number of Leaves Before:0
 Max Depth: 13
 Min Depth: 0
-times 0:	453450
-times 1:	1039390
-times 2:	1644378
-times 3:	88243
+times 0:	411266
+times 1:	716302
+times 2:	1082125
+times 3:	46271
 times 4:	0
-times 5:	2823592
-times 6:	22453656
-times 7:	30722293
-times 8:	4971457
-times 9:	164317
-times 10:	58515
-times 11:	301060
-times 12:	1527008
-times 13:	768
-times 14:	188920
+times 5:	2018308
+times 6:	14094116
+times 7:	19926158
+times 8:	3842787
+times 9:	102872
+times 10:	40151
+times 11:	158652
+times 12:	1109888
+times 13:	489
+times 14:	174294
 times 15:	0
 indirect_variables: 0
 mapStateToNode: 6
@@ -101,4 +101,4 @@ instructions:       3917
 max memory:         117MB
 loaded code:        classes=64,methods=1318
 
-====================================================== search finished: 25-02-2022 12:15
+====================================================== search finished: 26-02-2022 18:49

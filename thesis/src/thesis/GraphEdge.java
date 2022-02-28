@@ -131,6 +131,7 @@ public class GraphEdge {
 		System.out.println("Edge rho: " + this.eRho.getRho());
 		System.out.println("Edge phi: " + this.ePhi.getPhiAsString());
 		System.out.println("Edge weight: " + this.edgeWeight);
+		System.out.println("Rho update: " + this.eRho.getLowerTableLimit() + "|" + this.eRho.getUpperTableLimit());
 	}
 	
 }

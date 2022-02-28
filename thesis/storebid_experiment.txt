@@ -17,9 +17,8 @@ JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All ri
 ====================================================== system under test
 rubis.MainStoreBid.main()
 
-====================================================== search started: 25-02-2022 12:15
+====================================================== search started: 26-02-2022 18:49
 -- start of store bid
--- end of store bid
 -- end of store bid
 -- end of store bid
 -- end of store bid
@@ -83,16 +82,10 @@ rubis.MainStoreBid.main()
   <== [PC_12_1442330203] 
 
 [PC_16_123870910] GET-12@Rubis:157 != -1 
-  --> [RWSET_1198606308] 
-  --> [RWSET_-1067191525] 
+  --> [RWSET_-2029169463] 
   <== [PC_14_-602189219] 
 
-[RWSET_-1067191525] 
-W: 51->itemId
-  <== [PC_16_123870910] 
-
-[RWSET_1198606308] 
-R: 51->itemId
+[RWSET_-2029169463] 
 W: 5->(GET-12@Rubis:157 + (itemId * 1000)), 2->itemId
   <== [PC_16_123870910] 
 
@@ -101,44 +94,44 @@ R: 2->itemId
   <== [PC_14_-602189219] 
 
 Total Number of Merges: 0
-Time spent Symbolic Execution: 0.485
-Time spent Pruning: 59822.768
-Number of Different Read and Write-Set: 3
-Number of Leaves Before:1
-Max Depth: 27
+Time spent Symbolic Execution: 0.382
+Time spent Pruning: 49537.224
+Number of Different Read and Write-Set: 2
+Number of Leaves Before:0
+Max Depth: 25
 Min Depth: 0
-times 0:	447705
-times 1:	809289
-times 2:	1645312
-times 3:	61335
+times 0:	359595
+times 1:	543219
+times 2:	1403233
+times 3:	46386
 times 4:	0
-times 5:	3029145
-times 6:	21802982
-times 7:	30028122
-times 8:	4615019
-times 9:	117754
-times 10:	55655
-times 11:	38950
-times 12:	1813545
-times 13:	700
-times 14:	241726
+times 5:	2109956
+times 6:	16337240
+times 7:	22202167
+times 8:	3396499
+times 9:	114536
+times 10:	38529
+times 11:	32896
+times 12:	1059834
+times 13:	350
+times 14:	207583
 times 15:	0
 indirect_variables: 0
-mapStateToNode: 13
+mapStateToNode: 12
 mapStateToRWSet: 0
-mapRWSetToNode: 3
+mapRWSetToNode: 2
 
 ====================================================== results
 no errors detected
 
 ====================================================== statistics
 elapsed time:       00:00:00
-states:             new=28,visited=0,backtracked=28,end=14
-search:             maxDepth=15,constraints=0
-choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=14
-heap:               new=670,released=325,maxLive=639,gcCycles=18
-instructions:       4003
+states:             new=26,visited=0,backtracked=26,end=13
+search:             maxDepth=14,constraints=0
+choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=13
+heap:               new=668,released=302,maxLive=639,gcCycles=16
+instructions:       3929
 max memory:         117MB
 loaded code:        classes=64,methods=1318
 
-====================================================== search finished: 25-02-2022 12:15
+====================================================== search finished: 26-02-2022 18:49

@@ -36,61 +36,88 @@ public class VertexSigma {
 			rhoUpdated = rhoUpdated.replaceAll("[\\[\\]]", "");
 			// translate indirect reads into variables
 			if (rhoUpdated.contains("GET") || rhoUpdated.startsWith("12->")) {
-				// table 7 indirect read, new order
-				if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("Tpcc:79")) {
-					rhoUpdated = rhoUpdated.replaceAll("GET-0@Tpcc:79"
-							, "irorderid"); 
-				}
-				// table 7 indirect read, stock level
-				else if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("->10")) {
-					if (rhoUpdated.contains(" - "))
-							rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)-(\\s\\d+?)\\)"
-							, "irorderid");
-					else
-						rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->10\\)"
+				
+				// TPC C 
+				if (rhoUpdated.contains("Tpcc")) {
+				
+					// table 7 indirect read, new order
+					if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("Tpcc:79")) {
+						rhoUpdated = rhoUpdated.replaceAll("GET-0@Tpcc:79"
+								, "irorderid"); 
+					}
+					// table 7 indirect read, stock level
+					else if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("->10")) {
+						if (rhoUpdated.contains(" - "))
+								rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)-(\\s\\d+?)\\)"
+								, "irorderid");
+						else
+							rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->10\\)"
+								, "(irorderid");
+					}
+					// table 7 indirect read, order status
+					else if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("->0")) 
+						rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->0\\)\\s\\*\\s1000000"
+								, "(irorderid * 1000000");
+						
+					// table 7 indirect read, delivery
+					else if (rhoUpdated.startsWith("7->"))
+						rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->1\\)"
 							, "(irorderid");
-				}
-				// table 7 indirect read, order status
-				else if (rhoUpdated.startsWith("7->") && rhoUpdated.contains("->0")) 
-					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->0\\)\\s\\*\\s1000000"
-							, "(irorderid * 1000000");
-					
-				// table 7 indirect read, delivery
-				else if (rhoUpdated.startsWith("7->"))
-					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->1\\)"
-						, "(irorderid");
-				// table 5 indirect read, new order
-				else if (rhoUpdated.startsWith("5->") && rhoUpdated.contains("->10"))
-					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
-						, "irorderid");
-				// table 5 indirect reads, delivery
-				else if (rhoUpdated.startsWith("5->") && rhoUpdated.contains("->1"))
-					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->1\\)"
+					// table 5 indirect read, new order
+					else if (rhoUpdated.startsWith("5->") && rhoUpdated.contains("->10"))
+						rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
 							, "irorderid");
-				// table 5 indirect reads, delivery v2
-				else if (rhoUpdated.startsWith("5->"))
-					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)\\s"
-							, "(irorderid"); 
-				// table 6 indirect reads, new order
-				else if (rhoUpdated.startsWith("6->") && rhoUpdated.contains("->10"))
-					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
-						, "irorderid");
-				// table 6 indirect read, order status
-				else if (rhoUpdated.startsWith("6->") && rhoUpdated.contains("->0")) 
-					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->0\\)"
-							, "(irorderid");
-				// table 6 indirect reads, delivery
-				else if (rhoUpdated.startsWith("6->"))
-					rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->1\\)"
-							, "(irorderid");				
-				// delivery table 3 indirect reads
-				else if (rhoUpdated.startsWith("3->"))
-					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->3\\)"
-							, "ircustomerid");
-				// delivery table 9 indirect reads
-				else if (rhoUpdated.startsWith("9->"))
-					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->4\\)"
-							, "iroliid");
+					// table 5 indirect reads, delivery
+					else if (rhoUpdated.startsWith("5->") && rhoUpdated.contains("->1"))
+						rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->1\\)"
+								, "irorderid");
+					// table 5 indirect reads, delivery v2
+					else if (rhoUpdated.startsWith("5->"))
+						rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)\\s"
+								, "(irorderid"); 
+					// table 6 indirect reads, new order
+					else if (rhoUpdated.startsWith("6->") && rhoUpdated.contains("->10"))
+						rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->10\\)"
+							, "irorderid");
+					// table 6 indirect read, order status
+					else if (rhoUpdated.startsWith("6->") && rhoUpdated.contains("->0")) 
+						rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->0\\)"
+								, "(irorderid");
+					// table 6 indirect reads, delivery
+					else if (rhoUpdated.startsWith("6->"))
+						rhoUpdated = rhoUpdated.replaceAll("\\(GET(.*?)->1\\)"
+								, "(irorderid");				
+					// delivery table 3 indirect reads
+					else if (rhoUpdated.startsWith("3->"))
+						rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->3\\)"
+								, "ircustomerid");
+					// delivery table 9 indirect reads
+					else if (rhoUpdated.startsWith("9->"))
+						rhoUpdated = rhoUpdated.replaceAll("GET(.*?)->4\\)"
+								, "iroliid");
+				}
+				// regiteritem rubis
+				else if (rhoUpdated.startsWith("2->")) {
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)categoryId->2\\)", 
+							"iritemid");
+				}
+				// registeruser rubis
+				else if (rhoUpdated.startsWith("1->")) {
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)regionId->2\\)", 
+							"iruserid");
+				}
+				else if (rhoUpdated.startsWith("5->")) {
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)Rubis\\:157", 
+							"irbidid");
+				}
+				else if (rhoUpdated.startsWith("6->")) {
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)Rubis\\:106", 
+							"irbuyid");
+				}
+				else if (rhoUpdated.startsWith("7->")) {
+					rhoUpdated = rhoUpdated.replaceAll("GET(.*?)Rubis\\:199", 
+							"ircommentid");
+				}
 				else {
 					continue;
 				}
@@ -99,7 +126,7 @@ public class VertexSigma {
 			if (rhoRepeated(rhoUpdated)) {
 				continue;
 			}
-			
+				
 			//build the rho from the updated string
 			VertexRho vertexRho = new VertexRho(rhoUpdated);
 			//build the phi from the rho's variables

@@ -14,7 +14,16 @@ public class VertexPhi {
 	private static int customer = 2999;
 	private static int district = 9;
 	
-	// getterrs for scaling factors
+	// scale factor for RUBIS
+	private static int rubisItems = 99999;
+	private static int rubisCategory = 19;
+	private static int rubisUsers = 99999;
+	private static int rubisRegion = 59;
+	private static int rubisBid = 9;
+	private static int rubisBuy = 9;
+	private static int rubisComment = 9;
+	
+	// getters for scaling factors TPCC
 	public static int getScalingFactorW() {
 		return w + 1;
 	}
@@ -30,6 +39,36 @@ public class VertexPhi {
 	public static int getScalingFactorI() {
 		return item + 1;
 	}
+	
+	// getters for scaling factos RUBIS
+	public static int getRubisItems() {
+		return rubisItems + 1;
+	}
+	
+	public static int getRubisCategory() {
+		return rubisCategory + 1;
+	}
+	
+	public static int getRubisUsers() {
+		return rubisUsers + 1;
+	}
+	
+	public static int getRubisRegion() {
+		return rubisRegion + 1;
+	}
+	
+	public static int getRubisBid() {
+		return rubisBid + 1;
+	}
+	
+	public static int getRubisBuy() {
+		return rubisBuy + 1;
+	}
+	
+	public static int getRubisComment() {
+		return rubisComment + 1;
+	}
+	
 	
 	// constructor for deep copy purpose
 	public VertexPhi(VertexPhi vertexPhi) {
@@ -82,6 +121,46 @@ public class VertexPhi {
 				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(customer));
 				this.variables.put(variable, range);
 			}
+			else if (variable.equals("iritemid")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(rubisItems));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("categoryId")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(rubisCategory));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("iruserid")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(rubisUsers));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("regionId")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(rubisRegion));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("irbidid")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(rubisBid));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("irbuyid")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(rubisBuy));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("itemId")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer((rubisCategory * 100000) + rubisItems));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("ircommentid")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(rubisComment));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("fromId")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer((rubisRegion * 100000) + rubisUsers));
+				this.variables.put(variable, range);
+			}
+			else if (variable.equals("toId")) {
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer((rubisRegion * 100000) + rubisUsers));
+				this.variables.put(variable, range);
+			}
 			else {
 				// debug scenario, missing variable case
 				System.out.println("Missing case -> " + variable);
@@ -121,6 +200,8 @@ public class VertexPhi {
 	public static int getTableRange(int tableNo) {
 		// compute max id of each table
 		switch (tableNo) {
+		case 1:
+			return (rubisRegion * 100000) + rubisUsers;
 		case 5:
 			return w * 100 + customer * 10000 + district;
 		case 6:
@@ -139,11 +220,14 @@ public class VertexPhi {
 	}
 	
 	// schema helper, check if a table is read 
-	public static boolean checkTableReplicated(int tableNo) {
+	public static boolean checkTableReplicated(int tableNo) {		
 		switch (tableNo) {
 		case 1:
 			if (w == 0) {
 				return true;
+			}
+			else {
+				return false;
 			}
 		case 8:
 			// table 8 is ready only

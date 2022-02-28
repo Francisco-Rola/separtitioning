@@ -37,8 +37,10 @@ public class NewSplitter {
 	int noVertices = 0;
 	// graph resultant from splitting
 	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph = new LinkedHashMap<>();
-	
+	// splits saved for each vertex
 	private LinkedHashMap<Integer, ArrayList<String>> splits = new LinkedHashMap<>();
+	// set of previous splits used
+	private HashSet<String> previousSplits = new HashSet<>();
 	
 	// method that takes a graph as input and splits its vertices, returns the resulting graph
 	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
@@ -181,18 +183,20 @@ public class NewSplitter {
 							continue;
 						}
 					}
-					else {
+					else {						
 						// check if there is a split variable common amongst all rhos
 						HashSet<String> commonSplit = checkCommonSplit(entry.getValue());
 						// check if any vars found
-						if (commonSplit.size() != 0) {
+						if (commonSplit.size() != 0) {							
 							// split found, add it
 							splits.add(commonSplit);
 							possibleSplits.put(entry.getKey(), splits);
 						}
 						else {
+														
 							// check if replication is wanted
 							if (replication) {
+																
 								// check whether this table is possible to replicate
 								if (VertexPhi.checkTableReplicated(entry.getKey())) {
 									// do not consider this table
@@ -293,6 +297,10 @@ public class NewSplitter {
 		ArrayList<String> splitVars = new ArrayList<>();
 		// get the smallest hitting set, NP complete problem
 		splits.addAll(getSplitVars(rhoCoverage, splitVars, null));
+		// save splits
+		for (String split: splits) {
+			this.previousSplits.add(split);
+		}
 		// return all splits, table splits and variables
 		return splits;
 	}
@@ -336,6 +344,29 @@ public class NewSplitter {
 							result.addAll(splitResult);
 							minSplitSize = result.size();
 							//System.out.println("Upgraded my solution");
+						}
+						// pick split that is alligned with previous splits
+						if (splitResult.size() == minSplitSize) {
+							// boolean previous split alligned
+							boolean alligned = false;
+							for (String res : result) {
+								// if current result is alligned with previous splits nothing is to be done
+								if (this.previousSplits.contains(res)) {
+									alligned = true;
+									break;
+								}
+							}
+							// if current best split is not alligned with previous splits, check if the new equal split is
+							if (!alligned) {
+								for (String res : splitResult) {
+									if (this.previousSplits.contains(res)) {
+										result = new ArrayList<>();
+										result.addAll(splitResult);
+										minSplitSize = result.size();
+										break;
+									}
+								}
+							}
 						}
 					}
 					return result;
@@ -432,10 +463,8 @@ public class NewSplitter {
 				temp.addAll(partition(partitions, noSplitsParameter));
 			}
 			// update rhos in sublists
-			System.out.println("I: " + temp.size());
 			for (int i = 0; i < temp.size(); i++) {
 				// update all sigmas in each section, i represents the section
-				System.out.println("J: " + temp.get(i).size());
 				for (int j = 0; j < temp.get(i).size(); j++) {
 					// check if table split or input split
 					if (split.getKey().startsWith("#")) {
@@ -487,6 +516,19 @@ public class NewSplitter {
 		// update all phis in the vertex
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
 			// if the rho contains the split param its respective phi needs to be updated
+			
+			// unless the table has been table split
+			boolean beenSplit = false;
+			String tableSplit = "#" + rhoPhi.getKey().getTable();
+			for (Split s : sigma.getSplits()) {
+				if (s.getSplitParam().equals(tableSplit)) {
+					beenSplit = true;
+				}
+			}
+			
+			if (beenSplit) continue;
+			
+			
 			if (rhoPhi.getKey().getVariables().contains(splitParam)) {
 				if (section == 0) rhoPhi.getValue().getPhi().put(splitParam, 
 						new Pair<Integer, Integer>(inputRange.getKey(), cutoff - 1));
@@ -518,7 +560,7 @@ public class NewSplitter {
 		// check the range of items in this table
 		int tableRange = VertexPhi.getTableRange(Integer.parseInt(tableNo));
 		// calculate cutoff for section
-		int cutoff = (tableRange / noSplits);
+		int cutoff = ((tableRange + 1) / noSplits);
 		
 		/*
 		// update all phis in the vertex
@@ -821,8 +863,9 @@ public class NewSplitter {
 			}
 			// Read any errors from the attempted command
 			while ((s = stdError.readLine()) != null) {
-				System.out.println("Error during openSMT phase");
+				System.out.println("Error during openSMT phase - rho weight");
 			    System.out.println(s);
+				System.exit(0);
 			}
 			
 			String[] commandsApprox = {"approxmc", "counts.cnf"};
@@ -956,8 +999,9 @@ public class NewSplitter {
 			}
 			// Read any errors from the attempted command
 			while ((s = stdError.readLine()) != null) {
-				System.out.println("Error during openSMT phase");
+				System.out.println("Error during openSMT phase - edge weight");
 			    System.out.println(s);
+			    System.exit(0);
 			}
 			
 			String[] commandsApprox = {"approxmc", "counts.cnf"};

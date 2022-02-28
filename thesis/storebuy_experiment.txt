@@ -17,7 +17,7 @@ JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All ri
 ====================================================== system under test
 rubis.MainStoreBuyNow.main()
 
-====================================================== search started: 25-02-2022 12:38
+====================================================== search started: 26-02-2022 18:49
 -- start of store buy now
 -- end of store buy now
 -- end of store buy now
@@ -56,27 +56,27 @@ W: 2->itemId
   <== [PC_7_-909382215] 
 
 Total Number of Merges: 0
-Time spent Symbolic Execution: 0.444
-Time spent Pruning: 55100.55
+Time spent Symbolic Execution: 0.336
+Time spent Pruning: 44452.627
 Number of Different Read and Write-Set: 2
 Number of Leaves Before:1
 Max Depth: 11
 Min Depth: 0
-times 0:	483802
-times 1:	972084
-times 2:	1799987
-times 3:	47328
+times 0:	417080
+times 1:	616436
+times 2:	1212107
+times 3:	42320
 times 4:	0
-times 5:	3110338
-times 6:	17437007
-times 7:	26023273
-times 8:	4313231
-times 9:	111681
-times 10:	81820
-times 11:	49543
-times 12:	1553994
-times 13:	823
-times 14:	185733
+times 5:	1961696
+times 6:	12241167
+times 7:	17956638
+times 8:	2961464
+times 9:	67807
+times 10:	42130
+times 11:	46120
+times 12:	1095415
+times 13:	519
+times 14:	180712
 times 15:	0
 indirect_variables: 0
 mapStateToNode: 5
@@ -96,4 +96,4 @@ instructions:       3834
 max memory:         117MB
 loaded code:        classes=64,methods=1318
 
-====================================================== search finished: 25-02-2022 12:38
+====================================================== search finished: 26-02-2022 18:49

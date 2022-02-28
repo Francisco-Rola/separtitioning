@@ -53,7 +53,7 @@ public class VertexRho {
 			this.rho = rho;
 		}
 		HashSet<String> variables = new HashSet<>();
-		Matcher m = Pattern.compile("(\\w+id[0-9]*)\\S*\\s*").matcher(rho);
+		Matcher m = Pattern.compile("(\\w+(i|I)d[0-9]*)\\S*\\s*").matcher(rho);
 		while(m.find()) {
 			variables.add((m.group(1)));
 		}

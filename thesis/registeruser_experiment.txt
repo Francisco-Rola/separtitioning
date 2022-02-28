@@ -17,7 +17,7 @@ JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All ri
 ====================================================== system under test
 rubis.MainRegisterUser.main()
 
-====================================================== search started: 25-02-2022 12:16
+====================================================== search started: 26-02-2022 18:49
 -- start of regsiter user
 -- end of regsiter user
 -- end of regsiter user
@@ -46,37 +46,37 @@ rubis.MainRegisterUser.main()
   <== [PC_4_868206858] 
 
 [PC_7_331962941] password != -1 
-  --> [RWSET_-2026250957] 
+  --> [RWSET_1713442158] 
   <== [PC_5_2044515868] 
 
-[RWSET_-2026250957] 
+[RWSET_1713442158] 
 R: 4->regionId
-W: 4->regionId, 1->(GET-5@Rubis:256(4->regionId->2) + (regionId * 1000000))
+W: 1->(GET-5@Rubis:244(4->regionId->2) + (regionId * 100000)), 4->regionId
   <== [PC_7_331962941] 
 
 Total Number of Merges: 0
-IR=GET-5@Rubis:256=4->regionId->2
-Time spent Symbolic Execution: 0.437
-Time spent Pruning: 56534.103
+IR=GET-5@Rubis:244=4->regionId->2
+Time spent Symbolic Execution: 0.36
+Time spent Pruning: 42387.865
 Number of Different Read and Write-Set: 1
 Number of Leaves Before:0
 Max Depth: 11
 Min Depth: 0
-times 0:	443299
-times 1:	651641
-times 2:	1416422
-times 3:	47473
+times 0:	366346
+times 1:	470656
+times 2:	1019670
+times 3:	34808
 times 4:	0
-times 5:	2480836
-times 6:	15251625
-times 7:	22050604
-times 8:	3900902
-times 9:	146253
-times 10:	44268
-times 11:	196968
-times 12:	1170255
-times 13:	510
-times 14:	225948
+times 5:	2004195
+times 6:	12777289
+times 7:	17933310
+times 8:	3499094
+times 9:	84788
+times 10:	34278
+times 11:	149234
+times 12:	848411
+times 13:	329
+times 14:	168008
 times 15:	0
 indirect_variables: 0
 mapStateToNode: 5
@@ -96,4 +96,4 @@ instructions:       3766
 max memory:         117MB
 loaded code:        classes=64,methods=1318
 
-====================================================== search finished: 25-02-2022 12:16
+====================================================== search finished: 26-02-2022 18:49

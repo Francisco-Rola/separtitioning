@@ -322,7 +322,7 @@ public class SEParser {
 	// main for debug purposes
 	public static void main(String[] args) {
 		try {
-			String[] files = {"order_status_experiment.txt"};
+			String[] files = {"registeruser_experiment.txt"};
 			new SEParser(files);
 			int vertexCount = 0; 
 			for(Vertex vertex : vertices) {

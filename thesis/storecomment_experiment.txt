@@ -17,7 +17,7 @@ JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All ri
 ====================================================== system under test
 rubis.MainStoreComment.main()
 
-====================================================== search started: 25-02-2022 12:15
+====================================================== search started: 26-02-2022 18:49
 -- start of store comment
 -- end of store comment
 -- end of store comment
@@ -48,54 +48,54 @@ rubis.MainStoreComment.main()
   <== [PC_4_-977821206] 
 
 [PC_7_1887707641] comment != -1 
+  --> [PC_9_1161661946] 
   --> [RWSET_670653063] 
-  --> [PC_9_1482301465] 
   <== [PC_5_602660091] 
-
-[PC_9_1482301465] GET-5@Rubis:211 != -1 
-  --> [PC_10_-1450478123] 
-  --> [RWSET_-196284847] 
-  <== [PC_7_1887707641] 
-
-[RWSET_-196284847] 
-R: 1->toId
-W: 7->(GET-5@Rubis:211 + (fromId * 100)), 1->fromId
-  <== [PC_9_1482301465] 
-
-[PC_10_-1450478123] GET-7@Rubis:235 != -1 
-  --> [RWSET_1887142296] 
-  <== [PC_9_1482301465] 
-
-[RWSET_1887142296] 
-W: 1->toId
-  <== [PC_10_-1450478123] 
 
 [RWSET_670653063] 
 R: 1->fromId
   <== [PC_7_1887707641] 
 
+[PC_9_1161661946] GET-5@Rubis:199 != -1 
+  --> [PC_10_1166322966] 
+  --> [RWSET_-1844069936] 
+  <== [PC_7_1887707641] 
+
+[RWSET_-1844069936] 
+R: 1->toId
+W: 7->(GET-5@Rubis:199 + (fromId * 100)), 1->fromId
+  <== [PC_9_1161661946] 
+
+[PC_10_1166322966] GET-7@Rubis:223 != -1 
+  --> [RWSET_1887142296] 
+  <== [PC_9_1161661946] 
+
+[RWSET_1887142296] 
+W: 1->toId
+  <== [PC_10_1166322966] 
+
 Total Number of Merges: 0
-Time spent Symbolic Execution: 0.465
-Time spent Pruning: 59482.434
+Time spent Symbolic Execution: 0.343
+Time spent Pruning: 39410.898
 Number of Different Read and Write-Set: 3
 Number of Leaves Before:0
 Max Depth: 15
 Min Depth: 0
-times 0:	550771
-times 1:	666089
-times 2:	1172973
-times 3:	61257
+times 0:	311929
+times 1:	466154
+times 2:	853561
+times 3:	30002
 times 4:	0
-times 5:	2662699
-times 6:	19837470
-times 7:	26494074
-times 8:	4976680
-times 9:	87469
-times 10:	46324
-times 11:	30224
-times 12:	1196090
-times 13:	456
-times 14:	251128
+times 5:	1779645
+times 6:	13560826
+times 7:	18130995
+times 8:	3165409
+times 9:	84184
+times 10:	37755
+times 11:	38555
+times 12:	816865
+times 13:	296
+times 14:	167583
 times 15:	0
 indirect_variables: 0
 mapStateToNode: 7
@@ -115,4 +115,4 @@ instructions:       3863
 max memory:         117MB
 loaded code:        classes=64,methods=1318
 
-====================================================== search finished: 25-02-2022 12:15
+====================================================== search finished: 26-02-2022 18:49

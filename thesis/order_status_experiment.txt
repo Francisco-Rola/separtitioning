@@ -17,39 +17,39 @@ JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All ri
 ====================================================== system under test
 tpcc.MainOrderStatus.main()
 
-====================================================== search started: 09-02-2022 10:10
+====================================================== search started: 26-02-2022 12:52
 [PC_1_2521314] ROOT
-  --> [RWSET_271989486] 
+  --> [RWSET_-524639213] 
   <== [PC_0_2521314] 
 
-[RWSET_271989486] 
-R: 1->warehouse_id, 11->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 60000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 90000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 70000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 50000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 40000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 30000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 20000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 10000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 80000))), 3->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 7->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 140000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 130000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 120000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 110000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:374(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 100000)))
+[RWSET_-524639213] 
+R: 6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 90000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 130000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 120000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 110000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 100000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 140000))), 11->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 50000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 40000))), 3->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 60000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 30000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 20000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 70000))), 7->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 80000))), 7->(district_id + ((warehouse_id * 100) + ((GET-0@Tpcc:372(6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0) * 1000000) + 10000)))
   <== [PC_1_2521314] 
 
 Total Number of Merges: 0
-IR=GET-0@Tpcc:374=6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:371(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0
-IR=GET-0@Tpcc:371=11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0
-Time spent Symbolic Execution: 0.249
-Time spent Pruning: 8.914
+IR=GET-0@Tpcc:369=11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0
+IR=GET-0@Tpcc:372=6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:369(11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))->0) * 10000)))->0
+Time spent Symbolic Execution: 0.251
+Time spent Pruning: 8.186
 Number of Different Read and Write-Set: 1
 Number of Leaves Before:0
 Max Depth: 1
 Min Depth: 0
-times 0:	254092
-times 1:	2058007
-times 2:	2249126
-times 3:	34594
+times 0:	385857
+times 1:	1935784
+times 2:	2243489
+times 3:	30511
 times 4:	0
-times 5:	1626320
-times 6:	18579776
-times 7:	27444168
-times 8:	2457659
-times 9:	599310
-times 10:	142878
-times 11:	318879
-times 12:	795613
-times 13:	2664
-times 14:	274994
+times 5:	1707652
+times 6:	17257928
+times 7:	26242628
+times 8:	2548668
+times 9:	576338
+times 10:	123828
+times 11:	326938
+times 12:	755511
+times 13:	2131
+times 14:	212808
 times 15:	0
 indirect_variables: 0
 mapStateToNode: 0
@@ -65,8 +65,8 @@ states:             new=2,visited=0,backtracked=2,end=1
 search:             maxDepth=2,constraints=0
 choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=1
 heap:               new=640,released=25,maxLive=638,gcCycles=2
-instructions:       4606
+instructions:       4596
 max memory:         117MB
 loaded code:        classes=64,methods=1319
 
-====================================================== search finished: 09-02-2022 10:10
+====================================================== search finished: 26-02-2022 12:52

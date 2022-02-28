@@ -11,15 +11,23 @@ public class GraphBuilder {
 	private static LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph = new LinkedHashMap<>();
 	
 	// method that builds graph from SE files
-	private static void buildGraph() {
+	private static void buildGraph(int workload) {
 		try {
-			// obtain vertices from SE tree
-			String[] files = {"payment_new.txt", "order_new.txt", "delivery_new.txt",
-					"order_status_experiment.txt", "stock_level_experiment.txt"}; 
-			//String[] files = {"order_new.txt"};
+			// TPCC
+			if (workload == 1) {
+				String[] files = {"payment_new.txt", "order_new.txt", "delivery_new.txt",
+						"order_status_experiment.txt", "stock_level_experiment.txt"};
+				// obtain vertices from SE tree
+				new SEParser(files);
+			}
+			// RUBIS
+			else {
+				String[] files = {"registeruser_experiment.txt", "registeritem_experiment.txt",
+						"storebuy_experiment.txt", "storebid_experiment.txt","storecomment_experiment.txt"};
+				// obtain vertices from SE tree
+				new SEParser(files);
+			}
 			
-			//String[] files = {"order_new.txt"};
-			new SEParser(files);
 			// after obtaining vertices from SE need to make them disjoint
 			ArrayList<Vertex> seVertices = SEParser.getVertices();
 			// iterate through SE vertices to add them to graph
@@ -57,11 +65,14 @@ public class GraphBuilder {
 	// build graph and feed it to splitter and partitioner
 	public static void main(String[] args) {
 		
+		// workload choice, 1 = tpcc, else rubis
+		int workload = 2;
+		
 		long startTime = System.currentTimeMillis();
 
 		System.out.println("Running graph builder");
-				
-		buildGraph();
+		
+		buildGraph(workload);
 		
 		printGraph(graph); 
 						
@@ -84,6 +95,10 @@ public class GraphBuilder {
 	    long elapsedTime = stopTime - startTime;
 
 	    System.out.println(elapsedTime); 
+	    
+	    CatalystEvaluation evaluation = new CatalystEvaluation(partitioner);
+	    
+	    evaluation.evaluateCatalyst(workload);
 
 	}
 }

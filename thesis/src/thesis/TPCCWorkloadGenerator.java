@@ -3,16 +3,20 @@ package thesis;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TPCCWorkloadGenerator {
 	
 	// scaling factors
-	private static int w = 100;
-	private static int d = 10;
-	private static int id = 100000;
-	private static int c = 3000;
+	private static int w = VertexPhi.getScalingFactorW();
+	private static int d = VertexPhi.getScalingFactorD();
+	private static int id = VertexPhi.getScalingFactorI();
+	private static int c = VertexPhi.getScalingFactorC();
 	
 	// current partition for tx
 	static private long currentPart = -1;
@@ -21,11 +25,8 @@ public class TPCCWorkloadGenerator {
 	static int local = 0;
 	// no REMOTE transactions (multi part)
 	static int remote = 0;
-	
-	// testmode
-	static int mode = 0;
 	// num parts
-	static long parts = 10;
+	static long parts = Partitioner.getNoParts();
 	
 	// workload generator for Schism
 	public static void buildSchismTrace(int noTxs) {
@@ -36,7 +37,7 @@ public class TPCCWorkloadGenerator {
 			// create a file for Weka training
 			File schism = new File("schism.txt");
 			schism.createNewFile();
-			FileWriter schismWriter = new FileWriter("schism.txt");
+			FileWriter schismWriter = new FileWriter("schism.txt", false);
 			// create the number of desired transactions in a trace
 			while (generatedTxs < noTxs) {
 				// increment genTxs
@@ -54,7 +55,8 @@ public class TPCCWorkloadGenerator {
 					long randSupplyW = ThreadLocalRandom.current().nextInt(0, 100);
 					// generate 1% remote new orders
 					if (w > 1 && randSupplyW == 50) {
-						supplyW = ThreadLocalRandom.current().nextInt(0, w);
+						while (supplyW == randW)
+							supplyW = ThreadLocalRandom.current().nextInt(0, w);
 					}
 					traceLine += "w" + randW;
 					// generate random district 2
@@ -217,9 +219,11 @@ public class TPCCWorkloadGenerator {
 		
 	}
 	
-	
-	
-	public static void evaluateCatalyst(int noTxs) {
+	// method used to evaluate Catalyst in terms of % of distributed txs given a part logic
+	public void evaluateCatalystTPCC(int noTxs, LinkedHashMap<Integer,LinkedHashMap<Split, Integer>> logic) {
+		// printout test parameters
+		System.out.println("NO warehouses: " + w);
+		System.out.println("NO parts: " + parts);
 		// number of txs generated
 		int generatedTxs = 0;
 		// reset counters
@@ -229,6 +233,9 @@ public class TPCCWorkloadGenerator {
 		while (generatedTxs < noTxs) {
 			// part for current tx
 			currentPart = -1;
+			// feature list for each
+			ArrayList<Pair<String, Integer>> features;
+			HashMap<String, Integer> featureMap;
 			// increase no generated txs
 			generatedTxs++;
 			// boolean variable to stop if remote tx is found
@@ -236,52 +243,90 @@ public class TPCCWorkloadGenerator {
 			// roll the dice to know which tx to generate
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
-			if (randomNum < 45) {
+			if (randomNum < 44) {
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				long randD = ThreadLocalRandom.current().nextInt(0, d);
 				long randC = ThreadLocalRandom.current().nextInt(0, c);
 				// generate random warehouse 1
 				long warehouseKey = randW;
-				if(!checkPart(warehouseKey, 1, randW, -1)) continue;
-				// generate supply warehouse 1% remote
+				Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
+				features = new ArrayList<>();
+				features.add(warehouseFeature);
+				featureMap = buildFeatureMap(features);
+				if(!checkPart(2, warehouseKey, 1, featureMap, logic)) continue;
+				// initially supply warehouse is the same
 				long supplyW = warehouseKey;
-				long randSupplyW = ThreadLocalRandom.current().nextInt(0, 100);
+				// 1% of new orders should have remote supply warehouse
+				int randSupplyW = ThreadLocalRandom.current().nextInt(0, 100);
 				// generate 1% remote new orders
 				if (w > 1 && randSupplyW == 50) {
-					supplyW = ThreadLocalRandom.current().nextInt(0, w);
+					while (supplyW == randW)
+						supplyW = ThreadLocalRandom.current().nextInt(0, w);
 				}
 				// generate random district 2
 				long districtKey = randD + (randW * 100);
-				if(!checkPart(districtKey, 2, randW, randD)) continue;
+				Pair<String, Integer> districtFeature = new Pair<String, Integer>("districtid", (int) randD);
+				features = new ArrayList<>();
+				features.add(warehouseFeature);
+				features.add(districtFeature);
+				featureMap = buildFeatureMap(features);
+				if(!checkPart(2, districtKey, 2, featureMap, logic)) continue;
 				// generate random customer 3
 				long customerKey = randD + (randW * 100) + (randC * 10000);
-				if(!checkPart(customerKey, 3, randW, randD)) continue;
-				// get order number and increment counter 5 6
+				Pair<String, Integer> customerFeature = new Pair<String, Integer>("customerid", (int) randC);
+				features = new ArrayList<>();
+				features.add(warehouseFeature);
+				features.add(districtFeature);
+				features.add(customerFeature);
+				featureMap = buildFeatureMap(features);
+				if(!checkPart(2, customerKey, 3, featureMap, logic)) continue;
+				// generate random order 5
 				long randO = ThreadLocalRandom.current().nextInt(0, c);
 				long orderKey = randD + (randW * 100) + (randO * 10000);
-				if(!checkPart(orderKey, 5, randW, randD)) continue;
+				Pair<String, Integer> orderFeature = new Pair<String, Integer>("orderid", (int) randC);
+				features = new ArrayList<>();
+				features.add(warehouseFeature);
+				features.add(districtFeature);
+				features.add(orderFeature);
+				featureMap = buildFeatureMap(features);
+				if(!checkPart(2, orderKey, 5, featureMap, logic)) continue;
+				// generate random new order 6
 				long newOrderKey = randD + (randW * 100) + (randO * 10000);
-				if(!checkPart(newOrderKey, 6, randW, randD)) continue;
+				if(!checkPart(2, newOrderKey, 6, featureMap, logic)) continue;
 				// generate number of items in order, between 5 and 15
-				long randNoItems = ThreadLocalRandom.current().nextInt(5, 15);
+				long randNoItems = ThreadLocalRandom.current().nextInt(4, 15);
 				// iterate over the the order items
 				for (int i = 0; i < randNoItems; i++) {
 					// generate a random item 8
 					long randItem = ThreadLocalRandom.current().nextInt(0, id);
 					long itemKey = randItem;
-					if(!checkPart(itemKey, 8, randW, randD)) {
+					Pair<String, Integer> itemFeature = new Pair<String, Integer>("oliid", (int) randItem);
+					features = new ArrayList<>();
+					features.add(itemFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(2, itemKey, 8, featureMap, logic)) {
 						stop = true;
 						break;
 					}
 					// generate a order line warehouse key 9
 					long orderLineWKey = supplyW + (randItem * 100);
-					if(!checkPart(orderLineWKey, 9, supplyW, -1)) {
+					Pair<String, Integer> supplyWFeature = new Pair<String, Integer>("warehouseid", (int) supplyW);
+					features = new ArrayList<>();
+					features.add(supplyWFeature);
+					features.add(itemFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(2, orderLineWKey, 9, featureMap, logic)) {
 						stop = true;
 						break;
 					}
 					// generate order line key 7
 					long orderLineKey = Long.valueOf(randD + (randW * 100) + (randO * 1000000) + (i * 10000));
-					if(!checkPart(orderLineKey, 7, randW, randD)) {
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(districtFeature);
+					features.add(orderFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(2, orderLineKey, 7, featureMap, logic)) {
 						stop = true;
 						break;
 					}
@@ -290,25 +335,45 @@ public class TPCCWorkloadGenerator {
 					local++;
 			}
 			// payment txs
-			else if (randomNum < 88) {
+			else if (randomNum < 87) {
 				// 85% of payments the customer belongs to local warehouse
 				long localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
-				if (localCustomer <= 85) {
-					// generate random warehouse 1
+				if (localCustomer <= 84) {
 					long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 					long randD = ThreadLocalRandom.current().nextInt(0, d);
 					long randC = ThreadLocalRandom.current().nextInt(0, c);
+					// generate random warehouse 1
 					long warehouseKey = randW;
-					if(!checkPart(warehouseKey, 1, randW, -1)) continue;
+					Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(1, warehouseKey, 1, featureMap, logic)) continue;
 					// generate random district 2
 					long districtKey = randD + (randW * 100);
-					if(!checkPart(districtKey, 2, randW, randD)) continue;
+					Pair<String, Integer> districtFeature = new Pair<String, Integer>("districtid", (int) randD);
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(districtFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(1, districtKey, 2, featureMap, logic)) continue;
 					// generate random customer 3
 					long customerKey = randD + (randW * 100) + (randC * 10000);
-					if(!checkPart(customerKey, 3, randW, randD)) continue;
+					Pair<String, Integer> customerFeature = new Pair<String, Integer>("customerid", (int) randC);
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(districtFeature);
+					features.add(customerFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(1, customerKey, 3, featureMap, logic)) continue;
 					// generate history 4
 					long historyKey = randD + (randW * 100) + (randC * 10000);
-					if(!checkPart(historyKey, 4, randW, randD)) continue;
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(districtFeature);
+					features.add(customerFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(1, historyKey, 4, featureMap, logic)) continue;
 					local++;
 				}
 				else {
@@ -324,41 +389,77 @@ public class TPCCWorkloadGenerator {
 						}
 					}
 					long warehouseKey = randW;
-					if(!checkPart(warehouseKey, 1, randW, -1)) continue;
+					Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(1, warehouseKey, 1, featureMap, logic)) continue;
 					// generate random district 2
 					long districtKey = randD + (randW * 100);
-					if(!checkPart(districtKey, 2, randW, randD)) continue;
+					Pair<String, Integer> districtFeature = new Pair<String, Integer>("districtid", (int) randD);
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(districtFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(1, districtKey, 2, featureMap, logic)) continue;
 					// generate random customer 3, on a potentially remote warehouse
 					long customerKey = randD + (randW2 * 100) + (randC * 10000);
-					if(!checkPart(customerKey, 3, randW2, randD)) continue;
+					warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW2);
+					Pair<String, Integer> customerFeature = new Pair<String, Integer>("customerid", (int) randC);
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(districtFeature);
+					features.add(customerFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(1, customerKey, 3, featureMap, logic)) continue;
 					// generate history 4, on a potentially remote warehouse
 					long historyKey = randD + (randW2 * 100) + (randC * 10000);
-					if(!checkPart(historyKey, 4, randW, randD)) continue;
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(districtFeature);
+					features.add(customerFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(1, historyKey, 4, featureMap, logic)) continue;
 					local++;
 				}
 			}
 			// delivery txs
-			else if (randomNum <= 92) {
+			else if (randomNum < 91) {
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+				Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
 				// iterate over all districts
 				for (long i = 0; i < d; i++) {
 					// generate random customer 3
 					long randC = ThreadLocalRandom.current().nextInt(0, c);
 					long customerKey = i + (randW * 100) + (randC * 10000);
-					if(!checkPart(customerKey, 3, randW, i)) {
+					Pair<String, Integer> customerFeature = new Pair<String, Integer>("customerid", (int) randC);
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(customerFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(3, customerKey, 3, featureMap, logic)) {
 						stop = true;
 						break;
 					}
 					// generate random order
 					long order = ThreadLocalRandom.current().nextInt(0, c);
 					long orderKey = i + (randW * 100) + (order * 10000);
-					if(!checkPart(orderKey, 5, randW, i)) {
+					Pair<String, Integer> orderFeature = new Pair<String, Integer>("orderid", (int) order);
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(orderFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(3, orderKey, 5, featureMap, logic)) {
 						stop = true;
 						break;
 					}
 					long newOrderKey = i + (randW * 100) + (order * 10000);
-					if(!checkPart(newOrderKey, 6, randW, i)) {
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(orderFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(3, orderKey, 6, featureMap, logic)) {
 						stop = true;
 						break;
 					}
@@ -368,7 +469,11 @@ public class TPCCWorkloadGenerator {
 					for (long j = 0; j < randNoItems; j++) {
 						// generate order line key 7
 						long orderLineKey = Long.valueOf(i + (randW * 100) + (order * 1000000) + (j * 10000));
-						if(!checkPart(orderLineKey, 7, randW, i)) {
+						features = new ArrayList<>();
+						features.add(warehouseFeature);
+						features.add(orderFeature);
+						featureMap = buildFeatureMap(features);
+						if(!checkPart(3, orderLineKey, 7, featureMap, logic)) {
 							stop = true;
 							break;
 						}
@@ -379,24 +484,42 @@ public class TPCCWorkloadGenerator {
 					local++;
 			}
 			// order status tx
-			else if (randomNum <= 96) {
+			else if (randomNum < 95) {
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+				Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
 				// generate random district 2
 				long randD = ThreadLocalRandom.current().nextInt(0, d);
+				Pair<String, Integer> districtFeature = new Pair<String, Integer>("districtid", (int) randD);
 				// generate random customer 3
 				long randC = ThreadLocalRandom.current().nextInt(0, c);
+				Pair<String, Integer> customerFeature = new Pair<String, Integer>("districtid", (int) randC);
 				long customerKey = randD + (randW * 100) + (randC * 10000);
-				if(!checkPart(customerKey, 3, randW, randD)) continue;
+				features = new ArrayList<>();
+				features.add(warehouseFeature);
+				features.add(districtFeature);
+				features.add(customerFeature);
+				featureMap = buildFeatureMap(features);
+				if(!checkPart(4, customerKey, 3, featureMap, logic)) continue;
 				// access order 6
 				long orderKey = randD + (randW * 100) + (randC * 10000);
-				if(!checkPart(orderKey, 5, randW, randD)) continue;
+				features = new ArrayList<>();
+				features.add(warehouseFeature);
+				features.add(districtFeature);
+				features.add(customerFeature);
+				featureMap = buildFeatureMap(features);
+				if(!checkPart(4, orderKey, 5, featureMap, logic)) continue;
 				// generate number of items in order, between 5 and 15
 				long randNoItems = ThreadLocalRandom.current().nextInt(4, 15);
 				for (int i = 0; i < randNoItems; i++) {
 					// generate order line key 7
 					long orderLineKey = Long.valueOf(randD + (randW * 100) + (randC * 1000000) + (i * 10000));
-					if(!checkPart(orderLineKey, 7, randW, randD)) {
+					features = new ArrayList<>();
+					features.add(warehouseFeature);
+					features.add(districtFeature);
+					features.add(customerFeature);
+					featureMap = buildFeatureMap(features);
+					if(!checkPart(4, orderLineKey, 7, featureMap, logic)) {
 						break;
 					}
 				}
@@ -406,26 +529,43 @@ public class TPCCWorkloadGenerator {
 			else {
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+				Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
 				// generate random district 2
 				long randD = ThreadLocalRandom.current().nextInt(0, d);
+				Pair<String, Integer> districtFeature = new Pair<String, Integer>("districtid", (int) randD);
 				long districtKey = randD + (randW * 100);
-				if(!checkPart(districtKey, 2, randW, randD)) continue;
+				features = new ArrayList<>();
+				features.add(warehouseFeature);
+				features.add(districtFeature);
+				featureMap = buildFeatureMap(features);
+				if(!checkPart(5, districtKey, 2, featureMap, logic)) continue;
 				for (long i = 0; i < 20; i++) {
 					// generate random order
 					long randO = ThreadLocalRandom.current().nextInt(0, c);
+					Pair<String, Integer> orderFeature = new Pair<String, Integer>("orderid", (int) randO);
 					long randNoItems = ThreadLocalRandom.current().nextInt(5, 15);
 					for (long j = 0; j < randNoItems; j++) {
 						// generate order line key 7
 						long orderLineKey = Long.valueOf(randD + (randW * 100) + (randO * 1000000) + (j * 10000));
-						if(!checkPart(orderLineKey, 7, randW, randD)) {
+						features = new ArrayList<>();
+						features.add(warehouseFeature);
+						features.add(districtFeature);
+						features.add(orderFeature);
+						featureMap = buildFeatureMap(features);
+						if(!checkPart(5, orderLineKey, 7, featureMap, logic)) {
 							stop = true;
 							break;
 						}
 						// generate a random item 8
 						long randItem = ThreadLocalRandom.current().nextInt(0, id);
+						Pair<String, Integer> itemFeature = new Pair<String, Integer>("oliid", (int) randItem);
 						// generate a order line warehouse key 9
 						long orderLineWKey = randW + (randItem * 100);
-						if(!checkPart(orderLineWKey, 9, randW, -1)) {
+						features = new ArrayList<>();
+						features.add(warehouseFeature);
+						features.add(itemFeature);
+						featureMap = buildFeatureMap(features);
+						if(!checkPart(5, orderLineWKey, 9, featureMap, logic)) {
 							stop = true;
 							break;
 						}
@@ -443,70 +583,50 @@ public class TPCCWorkloadGenerator {
 		System.out.println("Local transactions: " + local);
 		double percent =  ( (double) remote/ (double) noTxs);
 		System.out.println("Percentage of remote transactions: " + (percent * 100) + "%");
-	}
+	} 
 	
 	// method that returns true if an access is local or false if it is remote
-	public static boolean checkPart(long key, int table, long wid, long did) {
-		// catalyst testing
-		if (mode == 0) {
-			// get part for this access
-			//int part = this.partitioner.lookupKey(String.valueOf(key), String.valueOf(table));
-			// plug part function here
-			//int part = (wid <= 4 ? 1 : 2);
-			
-						
-			long part;
-			
-			part = 0;
-			
-			
-			// check if local or remote
-			if (currentPart == -1) {
-				currentPart = part;
-				return true;
-			}
-			else if (currentPart == part) {
-				return true;
-			}
-			else {
-				if (VertexPhi.checkTableReplicated(table)) {
-					return true;
-				}
-				//System.out.println("Table: " + table + " - Remote key: " + key);
-				remote++;
-				return false;
-			}
+	public static boolean checkPart(int txProfile, long key, int table, HashMap<String, Integer> features, LinkedHashMap<Integer,LinkedHashMap<Split, Integer>> logic) {
+		// part the access belongs to
+		int part = -1;
+		// query the map to get the rules for correct txProfile
+		LinkedHashMap<Split, Integer> rules = logic.get(txProfile);
+		// given the rules just need to query them in order
+		for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
+			if (rule.getKey().query(key, table, features))
+				part = rule.getValue();
+		}	
+		// check if local or remote
+		if (currentPart == -1) {
+			currentPart = part;
+			return true;
+		}
+		else if (currentPart == part) {
+			return true;
 		}
 		else {
-			long part = key % parts;
-			if (currentPart == -1) {
-				currentPart = part; 
+			if (VertexPhi.checkTableReplicated(table)) {
 				return true;
 			}
-			else if (currentPart == part) {
-				return true;
-			}
-			else {
-				remote++;
-				return false;
-			}
+			System.out.println("Table: " + table + " - Remote key: " + key);
+			remote++;
+			return false;
 		}
-		
 	}
+		
+	// method that builds map of features for each access
+	public HashMap<String, Integer> buildFeatureMap(ArrayList<Pair<String, Integer>> features) {
+		// build a feature map
+		HashMap<String, Integer> featureMap = new HashMap<>();
+		// iterate over pairs of features and insert in map
+		for (Pair<String, Integer> feature : features) {
+			featureMap.put(feature.getKey(), feature.getValue());
+		}
+		return featureMap;
+	}
+		
+		
+		
+		
 	
-	public static void main(String[] args) {
-		System.out.println("NO warehouses: " + w);
-		System.out.println("NO parts: " + parts);
-		
-		// evaluate Catalyst
-		evaluateCatalyst(100);
-		evaluateCatalyst(1000);
-		evaluateCatalyst(100000);
-		// swap to hash part
-		mode = 1;
-		evaluateCatalyst(100);
-		evaluateCatalyst(1000);
-		evaluateCatalyst(100000);
-	}
-
 }
