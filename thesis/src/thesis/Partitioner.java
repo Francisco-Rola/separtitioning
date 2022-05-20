@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Partitioner {
 	
 	// no partitions desired 
-	private static int noParts = 10; 
+	private static int noParts = 2; 
 	
 	// graph under partitioning
 	private LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph;

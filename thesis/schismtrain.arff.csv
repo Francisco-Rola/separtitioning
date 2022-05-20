@@ -1,14 +1,4 @@
-@relation 'parts'
-@attribute i numeric
-@attribute u numeric
-@attribute c numeric
-@attribute r numeric
-@attribute y numeric
-@attribute d numeric
-@attribute t numeric
-@attribute table numeric
-@attribute class {0,1}
-@data
+i,u,c,r,y,d,t,table,class
 20216,?,?,?,?,?,?,2,0
 20216,?,?,?,?,1,?,5,0
 175336,?,?,?,?,?,?,2,0
