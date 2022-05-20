@@ -14,7 +14,7 @@ public class CatalystEvaluation {
 			TPCCWorkloadGenerator tpcc = new TPCCWorkloadGenerator();
 			tpcc.evaluateCatalystTPCC(1000000, partitioner.getPartLogic());
 		}
-		// RUBIS
+		// RUBIS 
 		else {
 			RubisWorkloadGenerator rubis = new RubisWorkloadGenerator();
 			rubis.evaluateCatalystRubis(1000000, partitioner.getPartLogic());
