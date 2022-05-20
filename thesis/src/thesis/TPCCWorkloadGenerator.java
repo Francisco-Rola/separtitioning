@@ -80,7 +80,7 @@ public class TPCCWorkloadGenerator {
 							randItem = ThreadLocalRandom.current().nextInt(0, id);
 						}
 						generatedItems.add(randItem);
-						traceLine += " i" + randItem;
+						//traceLine += " i" + randItem;
 						// generate a order line warehouse key 9
 						traceLine += " w" + supplyW + "i" + randItem;
 						// generate order line key 7
@@ -591,11 +591,18 @@ public class TPCCWorkloadGenerator {
 		int part = -1;
 		// query the map to get the rules for correct txProfile
 		LinkedHashMap<Split, Integer> rules = logic.get(txProfile);
-		// given the rules just need to query them in order
-		for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
-			if (rule.getKey().query(key, table, features))
-				part = rule.getValue();
-		}	
+		
+		// extra situation for delivery in 1w workload
+		if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
+			part = 1;
+		}
+		else {
+			// given the rules just need to query them in order
+			for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
+				if (rule.getKey().query(key, table, features))
+					part = rule.getValue();
+			}
+		}
 		// check if local or remote
 		if (currentPart == -1) {
 			currentPart = part;

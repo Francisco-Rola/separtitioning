@@ -55,20 +55,13 @@ public class GraphVertex {
 	}
 	
 	// method that computes vertex weight in SMT implementation
-	public void computeVertexWeightSMT() { 
-		// temp variable for vertex weight
-		int vertexWeightTemp = 0;
-		// iterate over all the rhos in the vertex
-		for (Map.Entry<VertexRho, VertexPhi> entry: this.getSigma().getRhos().entrySet()) {
-			System.out.println("T: " + entry.getKey().getTable() + " rho weight: " + 
-						entry.getKey().getNoItems() + " value: " + entry.getKey().getValue());
-			vertexWeightTemp += (entry.getKey().getNoItems() * entry.getKey().getValue());
-		}
-		this.vertexWeight = vertexWeightTemp;	
-		
+	public void computeVertexWeightSMT(int vertexWeight) { 	
 		// cannot be less than 0, if so its because of an over aproximation, fix it
-		if (this.vertexWeight < 0) {
+		if (vertexWeight < 0) {
 			this.vertexWeight = 0;
+		}
+		else {
+			this.vertexWeight = vertexWeight;
 		}
 	}
 		

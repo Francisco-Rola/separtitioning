@@ -262,13 +262,21 @@ public class RubisWorkloadGenerator {
 	public static boolean checkPart(int txProfile, long key, int table, HashMap<String, Integer> features, LinkedHashMap<Integer,LinkedHashMap<Split, Integer>> logic) {
 		// part the access belongs to
 		int part = -1;
-		// query the map to get the rules for correct txProfile
-		LinkedHashMap<Split, Integer> rules = logic.get(txProfile);
-		// given the rules just need to query them in order
-		for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
-			if (rule.getKey().query(key, table, features))
-				part = rule.getValue();
-		}	
+		
+		if (logic != null) {
+			// query the map to get the rules for correct txProfile
+			LinkedHashMap<Split, Integer> rules = logic.get(txProfile);
+			// given the rules just need to query them in order
+			for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
+				if (rule.getKey().query(key, table, features))
+					part = rule.getValue();
+			}
+		}
+		
+		else {
+			part = (int) (key % parts);
+		}
+		
 		// check if local or remote
 		if (currentPart == -1) {
 			currentPart = part;

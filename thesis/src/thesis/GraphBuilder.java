@@ -16,7 +16,8 @@ public class GraphBuilder {
 			// TPCC
 			if (workload == 1) {
 				String[] files = {"payment_new.txt", "order_new.txt", "delivery_new.txt",
-						"order_status_experiment.txt", "stock_level_experiment.txt"};
+						"order_status_experiment.txt", "stock_level_experiment.txt"}; 
+				//String[] files = {"payment_new.txt"};
 				// obtain vertices from SE tree
 				new SEParser(files);
 			}
@@ -66,14 +67,20 @@ public class GraphBuilder {
 	public static void main(String[] args) {
 		
 		// workload choice, 1 = tpcc, else rubis
-		int workload = 2;
+		int workload = 1;
 		
-		long startTime = System.currentTimeMillis();
+		long startTimeTotal = System.currentTimeMillis();
 
 		System.out.println("Running graph builder");
 		
 		buildGraph(workload);
 		
+	    long stopTimeGraphInitial = System.currentTimeMillis();
+		
+	    long elapsedTime = stopTimeGraphInitial - startTimeTotal;
+	    
+	    System.out.println("Time to build initial symbolic graph (pre splitting): " + elapsedTime);
+
 		printGraph(graph); 
 						
 		System.out.println("Running graph splitter");
@@ -81,20 +88,26 @@ public class GraphBuilder {
 		NewSplitter splitter = new NewSplitter();
 		
 		graph = splitter.splitGraph(graph);
-		
+				
 		printGraph(graph);
 		
 		System.out.println("Running graph partitioner");
+		
+		long startTimePartitioning = System.currentTimeMillis();
 		
 		Partitioner partitioner = new Partitioner(graph, splitter);
 		
 		partitioner.partitionGraph();   
 		
-	    long stopTime = System.currentTimeMillis();
+	    long stopTimePartitioning = System.currentTimeMillis();
 
-	    long elapsedTime = stopTime - startTime;
+	    elapsedTime = stopTimePartitioning - startTimePartitioning;
+	    
+	    System.out.println("Time to build partition graph and build logic: " + elapsedTime);
 
-	    System.out.println(elapsedTime); 
+	    elapsedTime = stopTimePartitioning - startTimeTotal;
+	    
+	    System.out.println("\nTotal execution time: " + elapsedTime); 
 	    
 	    CatalystEvaluation evaluation = new CatalystEvaluation(partitioner);
 	    

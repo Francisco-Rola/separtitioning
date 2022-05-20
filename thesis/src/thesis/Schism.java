@@ -9,11 +9,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
 
+import weka.attributeSelection.CfsSubsetEval;
+import weka.attributeSelection.GreedyStepwise;
 import weka.classifiers.Evaluation;
+import weka.classifiers.meta.AttributeSelectedClassifier;
+import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.trees.J48;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
+import weka.filters.unsupervised.attribute.Remove;
 
 
 public class Schism {
@@ -94,7 +100,7 @@ public class Schism {
 			e.printStackTrace();
 		}		
 		// create METIS file		
-		File metis = new File("graphFile");
+		File metis = new File(graphFile);
 		try {
 			if (metis.createNewFile()) {
 			    System.out.println("File created: " + metis.getName());
@@ -325,12 +331,12 @@ public class Schism {
 			e.printStackTrace();
 		}		
 		// create METIS file		
-		File metis = new File("graphFile");
+		File metis = new File(graphFile);
 		try {
 			if (metis.createNewFile()) {
 			    System.out.println("File created: " + metis.getName());
 			  } else {
-			    System.out.println("File already exists.");
+			    System.out.println("File already exists " + metis.getName());
 			  }
 		} catch (IOException e) {
 			System.out.println("Error while creating METIS file!");
@@ -421,6 +427,7 @@ public class Schism {
 			dataFileW.append("@attribute y numeric\n");
 			dataFileW.append("@attribute d numeric\n");
 			dataFileW.append("@attribute t numeric\n");
+			dataFileW.append("@attribute table numeric\n");
 
 			
 			String partClass = "{";
@@ -515,7 +522,40 @@ public class Schism {
 						else break;
 					}
 				}
-				String dataLine = i + "," + u + "," + c + "," + r + "," + y + "," + d + "," + t + "," + entry.getValue() + "\n"; 
+				String table = "?";
+				if (key.contains("i") && key.contains("y")) {
+					table = "6";
+				}
+				else if (key.contains("c") && key.contains("i")) {
+					table = "2" ;
+				}
+				else if (key.contains("r") && key.contains("u")) {
+					table = "1";
+				}
+				else if (key.contains("i") && key.contains("d")) {
+					table = "5";
+				}
+				else if (key.contains("u") && key.contains("t")) {
+					table = "7";
+				}
+				else if (key.contains("r")) {
+					table = "4";
+				}
+				else if (key.contains("c")) {
+					table = "3";
+				}
+				else if (key.contains("i")) {
+					table = "2"; 	
+				}
+				else if (key.contains("u")) {
+					table = "1";
+				}
+				else {
+					System.out.println(key);
+					System.out.println("Messed up");
+				}
+				
+				String dataLine = i + "," + u + "," + c + "," + r + "," + y + "," + d + "," + t + "," + table + "," + entry.getValue() + "\n"; 
 				dataFileW.append(dataLine);
 			}
 			dataFileW.close();
@@ -539,14 +579,38 @@ public class Schism {
 			source = new DataSource(testFile);
 			Instances test = source.getDataSet();
 			test.setClassIndex(test.numAttributes() - 1);
-
+			
+			/*
+			// testing classifier with feature selection
+			Remove rm = new Remove();
+			rm.setAttributeIndices("1");  // remove 1st attribute
+			
+			// classifier
+			J48 j48 = new J48();
+			j48.setUnpruned(true);        // using an unpruned J48
+			// meta-classifier
+			FilteredClassifier fc = new FilteredClassifier();
+			fc.setFilter(rm);
+			fc.setClassifier(j48);
+			// train and make predictions
+			fc.buildClassifier(train);
+			System.out.println(j48);
+			
+			Evaluation eval = new Evaluation(train);
+			eval.evaluateModel(j48, test);
+			
+			System.out.println(eval.toSummaryString());
+			*/
+			
 			
 			J48 tree = new J48();
 			tree.buildClassifier(train);
 			System.out.println(tree);
 			Evaluation eval = new Evaluation(train);
-			eval.evaluateModel(tree, test);
-			System.out.println(eval.toSummaryString("\nResults\n======\n", false));
+			// eval.evaluateModel(tree,test)
+			eval.evaluateModel(tree, train);
+			
+			System.out.println(eval.toSummaryString());
 			
 		} catch (Exception e) {
 			System.out.println("Error during Weka model building");

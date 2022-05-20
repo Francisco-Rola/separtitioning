@@ -18,6 +18,8 @@ public class CatalystEvaluation {
 		else {
 			RubisWorkloadGenerator rubis = new RubisWorkloadGenerator();
 			rubis.evaluateCatalystRubis(1000000, partitioner.getPartLogic());
+			
+			rubis.evaluateCatalystRubis(1000000, null);
 		}
 	}
 

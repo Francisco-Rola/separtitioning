@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,8 +17,7 @@ import com.wolfram.jlink.KernelLink;
 
 
 // class performing vertex splitting and creating graph file for the partitioner
-public class NewSplitter {
-	
+public class NewSplitter {	
 	// counter for SMT file creation
 	int fileId = 1;
 	// count for SMT tags
@@ -30,7 +27,7 @@ public class NewSplitter {
 	// how many parts does a table split go for
 	public int tableSplitFactor = 2;
 	// how many splits does an input split go for, at most
-	public int inputSplitFactor = 2;
+	public int inputSplitFactor = 10;
 	// no edges in final graph
 	int noEdges = 0;
 	// no vertices in final graph
@@ -44,10 +41,15 @@ public class NewSplitter {
 	
 	// method that takes a graph as input and splits its vertices, returns the resulting graph
 	public LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> splitGraph(LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
+		
+		long timeForSplitting = 0;
+		long timeForComputation = 0;
+		
 		// tx profile identifier
 		int txProfile = 1;
 		// go through all vertices in graph
 		for (GraphVertex v: graph.keySet()) {
+			long startTime = System.currentTimeMillis();
 			// obtain rho phi pair for the given vertex
 			HashMap<VertexRho, VertexPhi> rhos = v.getSigma().getRhos();
 			// group together rhos that belong to the same table within a vertex
@@ -62,11 +64,20 @@ public class NewSplitter {
 			System.out.println("Getting splits - DONE");
 			// display the splits
 			printSplits(txProfile, splits);
+			long endTime = System.currentTimeMillis();
+			long splitTime = endTime - startTime;
+			timeForSplitting += splitTime;
 			// apply the split to the vertex
+			startTime = System.currentTimeMillis();
 			applySplit(v.getSigma(), splits, txProfile);
+			endTime = System.currentTimeMillis();
+			long computationTime = endTime - startTime;
+			timeForComputation += computationTime;
 			//increment vertex counter
 			txProfile++;
 		}
+		System.out.println("Time to split the graph: " + timeForSplitting);
+		System.out.println("Time to compute weights of vertices and edges: " + timeForComputation);
 		// build metis graph
 		LinkedHashMap<Integer, Pair<Integer, HashMap<Integer, Integer>>> metisGraph = buildMETISGraph();
 		// print METIS file
@@ -708,69 +719,56 @@ public class NewSplitter {
 						break;
 				}
 			}
-			// remove duplicate items from rho weight
-			int itemsToRemove = 0;
-			// need to update no items in this rho after computing all its edges, compare to previous rhos
-			
-			//System.out.println("Rho: " + entryV.getKey().getRho());
-			//System.out.println("Weight: " + entryV.getKey().getNoItems());
-			
-			if (entryV.getKey().isRemote()) continue;
-			
-			for (Map.Entry<VertexRho, VertexPhi> prevRho: prevRhos.entrySet()) {
-				// check if rhos belong to same table
-				if (prevRho.getKey().getTable().equals(entryV.getKey().getTable())) {
-					// if same table compare overlaps
-					int overlap = rhoIntersection(entryV.getKey(), prevRho.getKey(), entryV.getValue(), prevRho.getValue());					
-					// check how many of the overlapping items are remote
-					int remote = 0;
-					for (GraphEdge e : foundEdges) {
-						if (e.getEdgeRho().equals(entryV.getKey())) {
-							// edges originated in the current rho
-							remote += rhoIntersection(prevRho.getKey(), e.getEdgeRho(), prevRho.getValue(), e.getEdgePhi());
-						}
-						else if (e.getEdgeRho().equals(prevRho.getKey())) {
-							// edges originated in previous rhos
-							remote += rhoIntersection(entryV.getKey(), e.getEdgeRho(), entryV.getValue(), e.getEdgePhi());
-						}
-					}
-					// from the overlap between the two rhos, remove the remote items in both rhos
-					overlap = overlap - remote;
-					// check if overlap went below 0 due to approximations
-					if (overlap < 0)
-						overlap = 0;
-					// add overlap size to items to remove
-					itemsToRemove += overlap;
-					// if more items to remove than size of rho we can proceed
-					if (itemsToRemove >= entryV.getKey().getNoItems())
-						break;
-				}
-				else {
-					// no overlaps between rhos
-					continue;
-				}
-			}
-			// System.out.println("Removed duplicates: " + itemsToRemove);
-			
-			prevRhos.put(entryV.getKey(), entryV.getValue());
-			// current rho weight will be equal to the its original weight - duplicate items
-			int noItemsRho = entryV.getKey().getNoItems();
-			noItemsRho = noItemsRho - itemsToRemove;
-			// check if below 0 due to approximations
-			if (noItemsRho < 0) {
-				noItemsRho = 0;
-			}
-			// System.out.println("Final: " + noItemsRho);
-			// set the new number of items in the rho
-			entryV.getKey().setNoItems(noItemsRho);
-			// if the rho is empty afterwards set it to remote and stop analyzing it
-			if (entryV.getKey().getNoItems() == 0) {
-				//System.out.println("Alert: Rho is now empty, setting it to remote!");
-				entryV.getKey().setRemote();
-			} 
-			
-			
 		}
+		
+		// need to compute rho weight on a per table basis, first group them together
+		HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> groupedRhos = groupRhos(rhosV);
+		// variable to store vertex weight
+		int rhosWeight = 0;
+		// iterate over all tables and get their weight
+		for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> table : groupedRhos.entrySet()) {
+			// get the weight of the table
+			System.out.println("Number of rhos to analyze in table " + table.getKey() + " is: " + table.getValue().size());
+			int tableWeight = computeTableWeight(table.getValue());
+			// add weight of table to rho weight
+			System.out.println("Table " + table.getKey() + " weight: " + tableWeight);
+			rhosWeight += tableWeight;
+		}
+		// need to remove weight corresponding to the remote items, group edges according to rho table
+		HashMap<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> groupedEdgeRhos = new HashMap<>();
+		for (GraphEdge e : foundEdges) {
+			VertexRho edgeRho = e.getEdgeRho();
+			VertexPhi edgePhi = e.getEdgePhi();
+			int table = Integer.parseInt(edgeRho.getTable());
+			// if table exists add rho to it
+			if (groupedEdgeRhos.containsKey(table)) {
+				Pair<VertexRho, VertexPhi> rhoPhi = new Pair<VertexRho, VertexPhi>(edgeRho, edgePhi);
+				groupedEdgeRhos.get(table).add(rhoPhi);
+			}
+			else {
+				Pair<VertexRho, VertexPhi> rhoPhi = new Pair<VertexRho, VertexPhi>(edgeRho, edgePhi);
+				ArrayList<Pair<VertexRho, VertexPhi>> rhoPhis = new ArrayList<>();
+				rhoPhis.add(rhoPhi);
+				groupedEdgeRhos.put(table, rhoPhis);
+			}
+		}
+		// variable to store remote item count
+		int remoteWeight = 0;
+		// iterate over all tables and get their weight
+		for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> table : groupedEdgeRhos.entrySet()) {
+			// get the weight of the table
+			int tableWeight = computeTableWeight(table.getValue());
+			// add weight of table to rho weight
+			System.out.println("Table " + table.getKey() + " remote items: " + tableWeight);
+			remoteWeight += tableWeight;
+		}
+		
+		int vertexWeight = rhosWeight - remoteWeight;
+		
+		
+		System.out.println("Rhos weight for vertex is " + vertexWeight);
+			
+			
 		// in this stage the new vertex has been compared and updated regarding all previous vertices
 		graph.put(newVertex, new ArrayList<>());
 		// add its edges to the graph as well
@@ -778,7 +776,7 @@ public class NewSplitter {
 			addEdge(newVertex, e, graph);
 		}
 		// compute vertex Weight
-		newVertex.computeVertexWeightSMT();
+		newVertex.computeVertexWeightSMT(vertexWeight);
 		System.out.println("Subvertex added successfully");
 	}
 	
@@ -788,7 +786,6 @@ public class NewSplitter {
 		String rho1 = rho.getRho(); 
 		String phi1 = phi.getPhiAsString(); 
 		HashSet<String> vars = rho.getVariables(); 
-		
 		
 		// create SMT file
 		String fileName = "SMTfileVertex.smt2";
@@ -868,7 +865,7 @@ public class NewSplitter {
 				System.exit(0);
 			}
 			
-			String[] commandsApprox = {"approxmc", "counts.cnf"};
+			String[] commandsApprox = {"approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
 			proc = rt.exec(commandsApprox);
 			int rhoWeight = 0;
 			
@@ -901,8 +898,175 @@ public class NewSplitter {
 		return 0;
 	}
 	
-	// method that computes the weight of the intersection between two rhos given each associated phi
+	// method that computes the weight of a table in a given vertex
+	private int computeTableWeight(ArrayList<Pair<VertexRho, VertexPhi>> tableRhos) {
+		
+		// list of variables in vertex
+		HashSet<String> varsVertex = new HashSet<>();
+		// variable declarations
+		ArrayList<String> varDeclarations = new ArrayList<>();
+		// rho and phi declarations
+		ArrayList<Pair<String, String>> rhoPhiDeclarations = new ArrayList<>();
+		// table split declarations
+		ArrayList<String> tableSplitDeclarations = new ArrayList<>();
+		
+		// create SMT file
+		String fileName = "SMTfileVertex.smt2";
+		
+		File smtFile = new File(fileName);
+		try {
+			smtFile.createNewFile();
+		} catch (IOException e) {
+			System.out.println("Error while creating SMT file!");
+			e.printStackTrace();
+		}
+		
+		// write to SMT file
+		try {
+			// reset tags for SMT vars in file
+			smtTag = 0;
+			
+			FileWriter smtWritter = new FileWriter(fileName);
+			// first line contains smt lib headers
+			smtWritter.append("(set-option :count-models true)\n");
+			smtWritter.append("(set-logic QF_BV)\n");
+			smtWritter.append("(set-option :print-clauses-file \"./counts.cnf\")");
+			smtWritter.append("(set-info :smt-lib-version 2.0)\n");
+			
+			// iterator for rho index
+			int index = 1;
+			// need to compute vertex weight based on all its rhos
+			for (Pair<VertexRho, VertexPhi> entry: tableRhos) {
+				smtWritter.append("(declare-fun rho_" + index + " () (_ BitVec 32))\n");
+				smtWritter.append("(declare-fun phi_" + index + " () Bool)\n");
+				
+				// obtain strings for query
+				String rho1 = entry.getKey().getRho(); 
+				String phi1 = entry.getValue().getPhiAsString(); 
+				HashSet<String> vars = entry.getKey().getVariables();
+				
+				// add new variables to query if appliable
+				for (String variable : vars) {
+					if (!varsVertex.contains(variable)) {
+						varDeclarations.add("(declare-fun " + variable + " () (_ BitVec 32))\n");
+						varsVertex.add(variable);
+					}
+				}
+				// add rho declarations
+				String rhoDeclaration = "(assert (= rho_" + index + " " + recursiveRhoToSMT(rho1.substring(rho1.indexOf(">") + 1), false) + "))\n";
+				// add table splti declaration if appliable
+				if (entry.getKey().tableSplitExists()) {
+					tableSplitDeclarations.add(tableSplitSMT(entry.getKey(), index));
+				}
+				// add phi declaration
+				String phiDeclaration = "(assert (= phi_" + index + " " + parsePhiIntoSmt(phi1) + "))\n";
+				// add both rho and phi declaration 
+				Pair<String, String> rhoPhi = new Pair<String, String>(rhoDeclaration, phiDeclaration);
+				rhoPhiDeclarations.add(rhoPhi);
+				index++;
+			}
+			// add variable declarations to SMT file
+			for (String varDeclaration : varDeclarations) {
+				smtWritter.append(varDeclaration);
+			}
+			// add a test variable declaration
+			smtWritter.append("(declare-fun test () (_ BitVec 32))\n");
+			// add rho phi declarations
+			for (Pair<String, String> rhoPhiDeclaration : rhoPhiDeclarations) {
+				smtWritter.append(rhoPhiDeclaration.getKey());
+				smtWritter.append(rhoPhiDeclaration.getValue());
+			}
+			// add table split declarations
+			for (String tableSplitDeclaration : tableSplitDeclarations) {
+				smtWritter.append(tableSplitDeclaration);
+			}
+			
+			// build the phi query
+			String phiQuery = "";
+			for (int i = 0; i < rhoPhiDeclarations.size(); i ++) {
+				if (i == 0) {
+					phiQuery = "phi_1";
+				}
+				else {
+					phiQuery = "(and " + phiQuery + " phi_" + (i + 1) + ")";
+				}
+			}
+			phiQuery = "(assert " + phiQuery + ")\n";
+			smtWritter.append(phiQuery);
+			
+			// build the assert query
+			String assertQuery = "";
+			for (int i = 0; i < rhoPhiDeclarations.size(); i++) {
+				if (i == 0) {
+					assertQuery += " (= (! test :named v1) rho_1)";
+				}
+				else {
+					assertQuery = " (or" + assertQuery + "(= test rho_" + (i + 1) + "))";
+				}
+			}
+			assertQuery = "(assert" + assertQuery + ")\n";
+			smtWritter.append(assertQuery);
+			smtWritter.append("(count-models v1)\n");
+			
+			smtWritter.append("(exit)");
+			// close file
+			smtWritter.close();
+			
+			// SMT file is built, only need to count number of solutions using approxmc and opensmt			
+			Runtime rt = Runtime.getRuntime();
+			String[] commandsSMT = {"opensmt", "SMTfileVertex.smt2"};
+			Process proc = rt.exec(commandsSMT);
+
+			BufferedReader stdInput = new BufferedReader(new 
+			     InputStreamReader(proc.getInputStream()));
+
+			BufferedReader stdError = new BufferedReader(new 
+			     InputStreamReader(proc.getErrorStream()));
+			
+			
+			// Read the output from the command
+			String s = null;
+			while ((s = stdInput.readLine()) != null) {
+			    //System.out.println(s);
+			}
+			// Read any errors from the attempted command
+			while ((s = stdError.readLine()) != null) {
+				System.out.println("Error during openSMT phase - rho weight");
+			    System.out.println(s);
+				System.exit(0);
+			}
+			
+			String[] commandsApprox = {"approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
+			proc = rt.exec(commandsApprox);
+			int rhoWeight = 0;
+			
+			stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+			stdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
+			
+			s = null;
+			while ((s = stdInput.readLine()) != null) {
+				if (s.startsWith("s mc")) {
+			    	String[] splits = s.split(" ");
+			    	rhoWeight = Integer.parseInt(splits[2]);
+			    	//System.out.println("Rho weight: " + rhoWeight);
+			    	return rhoWeight;
+			    }
+			}
+			// Read any errors from the attempted command
+			while ((s = stdError.readLine()) != null) {
+				System.out.println("Error during ApproxMC phase");
+			    System.out.println(s);
+			}
+			
+		} catch (IOException e) {
+			System.out.println("Error on generating SMT file!");
+			e.printStackTrace();
+		}
+		return 0;
+	}
 	
+	// method that computes the weight of the intersection between two rhos given each associated phi
 	private int rhoIntersection(VertexRho rhoV, VertexRho rhoGV, VertexPhi phiV, VertexPhi phiGV) {
 		// obtain strings for query
 		String rho1 = rhoV.getRho(); // new vertex
@@ -1004,7 +1168,7 @@ public class NewSplitter {
 			    System.exit(0);
 			}
 			
-			String[] commandsApprox = {"approxmc", "counts.cnf"};
+			String[] commandsApprox = {"approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
 			proc = rt.exec(commandsApprox);
 			int intersectionSize = 0;
 			
@@ -1036,7 +1200,6 @@ public class NewSplitter {
 	}
 	
 	// method that builds extra smt line for table splits
-	
 	private String tableSplitSMT(VertexRho rho, int rhoNumber) {
 		// get lower table limit
 		int lower = rho.getLowerTableLimit() - 1;
@@ -1243,7 +1406,6 @@ public class NewSplitter {
 	private void addEdge(GraphVertex v, GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		graph.get(v).add(edge);
 	}
-	
 	// method used to build adjacency matrix for graph presenting
 	private LinkedHashMap<Integer, Pair<Integer,HashMap<Integer, Integer>>> buildMETISGraph() {
 		// final graph for METIS
