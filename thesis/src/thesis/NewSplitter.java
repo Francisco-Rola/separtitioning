@@ -843,7 +843,7 @@ public class NewSplitter {
 			
 			// SMT file is built, only need to count number of solutions using approxmc and opensmt			
 			Runtime rt = Runtime.getRuntime();
-			String[] commandsSMT = {"opensmt", "SMTfileVertex.smt2"};
+			String[] commandsSMT = {"./resources/opensmt", "SMTfileVertex.smt2"};
 			Process proc = rt.exec(commandsSMT);
 
 			BufferedReader stdInput = new BufferedReader(new 
@@ -865,7 +865,7 @@ public class NewSplitter {
 				System.exit(0);
 			}
 			
-			String[] commandsApprox = {"approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
+			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
 			proc = rt.exec(commandsApprox);
 			int rhoWeight = 0;
 			
@@ -1014,7 +1014,7 @@ public class NewSplitter {
 			
 			// SMT file is built, only need to count number of solutions using approxmc and opensmt			
 			Runtime rt = Runtime.getRuntime();
-			String[] commandsSMT = {"opensmt", "SMTfileVertex.smt2"};
+			String[] commandsSMT = {"./resources/opensmt", "SMTfileVertex.smt2"};
 			Process proc = rt.exec(commandsSMT);
 
 			BufferedReader stdInput = new BufferedReader(new 
@@ -1036,7 +1036,7 @@ public class NewSplitter {
 				System.exit(0);
 			}
 			
-			String[] commandsApprox = {"approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
+			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
 			proc = rt.exec(commandsApprox);
 			int rhoWeight = 0;
 			
@@ -1146,7 +1146,7 @@ public class NewSplitter {
 			
 			// SMT file is built, only need to count number of solutions using approxmc and opensmt
 			Runtime rt = Runtime.getRuntime();
-			String[] commandsSMT = {"opensmt", "SMTfile.smt2"};
+			String[] commandsSMT = {"./resources/opensmt", "SMTfile.smt2"};
 			Process proc = rt.exec(commandsSMT);
 
 			BufferedReader stdInput = new BufferedReader(new 
@@ -1168,7 +1168,7 @@ public class NewSplitter {
 			    System.exit(0);
 			}
 			
-			String[] commandsApprox = {"approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
+			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
 			proc = rt.exec(commandsApprox);
 			int intersectionSize = 0;
 			
