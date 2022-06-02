@@ -16,7 +16,8 @@ public class MathematicaHandler {
 	public static KernelLink getInstance() {
 		if (ml == null) {
 			 try {
-		        	String jLinkDir = "/usr/local/Wolfram/Mathematica/12.1/SystemFiles/Links/JLink";
+		        	//String jLinkDir = "/usr/local/Wolfram/Mathematica/12.1/SystemFiles/Links/JLink";
+				 	String jLinkDir = "/usr/local/Wolfram/WolframEngine/13.0/SystemFiles/Links/JLink";
 		            System.setProperty("com.wolfram.jlink.libdir", jLinkDir);
 		            ml = MathLinkFactory.createKernelLink("-linkmode launch -linkname 'math -mathlink'");
 		            ml.discardAnswer();
