@@ -237,47 +237,198 @@ public class NewSplitter {
 		return possibleSplits;
 	}
 	
-	// method that checks if two rhos can intersect for any input
+	// method that checks sat between intersection of 2 rhos and corresponding phis
 	private boolean checkIntersection(Pair<VertexRho, VertexPhi> rhoPhi1, Pair<VertexRho, VertexPhi> rhoPhi2) {
-		// get rhos and phis as strings
-		String rho1 = rhoPhi1.getKey().getRho();
-		String rho2 = rhoPhi2.getKey().getRho();
-		String phi1 = rhoPhi1.getValue().getPhiAsString();
-		String phi2 = rhoPhi2.getValue().getPhiAsString();
-		// rename vars for mathematica query
+		// rhos 
+		VertexRho rhoV = rhoPhi1.getKey();
+		VertexRho rhoGV = rhoPhi2.getKey();
+		// phis
+		VertexPhi phiV = rhoPhi1.getValue();
+		VertexPhi phiGV = rhoPhi2.getValue();
+		
+		// obtain strings for query
+		String rho1 = rhoV.getRho(); 
+		String rho2 = rhoGV.getRho();
+		
 		rho2 = variableRename(rho2);
+		
+		String phi1 = phiV.getPhiAsString(); 
+		String phi2 = phiGV.getPhiAsString();
+		
 		phi2 = variableRename(phi2);
 		
-		String rhoQuery = rho1.substring(rho1.indexOf(">") + 1) + " == " + rho2.substring(rho2.indexOf(">") + 1);
-		String phiQuery = phi1 + " && " + phi2;
-		
-		HashSet<String> vars1 = rhoPhi1.getKey().getVariables();
-		HashSet<String> vars2 = rhoPhi2.getKey().getVariables();
-		
-		String variableList = "{";
-		for (String variable: vars1) {
-			variableList += variable + ", ";
-		}
-		for (String variable: vars2) {
-			variableList += variable.replaceAll("id", "idGV") + ", ";
-		}
-		variableList = variableList.substring(0, variableList.length() - 2);
-		variableList += "}";
-		
-		String query = "FindInstance[" + rhoQuery + " && " + phiQuery + ", " 
-				+ variableList + ", Integers]";
-				
-		KernelLink link = MathematicaHandler.getInstance();
-		String result = link.evaluateToOutputForm(query, 0);
-		
-		// check if there is an intersection
-		if (result.equals("{}")) {
-			return false;
-		}
-		else {
-			return true;
-		}
+		HashSet<String> vars1 = rhoV.getVariables(); 
+		HashSet<String> vars2 = rhoGV.getVariables(); 
 
+		// create SMT file
+		String fileName = "SMTfile.smt2";
+		File smtFile = new File(fileName);
+		try {
+			smtFile.createNewFile();
+		} catch (IOException e) {
+			System.out.println("Error while creating SMT file!");
+			e.printStackTrace();
+		}
+		// write to SMT file
+		try {
+			// reset tags for SMT vars in file
+			smtTag = 0;
+			
+			FileWriter smtWritter = new FileWriter(fileName);
+			// first line contains smt lib headers
+			smtWritter.append("(set-logic QF_LIA)\n");
+			smtWritter.append("(set-info :smt-lib-version 2.0)\n");
+			smtWritter.append("(declare-fun rho_1 () Int)\n");
+			smtWritter.append("(declare-fun rho_2 () Int)\n");
+			smtWritter.append("(declare-fun phi_1 () Bool)\n");
+			smtWritter.append("(declare-fun phi_2 () Bool)\n");
+			
+			for (String variable : vars1) {
+				smtWritter.append("(declare-fun " + variable + " () Int)\n");
+			}
+			for (String variable : vars2) {
+				variable = variable.replaceAll("id", "idGV");
+				smtWritter.append("(declare-fun " + variable + " () Int)\n");
+			}
+			
+			smtWritter.append("(assert (= rho_1 " + recursiveRhoToSMTLIA(rho1.substring(rho1.indexOf(">") + 1), false) + "))\n");
+			smtWritter.append("(assert (= rho_2 " + recursiveRhoToSMTLIA(rho2.substring(rho2.indexOf(">") + 1), false) + "))\n");
+			smtWritter.append("(assert (= phi_1 " + parsePhiIntoSmtLIA(phi1) + "))\n");
+			smtWritter.append("(assert (= phi_2 " + parsePhiIntoSmtLIA(phi2) + "))\n");
+
+			smtWritter.append("(assert (and (= rho_1 rho_2) (and phi_1 phi_2)))\n");
+			
+			smtWritter.append("(check-sat)\n");
+			smtWritter.append("(exit)");
+			// close file
+			smtWritter.close();
+			fileId++;
+			
+			// SMT file is built, only need to count number of solutions using approxmc and opensmt
+			Runtime rt = Runtime.getRuntime();
+			String[] commandsSMT = {"./resources/opensmt", "SMTfile.smt2"};
+			Process proc = rt.exec(commandsSMT);
+
+			BufferedReader stdInput = new BufferedReader(new 
+			     InputStreamReader(proc.getInputStream()));
+
+			BufferedReader stdError = new BufferedReader(new 
+			     InputStreamReader(proc.getErrorStream()));
+			
+			
+			// Read the output from the command
+			String s = null;
+			while ((s = stdInput.readLine()) != null) {
+			    if (s.equals("unsat")) {
+					return false;
+			    }
+			}
+			// Read any errors from the attempted command
+			while ((s = stdError.readLine()) != null) {
+				System.out.println("Error during openSMT phase - pre splitting");
+			    System.out.println(s);
+			    System.exit(0);
+			}
+			
+			
+		} catch (IOException e) {
+			System.out.println("Error on generating SMT file!");
+			e.printStackTrace();
+		}
+		
+		return true;
+	}
+	
+	// method that coverts rho into smt lib format LIA
+	private String recursiveRhoToSMTLIA(String rho, boolean rho1) {
+		// find splitting index related to external operation
+		int splitIndex = findExternalOperation(rho);
+		
+		// if splitIndex is -1 then we reached an operand
+		if (splitIndex == -1) {
+			return findOperand(rho);
+		}		
+		// find which operation has been found as external
+		if (rho.charAt(splitIndex) == '+') {
+			return "(+ " + recursiveRhoToSMTLIA(rho.substring(1, splitIndex - 1), rho1) + " " 
+					+ recursiveRhoToSMTLIA(rho.substring(splitIndex + 2, rho.length() - 1), rho1) + ")";
+		}
+		else if (rho.charAt(splitIndex) == '*') {
+			return "(* " + recursiveRhoToSMTLIA(rho.substring(1, splitIndex - 1), rho1) + " " 
+					+ recursiveRhoToSMTLIA(rho.substring(splitIndex + 2, rho.length() - 1), rho1) + ")";
+		}
+		else if (rho.charAt(splitIndex) == '-') {
+			return "(- " + recursiveRhoToSMTLIA(rho.substring(1, splitIndex - 1), rho1) + " " 
+					+ recursiveRhoToSMTLIA(rho.substring(splitIndex + 2, rho.length() - 1), rho1) + ")";
+		}
+		
+		// shouldn't happen
+		System.out.println("Buggy conversion from rho to smt rho");
+		return null;
+	}
+	
+	// method that converts phis into smt lib format
+	private String parsePhiIntoSmtLIA(String phi) {
+		
+		String[] parts = phi.split("&&");
+		
+		String smtString = "";
+		
+		String memberCounting = "";
+		for (int i = 0; i < parts.length - 1; i++) {
+			memberCounting += "(and ";
+		}
+		
+		smtString += memberCounting;
+		
+		for (String part: parts) {
+			String member = "(and (< ";
+			
+			String leftLimit = "";
+			String variable = "";
+			String rightLimit = "";
+			boolean variableDone = false;
+			
+			for (int i = 0; i < part.length(); i++){ 
+			    char c = part.charAt(i);
+			    
+				// left limit building
+				if (Character.isDigit(c) && variable == "") {
+			    	leftLimit += c;
+			    }
+				// right limit building
+				else if (Character.isDigit(c) && variableDone) {
+			    	rightLimit += c;
+			    }
+				// variable building
+				else if (Character.isLetter(c) || (Character.isDigit(c) && !variableDone)) {
+					variable += c;
+				}
+				//operators
+				else if (c == '<' || c == '=') {
+					continue;
+				}
+				// end of a member
+				else if (c == ' ' || Character.isWhitespace(c)) {
+					if (variable != "") {
+						variableDone = true;
+					}
+					continue;
+				}
+			}
+			
+			int leftLimitInt = Integer.parseInt(leftLimit);
+			int rightLimitInt = Integer.parseInt(rightLimit);
+			
+			member += leftLimitInt + " " + variable + ") (< " + variable + " " + rightLimitInt + "))";  
+			smtString += member;
+			
+		}
+		
+		for (int i = 0; i < parts.length - 1; i++) {
+			smtString += ")";
+		}
+		return smtString;
 	}
 	
 	// method that leverages regex for var renaming
@@ -572,23 +723,6 @@ public class NewSplitter {
 		int tableRange = VertexPhi.getTableRange(Integer.parseInt(tableNo));
 		// calculate cutoff for section
 		int cutoff = ((tableRange + 1) / noSplits);
-		
-		/*
-		// update all phis in the vertex
-		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
-			// update every access to the table under split
-			if (rhoPhi.getKey().getRho().startsWith(tableNo)) {
-				if (section == 0) 
-					rhoPhi.getKey().splitRho(" <= " + (cutoff));
-				else {
-					rhoPhi.getKey().splitRho(" > " + (cutoff * section));
-					rhoPhi.getKey().splitRho(" <= " + (cutoff * (section + 1)));				
-				}
-			}
-		}
-		return sigma;
-		*/
-		
 		// update all phis in the vertex
 		for (Map.Entry<VertexRho, VertexPhi> rhoPhi: sigma.getRhos().entrySet()) {
 			// update every access to the table under split
@@ -617,6 +751,7 @@ public class NewSplitter {
 		
 	}
 	
+	// method that adds vertex to the graph
 	// method that adds a vertex to the graph, ensuring no edge overlaps
 	private void addVertexSMT(GraphVertex newVertex, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		// edges found during rho comparison
@@ -781,6 +916,8 @@ public class NewSplitter {
 	}
 	
 	// method that computes the weight of a given rho using aproxmc 
+	
+	// method that computes rho weight given its phi
 	private int computeRhoWeight(VertexRho rho, VertexPhi phi) {
 		// obtain strings for query
 		String rho1 = rho.getRho(); 
@@ -899,6 +1036,8 @@ public class NewSplitter {
 	}
 	
 	// method that computes the weight of a table in a given vertex
+	
+	// methat that computes table weight
 	private int computeTableWeight(ArrayList<Pair<VertexRho, VertexPhi>> tableRhos) {
 		
 		// list of variables in vertex
@@ -1065,6 +1204,7 @@ public class NewSplitter {
 		}
 		return 0;
 	}
+	
 	
 	// method that computes the weight of the intersection between two rhos given each associated phi
 	private int rhoIntersection(VertexRho rhoV, VertexRho rhoGV, VertexPhi phiV, VertexPhi phiGV) {
@@ -1363,6 +1503,27 @@ public class NewSplitter {
 
 	}
 	
+	// method that finds an operand and prints in SMT LIA format
+	private String findOperand(String rho) {
+		// build the operand string
+		String operand = "";
+		for (int i = 0; i < rho.length(); i++){
+			// read each char
+		    char c = rho.charAt(i);
+		    // check if next char is a letter or a digit
+		    if (Character.isLetter(c) || Character.isDigit(c)) {
+		    	operand += c;
+		    }
+		    else {
+				System.out.println(rho);
+		    	System.out.println("Unknown operand character");
+		    	System.out.println(c);
+		    }
+		}
+		return operand;
+
+	}
+	
 	// method that finds external operation in rho, inclusion index = 1
 	private int findExternalOperation(String rho) {
 		// inclusion index to count for nested operations
@@ -1406,6 +1567,7 @@ public class NewSplitter {
 	private void addEdge(GraphVertex v, GraphEdge edge, LinkedHashMap<GraphVertex, ArrayList<GraphEdge>> graph) {
 		graph.get(v).add(edge);
 	}
+	
 	// method used to build adjacency matrix for graph presenting
 	private LinkedHashMap<Integer, Pair<Integer,HashMap<Integer, Integer>>> buildMETISGraph() {
 		// final graph for METIS
@@ -1582,6 +1744,7 @@ public class NewSplitter {
 		return splits;
 	}
 	
+	// method that returns the splits used for a given vertex
 	public LinkedHashMap<Integer, ArrayList<String>> getSplits() {
 		return this.splits;
 	}
