@@ -11,7 +11,7 @@ public class CatalystEvaluation {
 	public void evaluateCatalyst(int workload) {
 		// TPCC
 		if (workload == 1) {
-			TPCCWorkloadGenerator tpcc = new TPCCWorkloadGenerator();
+			TPCCWorkloadGenerator tpcc = new TPCCWorkloadGenerator(GraphBuilder.noW);
 			tpcc.evaluateCatalystTPCC(1000000, partitioner.getPartLogic());
 		}
 		// RUBIS 

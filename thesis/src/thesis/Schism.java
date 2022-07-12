@@ -607,8 +607,7 @@ public class Schism {
 			tree.buildClassifier(train);
 			System.out.println(tree);
 			Evaluation eval = new Evaluation(train);
-			// eval.evaluateModel(tree,test)
-			eval.evaluateModel(tree, train);
+			eval.evaluateModel(tree,test);
 			
 			System.out.println(eval.toSummaryString());
 			
@@ -618,24 +617,24 @@ public class Schism {
 		}
 	}
 	
-	public static void main(String[] args) {
-		int workload = 2;
-		// TPCC
-		if (workload == 1) {
-			TPCCWorkloadGenerator.buildSchismTrace(1000);
-			parseTraceTPCC("metistrain.txt", 2, "schismtrain.arff");
-			TPCCWorkloadGenerator.buildSchismTrace(1000);
-			parseTraceTPCC("metistest.txt", 2, "schismtest.arff");
-			evaluateSchism("schismtrain.arff", "schismtest.arff"); 
-		}
-		// RUBIS
-		else {
-			RubisWorkloadGenerator.buildSchismTrace(1000);
-			parseTraceRubis("metistrain.txt", 2, "schismtrain.arff");
-			RubisWorkloadGenerator.buildSchismTrace(1000);
-			parseTraceRubis("metistest.txt", 2, "schismtest.arff");
-			evaluateSchism("schismtrain.arff", "schismtest.arff");
-		}
+	// Schism constructor for TPCC workloads
+	public Schism(int noW, int noP) {
+		TPCCWorkloadGenerator tpccWLtrain = new TPCCWorkloadGenerator(noW);
+		tpccWLtrain.buildSchismTrace(1000, noW);
+		parseTraceTPCC("metistrain.txt", noP, "schismtrain.arff");
+		TPCCWorkloadGenerator tpccWLtest = new TPCCWorkloadGenerator(noW);
+		tpccWLtest.buildSchismTrace(1000, noW);
+		parseTraceTPCC("metistest.txt", noP, "schismtest.arff");
+		evaluateSchism("schismtrain.arff", "schismtest.arff"); 
+	}
+	
+	// Schism constructor for RUBIS workloads
+	public Schism(int noP) {
+		RubisWorkloadGenerator.buildSchismTrace(1000);
+		parseTraceRubis("metistrain.txt", noP, "schismtrain.arff");
+		RubisWorkloadGenerator.buildSchismTrace(1000);
+		parseTraceRubis("metistest.txt", noP, "schismtest.arff");
+		evaluateSchism("schismtrain.arff", "schismtest.arff");
 	}
 
 }

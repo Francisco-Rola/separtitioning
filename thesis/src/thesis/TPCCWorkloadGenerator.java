@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class TPCCWorkloadGenerator {
 	
 	// scaling factors
-	private static int w = VertexPhi.getScalingFactorW();
+	private static int w;
 	private static int d = VertexPhi.getScalingFactorD();
 	private static int id = VertexPhi.getScalingFactorI();
 	private static int c = VertexPhi.getScalingFactorC();
@@ -28,8 +28,13 @@ public class TPCCWorkloadGenerator {
 	// num parts
 	static long parts = Partitioner.getNoParts();
 	
+	// constructor that receives scaling parameters
+	public TPCCWorkloadGenerator(int w) {
+		TPCCWorkloadGenerator.w = w + 1;
+	}
+	
 	// workload generator for Schism
-	public static void buildSchismTrace(int noTxs) {
+	public void buildSchismTrace(int noTxs, int noW) {
 		// number of txs generated
 		int generatedTxs = 0;
 		
@@ -47,7 +52,7 @@ public class TPCCWorkloadGenerator {
 				// roll the dice to know which tx to generate
 				int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 				// new order txs
-				if (randomNum < 45) {
+				if (randomNum < 44) {
 					// generate random warehouse 1
 					long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 					// generate supply warehouse 1% remote
@@ -90,7 +95,7 @@ public class TPCCWorkloadGenerator {
 					schismWriter.append(traceLine);
 				}
 				// payment txs
-				else if (randomNum < 88) {
+				else if (randomNum < 87) {
 					// 85% of payments the customer belongs to local warehouse
 					int localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
 					if (localCustomer <= 84) {
@@ -130,7 +135,7 @@ public class TPCCWorkloadGenerator {
 					schismWriter.append(traceLine);
 				}
 				// delivery txs
-				else if (randomNum < 92) {
+				else if (randomNum < 91) {
 					// generate random warehouse 1
 					long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 					traceLine += "w" + randW;
@@ -155,7 +160,7 @@ public class TPCCWorkloadGenerator {
 					schismWriter.append(traceLine);
 				}
 				// order status tx
-				else if (randomNum < 96) {
+				else if (randomNum < 95) {
 					// generate random warehouse 1
 					long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 					// generate random district 2

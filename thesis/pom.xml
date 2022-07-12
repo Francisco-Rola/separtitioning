@@ -44,7 +44,7 @@
     		</execution>
   		</executions>
   		<configuration>
-    		<mainClass>thesis.GraphBuilder</mainClass>
+    		<mainClass>thesis.Artifact</mainClass>
     	<!--  <arguments>
       		<argument>foo</argument>
       		<argument>bar</argument>

@@ -1,6 +1,7 @@
 package thesis;
 
 import java.io.BufferedReader;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,9 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.wolfram.jlink.KernelLink;
-
-
 // class performing vertex splitting and creating graph file for the partitioner
 public class NewSplitter {	
 	// counter for SMT file creation
@@ -25,9 +23,9 @@ public class NewSplitter {
 	// replication wanted?
 	boolean replication = true;
 	// how many parts does a table split go for
-	public int tableSplitFactor = 2;
+	public int tableSplitFactor = GraphBuilder.noP;
 	// how many splits does an input split go for, at most
-	public int inputSplitFactor = 10;
+	public int inputSplitFactor = GraphBuilder.noP;
 	// no edges in final graph
 	int noEdges = 0;
 	// no vertices in final graph
@@ -194,20 +192,19 @@ public class NewSplitter {
 							continue;
 						}
 					}
-					else {						
+					else {				
 						// check if there is a split variable common amongst all rhos
 						HashSet<String> commonSplit = checkCommonSplit(entry.getValue());
 						// check if any vars found
+						System.out.println(entry.getKey() + " Common split size:" + commonSplit.size());
 						if (commonSplit.size() != 0) {							
 							// split found, add it
 							splits.add(commonSplit);
 							possibleSplits.put(entry.getKey(), splits);
 						}
 						else {
-														
 							// check if replication is wanted
-							if (replication) {
-																
+							if (replication) {	
 								// check whether this table is possible to replicate
 								if (VertexPhi.checkTableReplicated(entry.getKey())) {
 									// do not consider this table
@@ -323,6 +320,10 @@ public class NewSplitter {
 					return false;
 			    }
 			}
+			
+			System.out.println("found an overlap looking for common splits");
+			Thread.sleep(5000);
+			
 			// Read any errors from the attempted command
 			while ((s = stdError.readLine()) != null) {
 				System.out.println("Error during openSMT phase - pre splitting");
@@ -330,9 +331,11 @@ public class NewSplitter {
 			    System.exit(0);
 			}
 			
-			
 		} catch (IOException e) {
 			System.out.println("Error on generating SMT file!");
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -419,9 +422,26 @@ public class NewSplitter {
 			
 			int leftLimitInt = Integer.parseInt(leftLimit);
 			int rightLimitInt = Integer.parseInt(rightLimit);
+
 			
-			member += leftLimitInt + " " + variable + ") (< " + variable + " " + rightLimitInt + "))";  
-			smtString += member;
+			if (leftLimitInt != 0) {
+			
+				leftLimitInt = leftLimitInt - 1;
+				rightLimitInt = rightLimitInt + 1;
+				
+				member += leftLimitInt + " " + variable + ") (< " + variable + " " + rightLimitInt + "))";  
+				
+				smtString += member;
+			}
+			
+			else {
+				
+				rightLimitInt = rightLimitInt + 1;
+
+				member = "(< " + variable + " " + rightLimitInt + ")";
+				
+				smtString += member;
+			}
 			
 		}
 		
@@ -758,8 +778,6 @@ public class NewSplitter {
 		ArrayList<GraphEdge> foundEdges = new ArrayList<>();
 		// need to compare newly added vertex to every other vertex
 		LinkedHashMap<VertexRho, VertexPhi> rhosV = newVertex.getSigma().getRhos();
-		// need to store which rhos have been analyzed for vertex weight computation
-		LinkedHashMap<VertexRho, VertexPhi> prevRhos = new LinkedHashMap<>();
 		// compare rho by rho
 		for (Map.Entry<VertexRho, VertexPhi> entryV: rhosV.entrySet()) {
 			String rhoV = entryV.getKey().getRho();
@@ -783,7 +801,6 @@ public class NewSplitter {
 							continue;
 						}
 						String rhoGV = entryGV.getKey().getRho();
-						String phiGV = entryGV.getValue().getPhiAsString();
 						// if rhos are not on same table they do need to be compared
 						if (!rhoV.substring(0, rhoV.indexOf(">") - 1).equals(rhoGV.substring(0, rhoGV.indexOf(">") - 1))
 								|| entryGV.getKey().isRemote()) {
@@ -1208,7 +1225,7 @@ public class NewSplitter {
 	
 	// method that computes the weight of the intersection between two rhos given each associated phi
 	private int rhoIntersection(VertexRho rhoV, VertexRho rhoGV, VertexPhi phiV, VertexPhi phiGV) {
-		// obtain strings for query
+		// obtain strings for query		
 		String rho1 = rhoV.getRho(); // new vertex
 		String rho2 = rhoGV.getRho(); // old vertex
 		
@@ -1225,6 +1242,7 @@ public class NewSplitter {
 		if (!checkIntersection(new Pair<VertexRho, VertexPhi>(rhoV, phiV), new Pair<VertexRho, VertexPhi>(rhoGV, phiGV))) {
 			return 0;
 		}
+		
 		
 		// create SMT file
 		String fileName = "SMTfile.smt2";
@@ -1283,7 +1301,7 @@ public class NewSplitter {
 			// close file
 			smtWritter.close();
 			fileId++;
-			
+						
 			// SMT file is built, only need to count number of solutions using approxmc and opensmt
 			Runtime rt = Runtime.getRuntime();
 			String[] commandsSMT = {"./resources/opensmt", "SMTfile.smt2"};
@@ -1334,7 +1352,7 @@ public class NewSplitter {
 		} catch (IOException e) {
 			System.out.println("Error on generating SMT file!");
 			e.printStackTrace();
-		}
+		} 
 		
 		return 0;
 	}
@@ -1701,6 +1719,7 @@ public class NewSplitter {
 				Pair<Integer, Integer> varRange = rho1.getValue().getPhi().get(commonVar);
 				// calculate cutoff for new simulated phi
 				int cutoff = (varRange.getValue() - varRange.getKey() + 1) / 2;
+
 				
 				// variable range is 0 so this variable cannot be a split var
 				if (cutoff == 0) {
@@ -1726,7 +1745,11 @@ public class NewSplitter {
 					// build rho phi pair
 					Pair<VertexRho, VertexPhi> rhoPhi2 = new Pair<VertexRho, VertexPhi>(rhoCopy2, phiCopy2);
 					//check inersection 
+					System.out.println(commonVar);
+					System.out.println(cutoff);
+					System.out.println("-----");
 					overlap = checkIntersection(rhoPhi1, rhoPhi2);
+					
 					// if overlapping bin variable
 					if (overlap) {
 						break;
