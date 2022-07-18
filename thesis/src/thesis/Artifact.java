@@ -30,19 +30,19 @@ public class Artifact {
 				}
 				else if (workload.equals("3")) {
 					// 10w2p
-					int noW = 9;
-					int noP = 2;
+					int noW = 0;
+					int noP = 5;
 					new GraphBuilder(1, noW, noP);
 				}
 				else if (workload.equals("4")) {
 					// 10w5p
-					int noW = 9;
-					int noP = 5;
+					int noW = 0;
+					int noP = 10;
 					new GraphBuilder(1, noW, noP);
 				}
 				else if (workload.equals("5")) {
 					// 100w10p
-					int noW = 99;
+					int noW = 4;
 					int noP = 10;
 					new GraphBuilder(1, noW, noP);
 				}
