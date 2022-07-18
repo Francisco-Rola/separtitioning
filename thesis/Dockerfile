@@ -17,6 +17,12 @@ RUN apt update && apt install -y curl avahi-daemon wget sshpass sudo locales loc
 RUN apt-get install -y build-essential cmake
 RUN apt-get install -y git
 RUN apt-get install -y maven
+RUN git clone https://github.com/Z3Prover/z3.git \
+ && cd z3 \
+ && python scripts/mk_make.py --java \
+ && cd build \
+ && make \
+ && sudo make install 
 RUN git clone https://github.com/msoos/cryptominisat \
  && cd cryptominisat \	
  && mkdir build && cd build \
