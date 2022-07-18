@@ -1,7 +1,6 @@
 package thesis;
 
 import java.io.BufferedReader;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -171,6 +170,7 @@ public class NewSplitter {
 				for (int j = i + 1; j < entry.getValue().size(); j++) {
 					Pair<VertexRho, VertexPhi> rhoPhi2 = entry.getValue().get(j);
 					boolean intersection = checkIntersection(rhoPhi1, rhoPhi2);
+					System.out.println(intersection);
 					if (!intersection) {
 						// rhos do not overlap, add all the variables that can split them
 						HashSet<String> possibleVars = rhoPhi1.getKey().getVariables();
@@ -193,7 +193,10 @@ public class NewSplitter {
 						}
 					}
 					else {				
-						// check if there is a split variable common amongst all rhos
+						System.out.println(rhoPhi1.getKey().getRho());
+						System.out.println(rhoPhi2.getKey().getRho());
+						
+						// check if there is a split variable common amongst all rhos in the table under analysis
 						HashSet<String> commonSplit = checkCommonSplit(entry.getValue());
 						// check if any vars found
 						System.out.println(entry.getKey() + " Common split size:" + commonSplit.size());
@@ -303,7 +306,7 @@ public class NewSplitter {
 			
 			// SMT file is built, only need to count number of solutions using approxmc and opensmt
 			Runtime rt = Runtime.getRuntime();
-			String[] commandsSMT = {"./resources/opensmt", "SMTfile.smt2"};
+			String[] commandsSMT = {"z3", "SMTfile.smt2"};
 			Process proc = rt.exec(commandsSMT);
 
 			BufferedReader stdInput = new BufferedReader(new 
@@ -375,17 +378,10 @@ public class NewSplitter {
 		
 		String[] parts = phi.split("&&");
 		
-		String smtString = "";
-		
-		String memberCounting = "";
-		for (int i = 0; i < parts.length - 1; i++) {
-			memberCounting += "(and ";
-		}
-		
-		smtString += memberCounting;
-		
+		String smtString = "(and ";
+				
 		for (String part: parts) {
-			String member = "(and (< ";
+			String member = "";
 			
 			String leftLimit = "";
 			String variable = "";
@@ -424,30 +420,20 @@ public class NewSplitter {
 			int rightLimitInt = Integer.parseInt(rightLimit);
 
 			
-			if (leftLimitInt != 0) {
+			rightLimitInt = rightLimitInt + 1;
 			
-				leftLimitInt = leftLimitInt - 1;
-				rightLimitInt = rightLimitInt + 1;
-				
-				member += leftLimitInt + " " + variable + ") (< " + variable + " " + rightLimitInt + "))";  
-				
-				smtString += member;
-			}
-			
-			else {
-				
-				rightLimitInt = rightLimitInt + 1;
+			member += "(>= " + variable + " " + leftLimitInt + ") (< " + variable + " " + rightLimitInt + ")";  
 
-				member = "(< " + variable + " " + rightLimitInt + ")";
-				
-				smtString += member;
-			}
+			smtString += member;
+			
+			
+			
 			
 		}
 		
-		for (int i = 0; i < parts.length - 1; i++) {
-			smtString += ")";
-		}
+		// close the and bracket
+		smtString += ")";
+		
 		return smtString;
 	}
 	
@@ -1683,6 +1669,9 @@ public class NewSplitter {
 	
 	// method to check if there is a variable that can split multiple overlapping rhos on same table
 	private HashSet<String> checkCommonSplit(ArrayList<Pair<VertexRho, VertexPhi>> rhos) {
+		
+		System.out.println("Checking for commmon splits: " + rhos.size());
+		
 		// possible splits
 		HashSet<String> splits = new HashSet<>();
 		// set of common variables in every rho on the same table
@@ -1694,6 +1683,7 @@ public class NewSplitter {
 			if (rho.getKey().getProb() < 0.5) {
 				continue;
 			}
+	
 			if (isFirst) {
 				commonVars.addAll(rho.getKey().getVariables());
 				isFirst = false;
@@ -1741,14 +1731,12 @@ public class NewSplitter {
 					VertexRho rhoCopy2 = new VertexRho(rho2.getKey());
 					VertexPhi phiCopy2 = new VertexPhi(rho2.getValue());
 					// edit phi for sim 
-					phiCopy2.getPhi().put(commonVar, new Pair<Integer, Integer> (cutoff + 1, varRange.getValue()));
+					phiCopy2.getPhi().put(commonVar, new Pair<Integer, Integer> (cutoff, varRange.getValue() - 1));
 					// build rho phi pair
 					Pair<VertexRho, VertexPhi> rhoPhi2 = new Pair<VertexRho, VertexPhi>(rhoCopy2, phiCopy2);
-					//check inersection 
-					System.out.println(commonVar);
-					System.out.println(cutoff);
-					System.out.println("-----");
 					overlap = checkIntersection(rhoPhi1, rhoPhi2);
+					
+					System.out.println(overlap);
 					
 					// if overlapping bin variable
 					if (overlap) {
