@@ -1005,7 +1005,7 @@ public class NewSplitter {
 				System.exit(0);
 			}
 			
-			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
+			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.4"};
 			proc = rt.exec(commandsApprox);
 			int rhoWeight = 0;
 			
@@ -1178,7 +1178,7 @@ public class NewSplitter {
 				System.exit(0);
 			}
 			
-			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
+			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.4"};
 			proc = rt.exec(commandsApprox);
 			int rhoWeight = 0;
 			
@@ -1312,7 +1312,7 @@ public class NewSplitter {
 			    System.exit(0);
 			}
 			
-			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.2"};
+			String[] commandsApprox = {"./resources/approxmc", "counts.cnf", "--epsilon=0.8", "--delta=0.4"};
 			proc = rt.exec(commandsApprox);
 			int intersectionSize = 0;
 			
