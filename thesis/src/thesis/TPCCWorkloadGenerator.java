@@ -620,7 +620,7 @@ public class TPCCWorkloadGenerator {
 			if (VertexPhi.checkTableReplicated(table)) {
 				return true;
 			}
-			System.out.println("Table: " + table + " - Remote key: " + key);
+			//System.out.println("Table: " + table + " - Remote key: " + key);
 			remote++;
 			return false;
 		}
