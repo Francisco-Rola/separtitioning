@@ -10,8 +10,8 @@ public class VertexPhi {
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	// scale factor for TPC -C
 	private static int w;
-	private static int item = 999;
-	private static int customer = 29;
+	private static int item = 99999;
+	private static int customer = 2999;
 	private static int district = 9;
 	
 	// scale factor for RUBIS
