@@ -1700,12 +1700,17 @@ public class NewSplitter {
 				if (rho1.getKey().getProb() < 0.5) continue;
 				// get range of commonVar
 				Pair<Integer, Integer> varRange = rho1.getValue().getPhi().get(commonVar);
+				
+				System.out.println(commonVar);
+				System.out.println("Lower: " + varRange.getKey());
+				System.out.println("Upper : " + varRange.getValue());
+				
 				// calculate cutoff for new simulated phi
-				int cutoff = (varRange.getValue() - varRange.getKey() + 1) / 2;
+				int cutoff = (varRange.getValue() - varRange.getKey()) / 2;
 
 				
 				// variable range is 0 so this variable cannot be a split var
-				if (cutoff == 0) {
+				if ((varRange.getValue() - (varRange.getKey())) == 0) {
 					overlap = true;
 					break;
 				}
@@ -1714,6 +1719,7 @@ public class NewSplitter {
 				VertexPhi phiCopy1 = new VertexPhi(rho1.getValue());
 				// edit phi for sim 
 				phiCopy1.getPhi().put(commonVar, new Pair<Integer, Integer>(varRange.getKey(), cutoff));
+								
 				// build rho phi pair
 				Pair<VertexRho, VertexPhi> rhoPhi1 = new Pair<VertexRho, VertexPhi>(rhoCopy1, phiCopy1);
 				for (int j = 0; j < rhos.size(); j++) {
@@ -1724,12 +1730,23 @@ public class NewSplitter {
 					VertexRho rhoCopy2 = new VertexRho(rho2.getKey());
 					VertexPhi phiCopy2 = new VertexPhi(rho2.getValue());
 					// edit phi for sim 
-					phiCopy2.getPhi().put(commonVar, new Pair<Integer, Integer> (cutoff, varRange.getValue() - 1));
+					phiCopy2.getPhi().put(commonVar, new Pair<Integer, Integer> (cutoff + 1, varRange.getValue()));
+					
+					System.out.println("After 2: " + (cutoff + 1) + ", "  + (varRange.getValue())); 
+
+					
 					// build rho phi pair
 					Pair<VertexRho, VertexPhi> rhoPhi2 = new Pair<VertexRho, VertexPhi>(rhoCopy2, phiCopy2);
 					overlap = checkIntersection(rhoPhi1, rhoPhi2);
 					
 					System.out.println(overlap);
+					
+					
+						System.out.println(rhoPhi1.getKey().getRho());
+						System.out.println(rhoPhi1.getValue().getPhiAsGroup());
+						System.out.println(rhoPhi2.getKey().getRho());
+						System.out.println(rhoPhi2.getValue().getPhiAsGroup());
+					
 					
 					// if overlapping bin variable
 					if (overlap) {
