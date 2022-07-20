@@ -170,7 +170,6 @@ public class NewSplitter {
 				for (int j = i + 1; j < entry.getValue().size(); j++) {
 					Pair<VertexRho, VertexPhi> rhoPhi2 = entry.getValue().get(j);
 					boolean intersection = checkIntersection(rhoPhi1, rhoPhi2);
-					System.out.println(intersection);
 					if (!intersection) {
 						// rhos do not overlap, add all the variables that can split them
 						HashSet<String> possibleVars = rhoPhi1.getKey().getVariables();
@@ -193,9 +192,6 @@ public class NewSplitter {
 						}
 					}
 					else {				
-						System.out.println(rhoPhi1.getKey().getRho());
-						System.out.println(rhoPhi2.getKey().getRho());
-						
 						// check if there is a split variable common amongst all rhos in the table under analysis
 						HashSet<String> commonSplit = checkCommonSplit(entry.getValue());
 						// check if any vars found
@@ -323,9 +319,7 @@ public class NewSplitter {
 					return false;
 			    }
 			}
-			
-			System.out.println("found an overlap looking for common splits");
-			Thread.sleep(5000);
+
 			
 			// Read any errors from the attempted command
 			while ((s = stdError.readLine()) != null) {
@@ -337,10 +331,7 @@ public class NewSplitter {
 		} catch (IOException e) {
 			System.out.println("Error on generating SMT file!");
 			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} 
 		
 		return true;
 	}
@@ -568,6 +559,7 @@ public class NewSplitter {
 		if (txProfile == 3 && splits.size() != 1) {
 			GraphVertex gv = new GraphVertex(sigma, txProfile, true);
 			addVertexSMT(gv, splitGraph);
+			System.out.println("Applying splits - DONE");
 			return;
 		}
 		
@@ -591,7 +583,12 @@ public class NewSplitter {
 		for (String split : splits) {
 			// check if table split
 			if (split.startsWith("#")) {
-				noSplits *= tableSplitFactor;
+				// if there is an input split already, simply split table in 2
+				if (splits.size() > 1) 
+					noSplits *= 2;
+				else 
+					noSplits *= tableSplitFactor;
+				
 				splitsPerParameter.put(split, tableSplitFactor);
 			}
 			// input split case
