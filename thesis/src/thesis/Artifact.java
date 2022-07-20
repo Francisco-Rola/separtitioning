@@ -29,7 +29,7 @@ public class Artifact {
 					new GraphBuilder(1, noW, noP);
 				}
 				else if (workload.equals("3")) {
-					// 10w2p
+					// 1w5p
 					int noW = 0;
 					int noP = 5;
 					new GraphBuilder(1, noW, noP);
@@ -84,8 +84,8 @@ public class Artifact {
 				}
 				else if (workload.equals("5")) {
 					// 100w10p
-					int noW = 99;
-					int noP = 10;
+					int noW = 0;
+					int noP = 5;
 					new Schism(noW, noP);
 				}
 				else {
