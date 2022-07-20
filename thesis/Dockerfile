@@ -19,6 +19,7 @@ RUN apt-get install -y git
 RUN apt-get install -y maven
 RUN git clone https://github.com/usi-verification-and-security/opensmt.git \
  && apt-get install -y bison \
+ && apt-get install -y flex \
  && cd opensmt \
  && mkdir build \
  && cd build \
