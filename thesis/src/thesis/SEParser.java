@@ -219,7 +219,14 @@ public class SEParser {
 					readSet.add(probRhos[1]);
 				}
 				else {
+					//formula = formula.replaceAll("ol_supply_w_id\\[\\d+\\]", "warehouse_id");
 					formula = formula.replaceAll("ol_supply_w_id\\[\\d+\\]", "warehouse_id");
+					
+					if (formula.startsWith("9->")) {
+						formula = formula.replaceAll("warehouse_id", "(warehouse_id * 100000)");
+						formula = formula.replaceAll("\\(ol", "ol");
+						formula = formula.replaceAll(" \\* 100\\)", "");
+					}
 					readSet.add(formula);
 				}
 				
@@ -251,6 +258,14 @@ public class SEParser {
 				}
 				else {
 					formula = formula.replaceAll("ol_supply_w_id\\[\\d+\\]", "warehouse_id");
+					
+					// fix table 9 structure
+					if (formula.startsWith("9->")) {
+						formula = formula.replaceAll("warehouse_id", "(warehouse_id * 100000)");
+						formula = formula.replaceAll("\\(ol", "ol");
+						formula = formula.replaceAll(" \\* 100\\)", "");
+					}
+					
 					writeSet.add(formula);
 				}
 			}
@@ -322,7 +337,7 @@ public class SEParser {
 	// main for debug purposes
 	public static void main(String[] args) {
 		try {
-			String[] files = {"registeritem_experiment.txt"};
+			String[] files = {"order_new.txt"};
 			new SEParser(files);
 			int vertexCount = 0; 
 			for(Vertex vertex : vertices) {
