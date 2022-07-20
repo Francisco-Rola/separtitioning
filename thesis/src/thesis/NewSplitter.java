@@ -22,7 +22,7 @@ public class NewSplitter {
 	// replication wanted?
 	boolean replication = true;
 	// how many parts does a table split go for
-	public int tableSplitFactor = GraphBuilder.noP;
+	public int tableSplitFactor = 2;
 	// how many splits does an input split go for, at most
 	public int inputSplitFactor = GraphBuilder.noP;
 	// no edges in final graph
@@ -584,11 +584,7 @@ public class NewSplitter {
 			// check if table split
 			if (split.startsWith("#")) {
 				// if there is an input split already, simply split table in 2
-				if (splits.size() > 1) 
-					noSplits *= 2;
-				else 
-					noSplits *= tableSplitFactor;
-				
+				noSplits *= tableSplitFactor;
 				splitsPerParameter.put(split, tableSplitFactor);
 			}
 			// input split case
