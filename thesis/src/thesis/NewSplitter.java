@@ -302,7 +302,7 @@ public class NewSplitter {
 			
 			// SMT file is built, only need to count number of solutions using approxmc and opensmt
 			Runtime rt = Runtime.getRuntime();
-			String[] commandsSMT = {"z3", "SMTfile.smt2"};
+			String[] commandsSMT = {"opensmt", "SMTfile.smt2"};
 			Process proc = rt.exec(commandsSMT);
 
 			BufferedReader stdInput = new BufferedReader(new 
