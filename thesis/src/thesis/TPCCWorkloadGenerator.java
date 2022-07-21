@@ -10,6 +10,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import weka.classifiers.trees.J48;
+import weka.core.Attribute;
+import weka.core.DenseInstance;
+import weka.core.Instance;
+import weka.core.Instances;
+
 public class TPCCWorkloadGenerator {
 	
 	// scaling factors
@@ -222,6 +228,259 @@ public class TPCCWorkloadGenerator {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	// method used to evaluate Schism in terms of % of distributed txs given a part logic
+	public void evaluateSchismTPCC(int noTxs, int noW, int noP, J48 logic) {
+		// printout test parameters
+		System.out.println("NO warehouses: " + noW);
+		System.out.println("NO parts: " + noP);
+		// number of txs generated
+		int generatedTxs = 0;
+		// reset counters
+		local = 0;
+		remote = 0;
+		
+		// create the number of desired transactions in a trace
+		while (generatedTxs < noTxs) {
+			// declare weka attributes	
+			Instance key;
+            ArrayList<Attribute> attributeList = new ArrayList<Attribute>(2);
+			Attribute wAtt = new Attribute("w");
+			Attribute dAtt = new Attribute("d");
+			Attribute cAtt = new Attribute("c");
+            ArrayList<String> classVal = new ArrayList<String>();
+            for (int i = 0; i < noP; i++) {
+            	classVal.add(String.valueOf(i));
+            }
+			attributeList.add(wAtt);
+			attributeList.add(dAtt);
+			attributeList.add(cAtt);
+			attributeList.add(new Attribute("@@class@@", classVal));
+            Instances data = new Instances("TestInstances",attributeList,0);
+            
+            // part for current tx
+         	currentPart = -1;	
+			// increment genTxs
+			generatedTxs++;
+			// reset stop flag
+			boolean stop = false;
+			// string to hold line for trace file
+			String traceLine = "";
+			// roll the dice to know which tx to generate
+			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
+			// new order txs
+			if (randomNum < 101) {
+				// generate random warehouse 1
+				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+				// generate supply warehouse 1% remote
+				long supplyW = randW;
+				long randSupplyW = ThreadLocalRandom.current().nextInt(0, 100);
+				// generate 1% remote new orders
+				if (w > 1 && randSupplyW == 50) {
+					while (supplyW == randW)
+						supplyW = ThreadLocalRandom.current().nextInt(0, w);
+				}
+				key = new DenseInstance(data.numAttributes());
+				data.add(key);
+				key.setValue(wAtt, randW);
+				key.setMissing(dAtt);
+				key.setMissing(cAtt);
+				data.setClassIndex(data.numAttributes() - 1);
+				key.setDataset(data);
+				if (!checkPart(1, data, key, logic)) continue;
+				data.remove(0);
+				// generate random district 2
+				long randD = ThreadLocalRandom.current().nextInt(0, d);
+				key = new DenseInstance(data.numAttributes());
+				data.add(key);
+				key.setValue(wAtt, randW);
+				key.setValue(dAtt, randD);
+				key.setMissing(cAtt);
+				data.setClassIndex(data.numAttributes() - 1);
+				key.setDataset(data);
+				if (!checkPart(2, data, key, logic)) continue;
+				data.remove(0);
+				// generate random customer 3
+				long randC = ThreadLocalRandom.current().nextInt(0, c);
+				key = new DenseInstance(data.numAttributes());
+				data.add(key);
+				key.setValue(wAtt, randW);
+				key.setValue(dAtt, randD);
+				key.setValue(cAtt, randC);
+				data.setClassIndex(data.numAttributes() - 1);
+				key.setDataset(data);
+				if (!checkPart(3, data, key, logic)) continue;
+				data.remove(0);
+				// get order number and increment counter 5 6
+				long randO = ThreadLocalRandom.current().nextInt(0, c);
+				// generate number of items in order, between 5 and 15
+				long randNoItems = ThreadLocalRandom.current().nextInt(4, 15);
+				// iterate over the the order items
+				HashSet<Long> generatedItems = new HashSet<>();
+				for (int i = 0; i < randNoItems; i++) {
+					// generate a random item 8
+					long randItem = ThreadLocalRandom.current().nextInt(0, id);
+					while (generatedItems.contains(randItem)) {
+						randItem = ThreadLocalRandom.current().nextInt(0, id);
+					}
+					generatedItems.add(randItem);
+					//traceLine += " i" + randItem;
+					// generate a order line warehouse key 9
+					key = new DenseInstance(data.numAttributes());
+					data.add(key);
+					key.setValue(wAtt, supplyW);
+					key.setMissing(dAtt);
+					key.setMissing(cAtt);
+					data.setClassIndex(data.numAttributes() - 1);
+					key.setDataset(data);
+					if (!checkPart(9, data, key, logic)) {
+						stop = true;
+						break;
+					}
+					data.remove(0);
+
+					// generate order line key 7
+					key = new DenseInstance(data.numAttributes());
+					data.add(key);
+					key.setValue(wAtt, randW);
+					key.setValue(dAtt, randD);
+					key.setMissing(cAtt);
+					data.setClassIndex(data.numAttributes() - 1);
+					key.setDataset(data);
+					if (!checkPart(7, data, key, logic)) {
+						stop = true;
+						break;
+					}
+					data.remove(0);
+
+				}
+				
+				if (!stop) local++;
+				
+			}
+			// payment txs
+			else if (randomNum < 87) {
+				// 85% of payments the customer belongs to local warehouse
+				int localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
+				if (localCustomer <= 84) {
+					// generate random warehouse 1
+					int randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+					traceLine += "w" + randW;
+					// generate random district 2
+					int randD = ThreadLocalRandom.current().nextInt(0, d);
+					traceLine += " w" + randW + "d" + randD;
+					// generate random customer 3
+					int randC = ThreadLocalRandom.current().nextInt(0, c);
+					traceLine += " w" + randW + "d" + randD + "c" + randC;
+					// generate history 4
+					traceLine += " w" + randW + "d" + randD + "h" + randC;
+				}
+				else {
+					// generate random warehouse 1.1
+					int randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+					// generate random warehouse 1.2, different from randW
+					int randW2 = randW;
+					if (w > 1) {
+						while (randW == randW2) {
+							randW2 = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+						}
+					}
+					traceLine += "w" + randW;
+					// generate random district 2
+					int randD = ThreadLocalRandom.current().nextInt(0, d);
+					traceLine += " w" + randW + "d" + randD;
+					// generate random customer 3, on a potentially remote warehouse
+					int randC = ThreadLocalRandom.current().nextInt(0, c);
+					traceLine += " w" + randW2 + "d" + randD + "c" + randC;
+					// generate history 4, on a potentially remote warehouse
+					traceLine += " w" + randW2 + "d" + randD + "h" + randC;
+				}
+				traceLine += "\n";
+			}
+			// delivery txs
+			else if (randomNum < 91) {
+				// generate random warehouse 1
+				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+				traceLine += "w" + randW;
+				// iterate over all districts
+				for (long i = 0; i < d; i++) {
+					// generate random customer 3
+					long randC = ThreadLocalRandom.current().nextInt(0, c);
+					traceLine += " w" + randW + "d" + i + "c" + randC;						
+					// generate random order
+					long order = ThreadLocalRandom.current().nextInt(0, c);
+					traceLine += " w" + randW + "d" + i + "o" + order;
+					traceLine += " w" + randW + "d" + i + "no" + order;
+					// generate number of items in order, between 5 and 15
+					long randNoItems = ThreadLocalRandom.current().nextInt(4, 15);
+					// iterate over the the order items
+					for (long j = 0; j < randNoItems; j++) {
+						// generate order line key 7
+						traceLine += " w" + randW + "d" + i + "o" + order + "l" + j; 
+					}
+				}
+				traceLine += "\n";
+			}
+			// order status tx
+			else if (randomNum < 95) {
+				// generate random warehouse 1
+				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+				// generate random district 2
+				long randD = ThreadLocalRandom.current().nextInt(0, d);
+				// generate random customer 3
+				long randC = ThreadLocalRandom.current().nextInt(0, c);
+				traceLine += "w" + randW + "d" + randD + "c" + randC;						
+				// access order 6
+				traceLine += " w" + randW + "d" + randD + "o" + randC;						
+				// generate number of items in order, between 5 and 15
+				long randNoItems = ThreadLocalRandom.current().nextInt(4, 15);
+				for (int i = 0; i < randNoItems; i++) {
+					// generate order line key 7
+					traceLine += " w" + randW + "d" + randD + "o" + randC + "l" + i;; 
+				}
+				traceLine += "\n";
+			}
+			// stock level tx
+			else {
+				// store generated orders to avoid duplicates
+				HashSet <Long> generatedOrders = new HashSet<>();
+				HashSet <Long> generatedItems = new HashSet<>();
+				// generate random warehouse 1
+				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
+				// generate random district 2
+				long randD = ThreadLocalRandom.current().nextInt(0, d);
+				traceLine += "w" + randW + "d" + randD;				
+				for (long i = 0; i < 20; i++) {
+					// generate random order
+					long randO = ThreadLocalRandom.current().nextInt(0, c);
+					while (generatedOrders.contains(randO)) {
+						randO = ThreadLocalRandom.current().nextInt(0, c);
+					}
+					generatedOrders.add(randO);
+					long randNoItems = ThreadLocalRandom.current().nextInt(4, 15);
+					for (long j = 0; j < randNoItems; j++) {
+						// generate order line key 7
+						traceLine += " w" + randW + "d" + randD + "o" + randO + "l" + j;; 
+						// generate a random item 8  
+						long randItem = ThreadLocalRandom.current().nextInt(0, id);
+						while (generatedItems.contains(randItem)) {
+							randItem = ThreadLocalRandom.current().nextInt(0, id);
+						}
+						generatedItems.add(randItem);
+						// generate a order line warehouse key 9
+						traceLine += " w" + randW + "i" + randItem;
+					}
+				}
+				traceLine += "\n";
+			}	
+		}
+		// Print out the results
+		System.out.println("Number of transactions in experiment: " + noTxs);
+		System.out.println("Remote transactions: " + remote);
+		System.out.println("Local transactions: " + local);
+		double percent =  ( (double) remote/ (double) noTxs);
+		System.out.println("Percentage of remote transactions: " + (percent * 100) + "%");
 	}
 	
 	// method used to evaluate Catalyst in terms of % of distributed txs given a part logic
@@ -590,8 +849,37 @@ public class TPCCWorkloadGenerator {
 		System.out.println("Percentage of remote transactions: " + (percent * 100) + "%");
 	} 
 	
+	// method that returns true if an access is local or false if it is remote Schism
+	public boolean checkPart(int table, Instances dataSet, Instance key, J48 logic) {
+		// part the access belongs to
+		int part = -1;
+		
+		try {
+			part = (int) logic.classifyInstance(key);
+		} catch (Exception e) {
+			System.out.println("Error on classifying instance");
+			e.printStackTrace();
+		}
+		
+		// check if logcal or remote
+		if (currentPart == -1) {
+			currentPart = part;
+			return true;
+		}
+		else if (currentPart == part) {
+			return true;
+		}
+		else {
+			if (table == 8) {
+				return true;
+			}
+			remote++;
+			return false;
+		}
+	}
+	
 	// method that returns true if an access is local or false if it is remote
-	public static boolean checkPart(int txProfile, long key, int table, HashMap<String, Integer> features, LinkedHashMap<Integer,LinkedHashMap<Split, Integer>> logic) {
+	public boolean checkPart(int txProfile, long key, int table, HashMap<String, Integer> features, LinkedHashMap<Integer,LinkedHashMap<Split, Integer>> logic) {
 		// part the access belongs to
 		int part = -1;
 		// query the map to get the rules for correct txProfile

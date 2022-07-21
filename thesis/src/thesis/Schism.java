@@ -564,77 +564,33 @@ public class Schism {
 			System.out.println("Error on generating WEKA data file!");
 			e.printStackTrace();
 		}
-		
-		
-	}
-
-	
-	public static void evaluateSchism(String trainFile, String testFile) {
-		// at this point we have a Weka file that we can use to build a model
-		try {
-			DataSource source = new DataSource(trainFile);
-			Instances train = source.getDataSet();
-			train.setClassIndex(train.numAttributes() - 1);
-
-			source = new DataSource(testFile);
-			Instances test = source.getDataSet();
-			test.setClassIndex(test.numAttributes() - 1);
-			
-			/*
-			// testing classifier with feature selection
-			Remove rm = new Remove();
-			rm.setAttributeIndices("1");  // remove 1st attribute
-			
-			// classifier
-			J48 j48 = new J48();
-			j48.setUnpruned(true);        // using an unpruned J48
-			// meta-classifier
-			FilteredClassifier fc = new FilteredClassifier();
-			fc.setFilter(rm);
-			fc.setClassifier(j48);
-			// train and make predictions
-			fc.buildClassifier(train);
-			System.out.println(j48);
-			
-			Evaluation eval = new Evaluation(train);
-			eval.evaluateModel(j48, test);
-			
-			System.out.println(eval.toSummaryString());
-			*/
-			
-			
-			J48 tree = new J48();
-			tree.buildClassifier(train);
-			System.out.println(tree);
-			Evaluation eval = new Evaluation(train);
-			eval.evaluateModel(tree,test);
-			
-			System.out.println(eval.toSummaryString());
-			
-		} catch (Exception e) {
-			System.out.println("Error during Weka model building");
-			e.printStackTrace();
-		}
 	}
 	
 	// Schism constructor for TPCC workloads
 	public Schism(int noW, int noP) {
 		TPCCWorkloadGenerator tpccWLtrain = new TPCCWorkloadGenerator(noW);
 		tpccWLtrain.buildSchismTrace(1000, noW);
-		parseTraceTPCC("metistrain.txt", noP, "schismtrain.arff");
-		TPCCWorkloadGenerator tpccWLtest = new TPCCWorkloadGenerator(noW);
-		tpccWLtest.buildSchismTrace(1000, noW);
-		parseTraceTPCC("metistest.txt", noP, "schismtest.arff");
-		evaluateSchism("schismtrain.arff", "schismtest.arff"); 
+		parseTraceTPCC("metistrain.txt", noP, "schismtrain.arff");		
+		try {
+			DataSource source = new DataSource("schismtrain.arff");
+			Instances train = source.getDataSet();
+			train.setClassIndex(train.numAttributes() - 1);
+			J48 tree = new J48();
+			tree.buildClassifier(train);
+			System.out.println(tree);
+			tpccWLtrain.evaluateSchismTPCC(1000, noW, noP, tree);
+		} catch (Exception e) {
+			System.out.println("Error during Weka model building");
+			e.printStackTrace();
+		}
+		
+		
 	}
 	
 	// Schism constructor for RUBIS workloads
 	public Schism(int noP) {
 		RubisWorkloadGenerator.buildSchismTrace(1000);
 		parseTraceRubis("metistrain.txt", noP, "schismtrain.arff");
-		RubisWorkloadGenerator.buildSchismTrace(1000);
-		parseTraceRubis("metistest.txt", noP, "schismtest.arff");
-		evaluateSchism("schismtrain.arff", "schismtest.arff");
 	}
 
 }

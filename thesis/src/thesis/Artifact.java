@@ -35,14 +35,20 @@ public class Artifact {
 					new GraphBuilder(1, noW, noP);
 				}
 				else if (workload.equals("4")) {
-					// 10w5p
-					int noW = 0;
-					int noP = 10;
+					// 10w2p
+					int noW = 9;
+					int noP = 2;
 					new GraphBuilder(1, noW, noP);
 				}
 				else if (workload.equals("5")) {
-					// 100w10p
-					int noW = 4;
+					// 10w5p
+					int noW = 9;
+					int noP = 5;
+					new GraphBuilder(1, noW, noP);
+				}
+				else if (workload.equals("6")) {
+					// 1w10p
+					int noW = 0;
 					int noP = 10;
 					new GraphBuilder(1, noW, noP);
 				}

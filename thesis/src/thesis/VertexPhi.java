@@ -226,7 +226,7 @@ public class VertexPhi {
 		switch (tableNo) {
 		case 1:
 			if (w == 0) {
-				return true;
+				return false;
 			}
 			else {
 				return false;

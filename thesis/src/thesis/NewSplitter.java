@@ -1663,7 +1663,7 @@ public class NewSplitter {
 	// method to check if there is a variable that can split multiple overlapping rhos on same table
 	private HashSet<String> checkCommonSplit(ArrayList<Pair<VertexRho, VertexPhi>> rhos) {
 		
-		System.out.println("Checking for commmon splits: " + rhos.size());
+		// System.out.println("Checking for commmon splits: " + rhos.size());
 		
 		// possible splits
 		HashSet<String> splits = new HashSet<>();
@@ -1701,9 +1701,11 @@ public class NewSplitter {
 				// get range of commonVar
 				Pair<Integer, Integer> varRange = rho1.getValue().getPhi().get(commonVar);
 				
+				/*
 				System.out.println(commonVar);
 				System.out.println("Lower: " + varRange.getKey());
 				System.out.println("Upper : " + varRange.getValue());
+				*/
 				
 				// calculate cutoff for new simulated phi
 				int cutoff = (varRange.getValue() - varRange.getKey()) / 2;
@@ -1732,20 +1734,20 @@ public class NewSplitter {
 					// edit phi for sim 
 					phiCopy2.getPhi().put(commonVar, new Pair<Integer, Integer> (cutoff + 1, varRange.getValue()));
 					
-					System.out.println("After 2: " + (cutoff + 1) + ", "  + (varRange.getValue())); 
+					//System.out.println("After 2: " + (cutoff + 1) + ", "  + (varRange.getValue())); 
 
 					
 					// build rho phi pair
 					Pair<VertexRho, VertexPhi> rhoPhi2 = new Pair<VertexRho, VertexPhi>(rhoCopy2, phiCopy2);
 					overlap = checkIntersection(rhoPhi1, rhoPhi2);
 					
+					/*
 					System.out.println(overlap);
-					
-					
-						System.out.println(rhoPhi1.getKey().getRho());
-						System.out.println(rhoPhi1.getValue().getPhiAsGroup());
-						System.out.println(rhoPhi2.getKey().getRho());
-						System.out.println(rhoPhi2.getValue().getPhiAsGroup());
+					System.out.println(rhoPhi1.getKey().getRho());
+					System.out.println(rhoPhi1.getValue().getPhiAsGroup());
+					System.out.println(rhoPhi2.getKey().getRho());
+					System.out.println(rhoPhi2.getValue().getPhiAsGroup());
+					*/
 					
 					
 					// if overlapping bin variable
