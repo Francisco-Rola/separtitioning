@@ -123,6 +123,16 @@ public class VertexSigma {
 				}
 			}
 			
+			// fix table 9 structure
+			if (rhoUpdated.startsWith("9->")) {
+				rhoUpdated = rhoUpdated.replaceAll("warehouseid", "(warehouseid * 100000)");
+				if (rhoUpdated.contains("(ol")) 
+					rhoUpdated = rhoUpdated.replaceAll("\\(ol", "ol");
+				else 
+					rhoUpdated = rhoUpdated.replaceAll("\\(irol", "irol");
+				rhoUpdated = rhoUpdated.replaceAll(" \\* 100\\)", "");
+			}
+			
 			if (rhoRepeated(rhoUpdated)) {
 				continue;
 			}
