@@ -270,7 +270,7 @@ public class TPCCWorkloadGenerator {
 			// roll the dice to know which tx to generate
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
-			if (randomNum < 101) {
+			if (randomNum < 44) {
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				// generate supply warehouse 1% remote
@@ -870,7 +870,7 @@ public class TPCCWorkloadGenerator {
 			return true;
 		}
 		else {
-			if (table == 8) {
+			if (table == 8 || (table == 1 && w == 1)) {
 				return true;
 			}
 			remote++;
