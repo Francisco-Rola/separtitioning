@@ -33,6 +33,7 @@ RUN git clone https://github.com/msoos/cryptominisat \
  && make \
  && sudo make install \
  && cd ../..
+RUN apt-get install -y metis
 RUN git clone https://github.com/Francisco-Rola/separtitioning.git \
  && cd separtitioning/thesis \
  && mvn clean install
