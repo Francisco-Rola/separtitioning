@@ -18,6 +18,11 @@
 		<scope>system</scope>
 		<systemPath>${basedir}/resources/weka.jar</systemPath>
 	</dependency>
+   <dependency>
+             <groupId>org.infinispan</groupId>
+             <artifactId>infinispan-core</artifactId>
+             <version>13.0.11.Final</version>
+	</dependency>
   </dependencies>
  
   
