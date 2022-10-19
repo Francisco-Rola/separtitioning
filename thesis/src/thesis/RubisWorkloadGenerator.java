@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import weka.classifiers.trees.J48;
+
 public class RubisWorkloadGenerator {
 	
 	// scaling factors
@@ -114,6 +116,75 @@ public class RubisWorkloadGenerator {
 		}
 		
 	}
+	// method used to evaluate Schism in terms of % of distributed txs given a part logic
+	public void evaluateSchismRubis(int noTxs, int noP, J48 logic) {
+		// generated txs counter
+		int generatedTxs = 0;
+		// reset counters
+		local = 0;
+		remote = 0;
+		
+		while (generatedTxs < noTxs) {
+			// increment genTxs
+			generatedTxs++;
+			// string to hold line for trace file
+			String traceLine = "";
+			// roll the dice to know which tx to generate
+			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
+			// buy now tx
+			if (randomNum < 45) {
+				// generate random item id
+				long randItem = ThreadLocalRandom.current().nextInt(0, items * category);
+				traceLine += "i" + randItem;
+				// generate random number of buy nows
+				long randBuy = ThreadLocalRandom.current().nextInt(0, buy);
+				traceLine += " i" + randItem + "y" + randBuy;
+				traceLine += "\n";
+			}
+			// bid tx
+			else if (randomNum < 88) {
+				// generate random item id
+				long randItem = ThreadLocalRandom.current().nextInt(0, items * category);
+				traceLine += "i" + randItem;
+				// generate random number of buy nows
+				long randBid = ThreadLocalRandom.current().nextInt(0, bid);
+				traceLine += " i" + randItem + "d" + randBid;
+				traceLine += "\n";
+			}
+			// comment tx
+			else if (randomNum < 92) {
+				// generate random from id
+				long randFrom = ThreadLocalRandom.current().nextInt(0, users * region);
+				traceLine += "u" + randFrom;
+				long randTo = ThreadLocalRandom.current().nextInt(0, users * region);
+				traceLine += " u" + randTo;
+				long randComment = ThreadLocalRandom.current().nextInt(0, comment);
+				traceLine += " u" + randFrom + "t" + randComment;
+				traceLine += "\n";
+			}
+			// register user
+			else if (randomNum < 96) {
+				// generate random region
+				long randRegion = ThreadLocalRandom.current().nextInt(0, region);
+				traceLine += "r" + randRegion;
+				// generate random user
+				long randUser = ThreadLocalRandom.current().nextInt(0, users * region);
+				traceLine+= " r" + randRegion + "u" + randUser;
+				traceLine += "\n";
+			}
+			// register item
+			else {
+				// generate random category
+				long randCategory = ThreadLocalRandom.current().nextInt(0, category);
+				traceLine += "c" + randCategory;
+				// generate random item
+				long randItem = ThreadLocalRandom.current().nextInt(0, items * category);
+				traceLine+= " c" + randCategory + "i" + randItem;
+				traceLine += "\n";
+			}	
+		}
+	}
+	
 
 	// method used to evaluate Catalyst in terms of % of distributed txs given a part logic
 	public void evaluateCatalystRubis(int noTxs, LinkedHashMap<Integer,LinkedHashMap<Split, Integer>> logic) {
@@ -289,7 +360,7 @@ public class RubisWorkloadGenerator {
 			if (VertexPhi.checkTableReplicated(table)) {
 				return true;
 			}
-			System.out.println("Table: " + table + " - Remote key: " + key);
+			//System.out.println("Table: " + table + " - Remote key: " + key);
 			remote++;
 			return false;
 		}

@@ -327,7 +327,7 @@ public class SEParser {
 	// main for debug purposes
 	public static void main(String[] args) {
 		try {
-			String[] files = {"stock_level_experiment.txt"};
+			String[] files = {"order_new.txt"};
 			new SEParser(files);
 			int vertexCount = 0; 
 			for(Vertex vertex : vertices) {

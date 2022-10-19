@@ -427,7 +427,6 @@ public class Schism {
 			dataFileW.append("@attribute y numeric\n");
 			dataFileW.append("@attribute d numeric\n");
 			dataFileW.append("@attribute t numeric\n");
-			dataFileW.append("@attribute table numeric\n");
 
 			
 			String partClass = "{";
@@ -522,40 +521,8 @@ public class Schism {
 						else break;
 					}
 				}
-				String table = "?";
-				if (key.contains("i") && key.contains("y")) {
-					table = "6";
-				}
-				else if (key.contains("c") && key.contains("i")) {
-					table = "2" ;
-				}
-				else if (key.contains("r") && key.contains("u")) {
-					table = "1";
-				}
-				else if (key.contains("i") && key.contains("d")) {
-					table = "5";
-				}
-				else if (key.contains("u") && key.contains("t")) {
-					table = "7";
-				}
-				else if (key.contains("r")) {
-					table = "4";
-				}
-				else if (key.contains("c")) {
-					table = "3";
-				}
-				else if (key.contains("i")) {
-					table = "2"; 	
-				}
-				else if (key.contains("u")) {
-					table = "1";
-				}
-				else {
-					System.out.println(key);
-					System.out.println("Messed up");
-				}
 				
-				String dataLine = i + "," + u + "," + c + "," + r + "," + y + "," + d + "," + t + "," + table + "," + entry.getValue() + "\n"; 
+				String dataLine = i + "," + u + "," + c + "," + r + "," + y + "," + d + "," + t + "," + entry.getValue() + "\n"; 
 				dataFileW.append(dataLine);
 			}
 			dataFileW.close();
@@ -578,7 +545,7 @@ public class Schism {
 			J48 tree = new J48();
 			tree.buildClassifier(train);
 			System.out.println(tree);
-			tpccWLtrain.evaluateSchismTPCC(1000, noW, noP, tree);
+			tpccWLtrain.evaluateSchismTPCC(1000000, noW, noP, tree);
 		} catch (Exception e) {
 			System.out.println("Error during Weka model building");
 			e.printStackTrace();
@@ -591,6 +558,17 @@ public class Schism {
 	public Schism(int noP) {
 		RubisWorkloadGenerator.buildSchismTrace(1000);
 		parseTraceRubis("metistrain.txt", noP, "schismtrain.arff");
+		try {
+			DataSource source = new DataSource("schismtrain.arff");
+			Instances train = source.getDataSet();
+			train.setClassIndex(train.numAttributes() - 1);
+			J48 tree = new J48();
+			tree.buildClassifier(train);
+			System.out.println(tree);
+		} catch (Exception e) {
+			System.out.println("Error during Weka model building");
+			e.printStackTrace();
+		}
 	}
 
 }

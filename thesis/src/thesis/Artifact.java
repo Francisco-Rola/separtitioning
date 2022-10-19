@@ -77,21 +77,27 @@ public class Artifact {
 					new Schism(noW, noP);
 				}
 				else if (workload.equals("3")) {
+					// 1w5p
+					int noW = 0;
+					int noP = 5;
+					new Schism(noW, noP);
+				}
+				else if (workload.equals("4")) {
 					// 10w2p
 					int noW = 9;
 					int noP = 2;
 					new Schism(noW, noP);
 				}
-				else if (workload.equals("4")) {
+				else if (workload.equals("5")) {
 					// 10w5p
 					int noW = 9;
 					int noP = 5;
 					new Schism(noW, noP);
 				}
-				else if (workload.equals("5")) {
-					// 100w10p
+				else if (workload.equals("6")) {
+					// 1w10p
 					int noW = 0;
-					int noP = 5;
+					int noP = 10;
 					new Schism(noW, noP);
 				}
 				else {
@@ -100,6 +106,22 @@ public class Artifact {
 					new Schism(noP);
 				}
 			}
+		}
+		// second experiment
+		if (experiment.equals("2")) {
+			// system [Schism/Catalyst/Hashing]
+			String system = args[1];
+			// Catalyst
+			if (system.equals("1")) {
+				// workload [1-6]
+				String workload = args[2];
+				// build execution
+				if (workload.equals("1")) {
+					// 1w2p
+					new TPCC(1,1);
+				}
+			}
+			
 		}
 	}
 }
