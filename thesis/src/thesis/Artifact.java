@@ -118,7 +118,13 @@ public class Artifact {
 				// build execution
 				if (workload.equals("1")) {
 					// 1w2p
-					new TPCC(1,1);
+					String nodeId = args[3];
+					new TPCC(1,1, Integer.valueOf(nodeId));
+				}
+				else if (workload.equals("2")) {
+					// 2w2p
+					String nodeId = args[3];
+					new TPCC(1,2, Integer.valueOf(nodeId));
 				}
 			}
 			
