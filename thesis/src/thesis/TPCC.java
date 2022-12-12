@@ -48,7 +48,7 @@ public class TPCC {
 	private static int systemNo;
 	
 	// TPCC parameters
-	private final int NUM_WAREHOUSES = 2;
+	private int NUM_WAREHOUSES = -1;
 	private final int NUM_DISTRICTS = 10;
 	private final int NUM_CUSTOMERS = 3000;
 	private final int NUM_ORDERS = 3000;
@@ -101,7 +101,19 @@ public class TPCC {
 		TPCC.experimentNo = experimentNo;
 		TPCC.systemNo = systemNo;
 		
+		// setup number of warehouses
+		if (experimentNo == 1) {
+			this.NUM_WAREHOUSES = 1;
+		}
+		else if (experimentNo == 2) {
+			this.NUM_WAREHOUSES = 2;
+		}
+		else {
+			this.NUM_WAREHOUSES = -1;
+		}
+		
 		GlobalConfigurationBuilder global = GlobalConfigurationBuilder.defaultClusteredBuilder();
+		global.cacheContainer().statistics(true);
 		// TODO Might need serialization here
 		
 		// created a cache manager, can now have multiple caches
@@ -128,6 +140,7 @@ public class TPCC {
 		    .recovery()
 		    .enabled(false)
 		    .recoveryInfoCacheName("__recoveryInfoCacheName__");
+		config.statistics().enable();
 		this.cacheManager.defineConfiguration("tpcc", config.build());
 		this.cache = cacheManager.getCache("tpcc");
 		this.transactionManager = cache.getAdvancedCache().getTransactionManager();
@@ -205,7 +218,17 @@ public class TPCC {
 		Instant start = Instant.now();
 		int cycleTxs = 0;
 		
-		while (true) {
+		Instant experimentBegin = Instant.now();
+		
+		Instant current = Instant.now();
+
+		boolean test = true;
+				
+		System.out.println("Hits: " + this.cache.getAdvancedCache().getStats().getHits());
+		
+		System.out.println("Misses: " + this.cache.getAdvancedCache().getStats().getMisses());
+		
+		while (true && Duration.between(experimentBegin, current).toMinutes() <= 1) {
 			try {
 				executeTransaction();
 				Thread.sleep(10);
@@ -217,17 +240,44 @@ public class TPCC {
 				e.printStackTrace();
 			}
 			cycleTxs++;
-			Instant current = Instant.now();
+			current = Instant.now();
 			if (Duration.between(start, current).toMillis() >= 3000) {
-				System.out.println("Evaluating thorughput");
+				//System.out.println("Evaluating thorughput");
 				double txPS = cycleTxs / (Duration.between(start, current).toMillis() / 1000);
-				System.out.println("Executed " + txPS + "/s");
+				//System.out.println("Executed " + txPS + "/s");
+				System.out.println(txPS);
 				cycleTxs = 0;
 				start = Instant.now();
+			}
+			if (test && Duration.between(experimentBegin, current).toMillis() >= 15000) {
+				System.out.println("Hits: " + this.cache.getAdvancedCache().getStats().getHits());
+				System.out.println("Misses: " + this.cache.getAdvancedCache().getStats().getMisses());
+				test = false;
 			}
 				
 		}
 		
+		System.out.println("Hits: " + this.cache.getAdvancedCache().getStats().getHits());
+				
+		System.out.println("Misses: " + this.cache.getAdvancedCache().getStats().getMisses());
+		
+		System.out.println("Write: " + this.cache.getAdvancedCache().getStats().getAverageWriteTimeNanos());
+		
+		System.out.println("Read: " + this.cache.getAdvancedCache().getStats().getAverageReadTimeNanos());
+		
+
+
+		
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		cacheManager.stop();
+		
+		System.exit(0);
 	}
 	
 	// generate transaction
@@ -527,7 +577,7 @@ public class TPCC {
 		}
 		// insert in new order 
 		String newOrderKey = "5,w" + w_id + "d" + d_id + "no" + nextOrder;
-		ArrayList<String> newOrderValue = cache.get(newOrderKey);
+		ArrayList<String> newOrderValue = null;
 		// if the key does not exist, create it else return an error
 		if (newOrderValue == null) {
 			newOrderValue = new ArrayList<String>();
@@ -549,7 +599,7 @@ public class TPCC {
 		}
 		// insert in order
 		String orderKey = "6,w" + w_id + "d" + d_id + "o" + nextOrder;
-		ArrayList<String> orderValue = cache.get(orderKey);
+		ArrayList<String> orderValue = null;
 		// if the key does not exist create it, it it does return an error
 		if (orderValue == null) {
 			Date date = new Date((new Date()).getTime());
@@ -615,7 +665,7 @@ public class TPCC {
 			// orderline insert
 			String orderLineKey = "7,w" + w_id + "d" + d_id + "o" + nextOrder + "l" + ol_number;
 			String ol_dist_info = stockValue.get((int) d_id + 2);
-			ArrayList<String> orderLineValue = cache.get(orderLineKey);
+			ArrayList<String> orderLineValue = null;
 			// if the key does exit, return an error, else create a new order line key
 			if (orderLineValue == null) {
 				//System.out.println("NewOrder: order line key not found, creating it!");
@@ -1389,8 +1439,47 @@ public class TPCC {
 					return "0";
 				}
 			}
+			// schism
 			else {
-				return "0";
+				if (key.contains("d")) {
+					int d = getIDfromParam(key, "d");
+					if (d <= 9) {
+						if (d <= 8) {
+							if (d <= 6) {
+								if (d <= 3) {
+									if (d <= 2) {
+										if (d <= 1) {
+											return "1";
+										}
+										else {
+											return "0";
+										}
+									}
+									else {
+										return "1";
+									}
+								}
+								else {
+									return "0";
+								}
+							}
+							else {
+								return "1";
+							}
+						}
+						else {
+							return "0";
+						}
+					}
+					else {
+						return "1";
+					}
+				}
+				else {
+					// no features in key from weka, run random hashing
+					int part = (int) (key.toString().charAt(0) % 2);
+					return String.valueOf(part);
+				}
 			}
 		}
 		// second experiment is 2w2p
@@ -1402,16 +1491,16 @@ public class TPCC {
 					return "1";
 				}
 				else if (getIDfromParam(key, "w") == 1)
-					return "1";
+					return "0";
 				else
-					return "2";
+					return "1";
 			}
 			else {
-				return "1";
+				return "0";
 			}
 		}
 		else {
-			return "0";
+			return "1";
 		}
     }
 	

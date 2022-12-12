@@ -127,6 +127,22 @@ public class Artifact {
 					new TPCC(1,2, Integer.valueOf(nodeId));
 				}
 			}
+			// Schism
+			if (system.equals("2")) {
+				// workload [1-6]
+				String workload = args[2];
+				// build execution
+				if (workload.equals("1")) {
+					// 1w2p
+					String nodeId = args[3];
+					new TPCC(2,1, Integer.valueOf(nodeId));
+				}
+				else if (workload.equals("2")) {
+					// 2w2p
+					String nodeId = args[3];
+					new TPCC(2,2, Integer.valueOf(nodeId));
+				}
+			}
 			
 		}
 	}
