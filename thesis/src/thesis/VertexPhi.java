@@ -203,7 +203,8 @@ public class VertexPhi {
 		// compute max id of each table
 		switch (tableNo) {
 		case 1:
-			return (rubisRegion * 100000) + rubisUsers;
+			//return (rubisRegion * 100000) + rubisUsers;
+			return w;
 		case 5:
 			return w * 100 + customer * 10000 + district;
 		case 6:
@@ -213,7 +214,7 @@ public class VertexPhi {
 		case 8:
 			return item;
 		case 9:
-			return w + (item * 100);
+			return item + (w * 100);
 		default:
 			// debug scenario, if needed add more tables
 			System.out.println("\n\nTable range unknown\n\n" + tableNo);
@@ -225,12 +226,7 @@ public class VertexPhi {
 	public static boolean checkTableReplicated(int tableNo) {		
 		switch (tableNo) {
 		case 1:
-			if (w == 0) {
-				return true;
-			}
-			else {
-				return false;
-			}
+			return false;
 		case 8:
 			// table 8 is ready only
 			return true;

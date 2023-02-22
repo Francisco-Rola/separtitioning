@@ -1,6 +1,7 @@
 package thesis;
 
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
@@ -10,7 +11,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -20,15 +25,24 @@ import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
 import org.infinispan.Cache;
+import org.infinispan.commons.tx.lookup.TransactionManagerLookup;
 import org.infinispan.configuration.cache.CacheMode;
+import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
+import org.infinispan.distribution.ch.impl.DefaultConsistentHashFactory;
+import org.infinispan.distribution.ch.impl.ReplicatedConsistentHashFactory;
 import org.infinispan.distribution.group.Grouper;
+import org.infinispan.distribution.impl.DistributionManagerImpl;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
+import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
+import org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
 
 public class TPCC {
@@ -102,7 +116,7 @@ public class TPCC {
 		TPCC.systemNo = systemNo;
 		
 		// setup number of warehouses
-		if (experimentNo == 1) {
+		if (experimentNo == 1 || experimentNo == 3) {
 			this.NUM_WAREHOUSES = 1;
 		}
 		else if (experimentNo == 2) {
@@ -112,77 +126,81 @@ public class TPCC {
 			this.NUM_WAREHOUSES = -1;
 		}
 		
-		GlobalConfigurationBuilder global = GlobalConfigurationBuilder.defaultClusteredBuilder();
-		global.cacheContainer().statistics(true);
-		// TODO Might need serialization here
+		GlobalConfiguration global = new GlobalConfigurationBuilder()
+				.clusteredDefault().jmx().enable()
+				.build();
+				
+		// setup number of nodes in cluster
+		int numNodes = experimentNo == 3 ? 5 : 2;
 		
-		// created a cache manager, can now have multiple caches
-		this.cacheManager = new DefaultCacheManager(global.build());
-		listener = new ClusterListener(2);
+		// setup cache manager
+		this.cacheManager = new DefaultCacheManager(global);
+		
+		listener = new ClusterListener(numNodes);
 	    cacheManager.addListener(listener);
-	    
+		
 	    // builder for non replicated cache
-		ConfigurationBuilder config = new ConfigurationBuilder();
-		config.clustering().cacheMode(CacheMode.DIST_SYNC)
-			.hash().numOwners(1).groups().enabled().addGrouper(new TPCC.KeyGrouper());
-		config.locking()
-	    	.isolationLevel(IsolationLevel.READ_COMMITTED);
-		config.transaction()
-		    .lockingMode(LockingMode.OPTIMISTIC)
-		    .autoCommit(true) // TODO dobule check this
-		    .completedTxTimeout(60000)
-		    .transactionMode(TransactionMode.NON_TRANSACTIONAL)
-		    .useSynchronization(false)
-		    .notifications(true)
-		    .reaperWakeUpInterval(30000)
-		    .cacheStopTimeout(30000)
-		    .transactionManagerLookup(new GenericTransactionManagerLookup())
-		    .recovery()
-		    .enabled(false)
-		    .recoveryInfoCacheName("__recoveryInfoCacheName__");
-		config.statistics().enable();
-		this.cacheManager.defineConfiguration("tpcc", config.build());
+		Configuration local = new ConfigurationBuilder()
+				.clustering().cacheMode(CacheMode.DIST_SYNC)
+				.hash().numOwners(1).consistentHashFactory(new DefaultConsistentHashFactory()).groups().enabled().addGrouper(new TPCC.KeyGrouper())
+				.transaction().transactionMode(TransactionMode.TRANSACTIONAL).autoCommit(false)
+				.lockingMode(LockingMode.OPTIMISTIC)
+				.transactionManagerLookup(new EmbeddedTransactionManagerLookup())
+				.locking().lockAcquisitionTimeout(60000)
+	    		.isolationLevel(IsolationLevel.READ_COMMITTED)	
+				.statistics().enable()
+				.build();
+				
+		this.cacheManager.defineConfiguration("tpcc", local);
 		this.cache = cacheManager.getCache("tpcc");
 		this.transactionManager = cache.getAdvancedCache().getTransactionManager();
 		
 		// builder for replicated cache
 		ConfigurationBuilder configReplicated = new ConfigurationBuilder();
-		configReplicated.clustering().cacheMode(CacheMode.REPL_SYNC);
-		/*configReplicated.locking()
-    		.isolationLevel(IsolationLevel.READ_COMMITTED);
+		configReplicated.clustering().cacheMode(CacheMode.REPL_SYNC)
+			.hash().numOwners(numNodes);
 		configReplicated.transaction()
-		    .lockingMode(LockingMode.OPTIMISTIC)
-		    .autoCommit(true)
-		    .completedTxTimeout(60000)
-		    .transactionMode(TransactionMode.NON_TRANSACTIONAL)
-		    .useSynchronization(false)
-		    .notifications(true)
-		    .reaperWakeUpInterval(30000)
-		    .cacheStopTimeout(30000)
-		    .transactionManagerLookup(new GenericTransactionManagerLookup())
-		    .recovery()
-		    .enabled(false)
-		    .recoveryInfoCacheName("__recoveryInfoCacheName__"); */
+			.transactionMode(TransactionMode.TRANSACTIONAL).autoCommit(false)
+			.lockingMode(LockingMode.OPTIMISTIC)
+			.transactionManagerLookup(new EmbeddedTransactionManagerLookup());
+		configReplicated.locking().lockAcquisitionTimeout(60000)
+			.isolationLevel(IsolationLevel.READ_COMMITTED);
 		this.cacheManager.defineConfiguration("repltpcc", configReplicated.build());
 		this.replCache = cacheManager.getCache("repltpcc");
 		
 		
-		
-		if (nodeId == 0) initCache();
+		// cache initialization
+		if (nodeId == 0)
+			try {
+				initCache();
+			} catch (SecurityException | IllegalStateException | NotSupportedException | SystemException
+					| RollbackException | HeuristicMixedException | HeuristicRollbackException e1) {
+				System.out.println("Error on initializing the cache");
+				e1.printStackTrace();
+			}
 		
 		
 		// place in the cache the information that this node is ready
 		String nodeReadyKey = "10," + nodeId;
 		ArrayList<String> nodeReadyValue = new ArrayList<>();
 		nodeReadyValue.add(String.valueOf(nodeId));
-		cache.put(nodeReadyKey, nodeReadyValue);
+		
+		try {
+			transactionManager.begin();
+			cache.put(nodeReadyKey, nodeReadyValue);
+			transactionManager.commit();
+		} catch (NotSupportedException | SystemException | SecurityException | IllegalStateException | RollbackException | HeuristicMixedException | HeuristicRollbackException e1) {
+			System.out.println("Error while registering node in the cluster!");
+			e1.printStackTrace();
+		}
+
 		
 		System.out.println("Node ready: " + cache.get(nodeReadyKey).get(0));
 		
 		// check if cluster is ready to begin transaction execution
 		while (true) {
 			// first experiment has 2 nodes
-			if (experimentNo == 1) {
+			if (experimentNo == 1 || experimentNo == 2) {
 				boolean allReady = true;
 				for (int i = 0; i < 2; i++) {
 					nodeReadyKey = "10," + i;
@@ -195,9 +213,9 @@ public class TPCC {
 				// if every node is ready then proceed, else continue loop
 				if (allReady) break;
 			}
-			else if (experimentNo == 2) {
+			else if (experimentNo == 3) {
 				boolean allReady = true;
-				for (int i = 0; i < 2; i++) {
+				for (int i = 0; i < 5; i++) {
 					nodeReadyKey = "10," + i;
 					nodeReadyValue = cache.get(nodeReadyKey);
 					if (nodeReadyValue == null) {
@@ -215,6 +233,9 @@ public class TPCC {
 		
 		System.out.println("Ready for transaction execution!");
 		
+		// reset stats after population
+		this.cache.getAdvancedCache().getStats().reset();
+		
 		Instant start = Instant.now();
 		int cycleTxs = 0;
 		
@@ -229,16 +250,7 @@ public class TPCC {
 		System.out.println("Misses: " + this.cache.getAdvancedCache().getStats().getMisses());
 		
 		while (true && Duration.between(experimentBegin, current).toMinutes() <= 1) {
-			try {
-				executeTransaction();
-				Thread.sleep(10);
-			} catch (SecurityException | IllegalStateException | NotSupportedException | SystemException
-					| RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-				System.out.println("Error during transaction execution!");
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			executeTransaction();
 			cycleTxs++;
 			current = Instant.now();
 			if (Duration.between(start, current).toMillis() >= 3000) {
@@ -265,7 +277,7 @@ public class TPCC {
 		
 		System.out.println("Read: " + this.cache.getAdvancedCache().getStats().getAverageReadTimeNanos());
 		
-
+		
 
 		
 		try {
@@ -275,13 +287,23 @@ public class TPCC {
 			e.printStackTrace();
 		}
 		
+		try {
+			System.in.read();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		cacheManager.stop();
+		
 		
 		System.exit(0);
 	}
 	
+	
+	
 	// generate transaction
-	private void executeTransaction() throws NotSupportedException, SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException, HeuristicRollbackException {
+	private void executeTransaction() {
 		// get a warehouse id for this tx
 		long terminalWId = getRoutingWarehouse(this.nodeId, TPCC.experimentNo);
 		// pick transaction
@@ -311,11 +333,26 @@ public class TPCC {
             	}
             	orderQuantities[i] = randomNumber(1,10);
             }
-            transactionManager.begin();
+	        
+            try {
+				transactionManager.begin();
+			} catch (NotSupportedException | SystemException e) {
+				e.printStackTrace();
+				System.out.println(e.getCause());
+			}
             newOrderTransaction(terminalWId, districtId, customerId, numItems, allLocal, itemIDs, supplierWarehouseIDs, orderQuantities);
-            transactionManager.commit();
+            try {
+				transactionManager.commit();
+			} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+					| HeuristicRollbackException | SystemException e) {
+				e.printStackTrace();
+				System.out.println(e.getCause());
+			}
+            
+           
+            
 		}
-		// payment
+		// payment 88
 		else if (txType <= 88) {
 			long districtId = getRoutingDistrict(this.nodeId, TPCC.experimentNo);
 			long local = randomNumber(1, 100);
@@ -347,9 +384,22 @@ public class TPCC {
 				customerId = nonUniformRandom(seedC_id, A_C_ID, 1, NUM_CUSTOMERS);
 			}
 			double amount = randomNumber(100, 500000)/100.0;
-			transactionManager.begin();
+			
+			try {
+				transactionManager.begin();
+			} catch (NotSupportedException | SystemException e) {
+				e.printStackTrace();
+				System.out.println(e.getCause());
+			}
 			paymentTransaction(terminalWId, customerWarehouseId, amount, districtId, customerDistrictId, customerId, customerLastName, customerByName);
-			transactionManager.commit();
+            try {
+				transactionManager.commit();
+			} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+					| HeuristicRollbackException | SystemException e) {
+				e.printStackTrace();
+				System.out.println(e.getCause());
+			}
+			
 		}
 		// order status
 		else if (txType <= 92) {
@@ -368,26 +418,64 @@ public class TPCC {
 				customerByName = false;
 				customerId = nonUniformRandom(seedC_id, A_C_ID, 1, NUM_CUSTOMERS);
 			}
-			transactionManager.begin();
+
+			try {
+				transactionManager.begin();
+			} catch (NotSupportedException | SystemException e) {
+				e.printStackTrace();
+				System.out.println(e.getCause());
+			}
 			orderStatusTransaction(terminalWId, districtId, customerId, customerLastName, customerByName);
-			transactionManager.commit();
+            try {
+				transactionManager.commit();
+			} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+					| HeuristicRollbackException | SystemException e) {
+				e.printStackTrace();
+				System.out.println(e.getCause());
+			}
+			
+			
 		}
 		// stock level
 		else if (txType <= 96) {
 			long districtId = getRoutingDistrict(this.nodeId, TPCC.experimentNo);
 			int stockThreshold = generateRandNum(10,20);
-			transactionManager.begin();
+			
+			try {
+				transactionManager.begin();
+			} catch (NotSupportedException | SystemException e) {
+				e.printStackTrace();
+				System.out.println(e.getCause());
+			}
 			stockLevelTransaction(terminalWId, districtId, stockThreshold);
-			transactionManager.commit();
+            try {
+				transactionManager.commit();
+			} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+					| HeuristicRollbackException | SystemException e) {
+				e.printStackTrace();
+				System.out.println(e.getCause());
+			}
 		}
 		// delivery
 		else {
 			if ((experimentNo == 1 && nodeId == 0) || experimentNo != 1) {
 				int o_carrier_id = generateRandNum(1, 10);
 				Date ol_delivery_d = new Date(System.currentTimeMillis());
-				transactionManager.begin();
+				
+				try {
+					transactionManager.begin();
+				} catch (NotSupportedException | SystemException e) {
+					e.printStackTrace();
+					System.out.println(e.getCause());
+				}
 				deliveryTransaction(terminalWId, o_carrier_id, ol_delivery_d);
-				transactionManager.commit();
+	            try {
+					transactionManager.commit();
+				} catch (SecurityException | IllegalStateException | RollbackException | HeuristicMixedException
+						| HeuristicRollbackException | SystemException e) {
+					e.printStackTrace();
+					System.out.println(e.getCause());
+				}
 			}
 		}
 	}
@@ -395,15 +483,22 @@ public class TPCC {
 	// conditional routing warehouse gen
 	private long getRoutingWarehouse(int nodeId, int experimentNo) {
 		// 1w2p
-		if (experimentNo == 1) {
+		if (experimentNo == 1 || experimentNo == 3) {
 			return 1;
 		}
 		// 2w2p
 		if (experimentNo == 2) {
-			if (nodeId == 0) {
+			String key = "1,w1";
+			
+			DistributionManagerImpl dm = (DistributionManagerImpl) cache.getAdvancedCache().getDistributionManager();
+			
+			//List<String> nodes = dm.locateKey(key);
+			
+			// if w = 1 is local return 1
+			if (dm.isLocatedLocally(key)) {
 				return 1;
 			}
-			if (nodeId == 1) {
+			else {
 				return 2;
 			}
 		}
@@ -414,11 +509,92 @@ public class TPCC {
 	private long getRoutingDistrict(int nodeId, int experimentNo) {
 		// 1w2p
 		if (experimentNo == 1) {
-			if (nodeId == 0)
-				return randomNumber(1,5);
-			else
-				return randomNumber(6,10);
+			
+			String key = "2,w1d1";
+			
+			DistributionManagerImpl dm = (DistributionManagerImpl) cache.getAdvancedCache().getDistributionManager();			
+			
+			if (dm.isLocatedLocally(key)) {
+				if (systemNo == 1)
+					return randomNumber(1,5);
+				else
+					return randomNumber(1,6);
+			}
+			else {
+				if (systemNo == 1)
+					return randomNumber(6,10);
+				else
+					return randomNumber(7,10);
+			}
+			
 		}
+		else if (experimentNo == 3) {
+			
+			String key = "2,w1d1";
+			
+			
+			
+			DistributionManagerImpl dm = (DistributionManagerImpl) cache.getAdvancedCache().getDistributionManager();
+			
+			System.out.println("1: " + dm.isLocatedLocally(key));
+			key = "2,w1d2";
+			System.out.println("2: " + dm.isLocatedLocally(key));
+			key = "2,w1d3";
+			System.out.println("3: " + dm.isLocatedLocally(key));
+			key = "2,w1d4";
+			System.out.println("4: " + dm.isLocatedLocally(key));
+			key = "2,w1d5";
+			System.out.println("5: " + dm.isLocatedLocally(key));
+			key = "2,w1d6";
+			System.out.println("6: " + dm.isLocatedLocally(key));
+			key = "2,w1d7";
+			System.out.println("7: " + dm.isLocatedLocally(key));
+			key = "2,w1d8";
+			System.out.println("8: " + dm.isLocatedLocally(key));
+			key = "2,w1d9";
+			System.out.println("9: " + dm.isLocatedLocally(key));
+			key = "2,w1d10";
+			System.out.println("10: " + dm.isLocatedLocally(key));
+			System.out.println("-------------------------");
+			try {
+				Thread.sleep(1000000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			if (dm.isLocatedLocally(key)) {
+				return randomNumber(1,2);
+			}
+			else {
+				key = "2,w1d3";
+				if (dm.isLocatedLocally(key)) {
+					return randomNumber(3,4);
+				}
+				else {
+					key = "2,w1d5";
+					if (dm.isLocatedLocally(key)) {
+						return randomNumber(5,6);
+					}
+					else {
+						key = "2,w1d7";
+						if (dm.isLocatedLocally(key)) {
+							if (systemNo == 1)
+								return randomNumber(7,8);
+							else
+								return randomNumber(7,9);
+						}
+						else {
+							if (systemNo == 1)
+								return randomNumber(9,10);
+							else
+								return 10;
+						}
+					}
+				}
+			}	
+		}
+		
 		return randomNumber(1,NUM_DISTRICTS);
 	}
 	
@@ -890,15 +1066,16 @@ public class TPCC {
 	}
 	
 	// cache initialize method
-	public void initCache() {
+	public void initCache() throws NotSupportedException, SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException, HeuristicRollbackException {
 		// need to place every table of TPCC in the cache
 		// key structure needs to be: table,key
-		
+		transactionManager.begin();
 		// init item table
 		initItems();
 		
 		// init warehouse table
 		initWarehouse();
+		transactionManager.commit();
 	}
 	
 	// init item table
@@ -1442,42 +1619,18 @@ public class TPCC {
 			// schism
 			else {
 				if (key.contains("d")) {
-					int d = getIDfromParam(key, "d");
-					if (d <= 9) {
-						if (d <= 8) {
-							if (d <= 6) {
-								if (d <= 3) {
-									if (d <= 2) {
-										if (d <= 1) {
-											return "1";
-										}
-										else {
-											return "0";
-										}
-									}
-									else {
-										return "1";
-									}
-								}
-								else {
-									return "0";
-								}
-							}
-							else {
-								return "1";
-							}
-						}
-						else {
-							return "0";
-						}
-					}
-					else {
+					if (getIDfromParam(key, "d") <= 6)
+						return "0";
+					else if (getIDfromParam(key, "d") <= 10)
 						return "1";
+					else {
+						System.out.println("Error, invalid key being asked for!");
+						return "0";
 					}
 				}
 				else {
 					// no features in key from weka, run random hashing
-					int part = (int) (key.toString().charAt(0) % 2);
+					int part = (int) (key.toString().hashCode() % 2);
 					return String.valueOf(part);
 				}
 			}
@@ -1491,14 +1644,92 @@ public class TPCC {
 					return "1";
 				}
 				else if (getIDfromParam(key, "w") == 1)
-					return "0";
-				else
 					return "1";
+				else
+					return "0";
 			}
+			// schism
 			else {
-				return "0";
+				if (table.equals("8")) {
+					System.out.println("Table 8 in the wrong KV-store");
+					return "1";
+				}
+				else if (key.contains("w")) {
+					if (getIDfromParam(key, "w") == 1)
+						return "1";
+					else
+						return "0";
+				}
+				else {
+					// no features in key from weka, run random hashing
+					int part = (int) (key.toString().hashCode() % 2);
+					return String.valueOf(part);
+				}
 			}
 		}
+		else if (experimentNo == 3) {
+			// catalyst
+			if (systemNo == 1) {
+				if (table.equals("8")) {
+					System.out.println("Table 8 in the wrong KV-store");
+					return "0";
+				}
+				else if (table.equals("1")) {
+					return "0";
+				}
+				else if (!table.equals("9")) {
+					if (getIDfromParam(key, "d") <= 2)
+						return "0";
+					else if (getIDfromParam(key, "d") <= 4)
+						return "1";
+					else if (getIDfromParam(key, "d") <= 6)
+						return "2";
+					else if (getIDfromParam(key, "d") <= 8)
+						return "3";
+					else if (getIDfromParam(key, "d") <= 10)
+						return "4";
+					else {
+						System.out.println("Invalid key being asked for!");
+						return "0";
+					}
+				}
+				// table 9 is a table split
+				else {
+					return "0";
+				}
+			}
+			// Schism
+			else {
+				// table 8 is replicated
+				if (table.equals("8")) {
+					System.out.println("Table 8 in the wrong KV-store");
+					return "0";
+				}				
+				else if (key.contains("d")) {
+					if (getIDfromParam(key, "d") <= 2)
+						return "0";
+					else if (getIDfromParam(key, "d") <= 4)
+						return "1";
+					else if (getIDfromParam(key, "d") <= 6)
+						return "2";
+					else if (getIDfromParam(key, "d") <= 9)
+						return "3";
+					else if (getIDfromParam(key, "d") <= 10)
+						return "4";
+					else {
+						System.out.println("Invalid key being asked for!");
+						return "0";
+					}
+				}
+				// everything else is randomly hashed
+				else {
+					// no features in key from weka, run random hashing
+					int part = (int) (key.toString().hashCode() % 5);
+					return String.valueOf(part);
+				}
+			}
+		}
+		
 		else {
 			return "1";
 		}
@@ -1527,16 +1758,16 @@ public class TPCC {
 	// based on this format we can apply table splits or input based splits
 	
 	public static class KeyGrouper implements Grouper<String> {
-		
+	
 		 @Override
-	     public String computeGroup(String key, String group) {
+	     public Object computeGroup(String key, Object group) {
 			// Get the table identifier from the key
 			String table = key.split(",")[0];
 			// Get the keyID from the key
 			String keyID = key.split(",")[1];
 			// Consult experiment specific partitioning function
 			String partition = computePartition(table, keyID);
-			return partition;
+			return Integer.valueOf(partition);
 	     }
 
 	     @Override
@@ -1544,4 +1775,5 @@ public class TPCC {
 	        return String.class;
 	     }   
 	}
+	
 }

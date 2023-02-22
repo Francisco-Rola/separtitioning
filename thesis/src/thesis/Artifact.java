@@ -1,8 +1,10 @@
 package thesis;
 
+import java.io.IOException;
+
 public class Artifact {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws NumberFormatException, IOException {
 				
 		// first parameter must be experiment [1-5]
 		String experiment = args[0];
@@ -126,6 +128,11 @@ public class Artifact {
 					String nodeId = args[3];
 					new TPCC(1,2, Integer.valueOf(nodeId));
 				}
+				else if (workload.equals("3")) {
+					// 1w5p
+					String nodeId = args[3];
+					new TPCC(1,3, Integer.valueOf(nodeId));
+				}
 			}
 			// Schism
 			if (system.equals("2")) {
@@ -142,6 +149,12 @@ public class Artifact {
 					String nodeId = args[3];
 					new TPCC(2,2, Integer.valueOf(nodeId));
 				}
+				else if (workload.equals("3")) {
+					// 1w5p
+					String nodeId = args[3];
+					new TPCC(2,3, Integer.valueOf(nodeId));
+				}
+				
 			}
 			
 		}

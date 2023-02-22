@@ -443,7 +443,11 @@ public class NewSplitter {
 		int rhoID = 1;
 		for (Map.Entry<Integer, ArrayList<HashSet<String>>> entry: possibleSplits.entrySet()) {
 			if (entry.getValue() == null) {
-				// table split detected, store it
+				// table split detected, store it unless 1 key table
+				if (VertexPhi.getTableRange(entry.getKey()) == 0) {
+					System.out.println("Table split not varible, unique key!");
+					continue;
+				}
 				splits.add("#" + entry.getKey().toString());
 				continue;
 			}
@@ -1341,7 +1345,7 @@ public class NewSplitter {
 		// get lower table limit
 		int lower = rho.getLowerTableLimit() - 1;
 		// get upper table limit
-		int upper = rho.getUpperTableLimit() + 1;
+		int upper = rho.getUpperTableLimit();
 		// convert lower to binary
 		String lowerBin = Integer.toBinaryString(lower);
 		// convert upper to binary
