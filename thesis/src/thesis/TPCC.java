@@ -118,7 +118,7 @@ public class TPCC {
 		}
 		
 		GlobalConfiguration global = new GlobalConfigurationBuilder()
-				.transport().defaultTransport()
+				.transport().defaultTransport().distributedSyncTimeout(300000)
 				.jmx().enable()
 				.build();
 				

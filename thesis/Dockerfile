@@ -14,7 +14,8 @@ RUN  apt-get update  -y \
 # java
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 RUN apt update && apt install -y curl avahi-daemon wget sshpass sudo locales locales-all ssh vim expect libfontconfig1 libgl1-mesa-glx libasound2
-RUN apt-get install -y build-essential cmake
+RUN apt-get install -y build-essential
+RUN wget -qO- "https://cmake.org/files/v3.17/cmake-3.17.0-Linux-x86_64.tar.gz" | tar --strip-components=1 -xz -C /usr/local
 RUN apt-get install -y git
 RUN apt-get install -y maven
 RUN git clone https://github.com/usi-verification-and-security/opensmt.git \
