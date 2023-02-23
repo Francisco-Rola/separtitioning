@@ -5,17 +5,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -25,25 +19,23 @@ import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
 import org.infinispan.Cache;
-import org.infinispan.commons.tx.lookup.TransactionManagerLookup;
+import org.infinispan.commons.executors.ThreadPoolExecutorFactory;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.distribution.ch.impl.DefaultConsistentHashFactory;
-import org.infinispan.distribution.ch.impl.ReplicatedConsistentHashFactory;
+import org.infinispan.distribution.ch.KeyPartitioner;
 import org.infinispan.distribution.group.Grouper;
 import org.infinispan.distribution.impl.DistributionManagerImpl;
+import org.infinispan.executors.DefaultExecutorFactory;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
-import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
-import org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
+import org.infinispan.util.concurrent.TimeoutException;
 
 public class TPCC {
 	
@@ -58,8 +50,8 @@ public class TPCC {
 	private final ClusterListener listener;
 	
 	// system parameters
-	private static int experimentNo;
-	private static int systemNo;
+	public static int experimentNo;
+	public static int systemNo;
 	
 	// TPCC parameters
 	private int NUM_WAREHOUSES = -1;
@@ -103,7 +95,6 @@ public class TPCC {
 	private long seedC_id = 501;
 	private long seedC_last = 132;
 	private long seedI_id = 5121;
-
 	
 	// build a cache for TPCC execution
 	public TPCC(int systemNo, int experimentNo, int nodeId) {
@@ -127,7 +118,8 @@ public class TPCC {
 		}
 		
 		GlobalConfiguration global = new GlobalConfigurationBuilder()
-				.clusteredDefault().jmx().enable()
+				.transport().defaultTransport()
+				.jmx().enable()
 				.build();
 				
 		// setup number of nodes in cluster
@@ -138,18 +130,22 @@ public class TPCC {
 		
 		listener = new ClusterListener(numNodes);
 	    cacheManager.addListener(listener);
+	    
+	    CustomKeyPartitioner keyPartitioner = new CustomKeyPartitioner();
 		
 	    // builder for non replicated cache
 		Configuration local = new ConfigurationBuilder()
 				.clustering().cacheMode(CacheMode.DIST_SYNC)
-				.hash().numOwners(1).consistentHashFactory(new DefaultConsistentHashFactory()).groups().enabled().addGrouper(new TPCC.KeyGrouper())
+				.hash().keyPartitioner(keyPartitioner).numOwners(1).numSegments(numNodes).groups().enabled()
 				.transaction().transactionMode(TransactionMode.TRANSACTIONAL).autoCommit(false)
-				.lockingMode(LockingMode.OPTIMISTIC)
+				.lockingMode(LockingMode.PESSIMISTIC)
 				.transactionManagerLookup(new EmbeddedTransactionManagerLookup())
-				.locking().lockAcquisitionTimeout(60000)
+				.locking().lockAcquisitionTimeout(300000)
 	    		.isolationLevel(IsolationLevel.READ_COMMITTED)	
 				.statistics().enable()
 				.build();
+		
+		
 				
 		this.cacheManager.defineConfiguration("tpcc", local);
 		this.cache = cacheManager.getCache("tpcc");
@@ -161,9 +157,9 @@ public class TPCC {
 			.hash().numOwners(numNodes);
 		configReplicated.transaction()
 			.transactionMode(TransactionMode.TRANSACTIONAL).autoCommit(false)
-			.lockingMode(LockingMode.OPTIMISTIC)
+			.lockingMode(LockingMode.PESSIMISTIC)
 			.transactionManagerLookup(new EmbeddedTransactionManagerLookup());
-		configReplicated.locking().lockAcquisitionTimeout(60000)
+		configReplicated.locking().lockAcquisitionTimeout(300000)
 			.isolationLevel(IsolationLevel.READ_COMMITTED);
 		this.cacheManager.defineConfiguration("repltpcc", configReplicated.build());
 		this.replCache = cacheManager.getCache("repltpcc");
@@ -277,20 +273,9 @@ public class TPCC {
 		
 		System.out.println("Read: " + this.cache.getAdvancedCache().getStats().getAverageReadTimeNanos());
 		
-		
-
-		
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
 		try {
 			System.in.read();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -531,37 +516,7 @@ public class TPCC {
 		else if (experimentNo == 3) {
 			
 			String key = "2,w1d1";
-			
-			
-			
 			DistributionManagerImpl dm = (DistributionManagerImpl) cache.getAdvancedCache().getDistributionManager();
-			
-			System.out.println("1: " + dm.isLocatedLocally(key));
-			key = "2,w1d2";
-			System.out.println("2: " + dm.isLocatedLocally(key));
-			key = "2,w1d3";
-			System.out.println("3: " + dm.isLocatedLocally(key));
-			key = "2,w1d4";
-			System.out.println("4: " + dm.isLocatedLocally(key));
-			key = "2,w1d5";
-			System.out.println("5: " + dm.isLocatedLocally(key));
-			key = "2,w1d6";
-			System.out.println("6: " + dm.isLocatedLocally(key));
-			key = "2,w1d7";
-			System.out.println("7: " + dm.isLocatedLocally(key));
-			key = "2,w1d8";
-			System.out.println("8: " + dm.isLocatedLocally(key));
-			key = "2,w1d9";
-			System.out.println("9: " + dm.isLocatedLocally(key));
-			key = "2,w1d10";
-			System.out.println("10: " + dm.isLocatedLocally(key));
-			System.out.println("-------------------------");
-			try {
-				Thread.sleep(1000000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
 			
 			if (dm.isLocatedLocally(key)) {
 				return randomNumber(1,2);
@@ -834,7 +789,9 @@ public class TPCC {
 			stockValue.set(14, String.valueOf(s_order_cntNew));
 			int s_remote_cntNew = Integer.valueOf(stockValue.get(15)) + s_remote_cnt_increment;
 			stockValue.set(15, String.valueOf(s_remote_cntNew));
+			
 			cache.put(stockKey, stockValue);
+			
 			
 			float ol_amount = ol_quantity * Float.valueOf(itemValue.get(3));
 			
@@ -1591,189 +1548,5 @@ public class TPCC {
 		return customerList;
 	}
 	
-	// experiment specific partitioning function
-	public static String computePartition(String table, String key) {
-		// first experiment is 1w2p
-		if (experimentNo == 1) {
-			// catalyst
-			if (systemNo == 1) {
-				// every table other than 9 is an input split
-				if (table.equals("8")) {
-					System.out.println("Table 8 in the wrong KV-store");
-					return "0";
-				}
-				else if (table.equals("1")) {
-					return "0";
-				}
-				else if (!table.equals("9")) {
-					if (getIDfromParam(key, "d") <= 5)
-						return "0";
-					else 
-						return "1";
-				}
-				// table 9 is a table split
-				else {
-					return "0";
-				}
-			}
-			// schism
-			else {
-				if (key.contains("d")) {
-					if (getIDfromParam(key, "d") <= 6)
-						return "0";
-					else if (getIDfromParam(key, "d") <= 10)
-						return "1";
-					else {
-						System.out.println("Error, invalid key being asked for!");
-						return "0";
-					}
-				}
-				else {
-					// no features in key from weka, run random hashing
-					int part = (int) (key.toString().hashCode() % 2);
-					return String.valueOf(part);
-				}
-			}
-		}
-		// second experiment is 2w2p
-		else if (experimentNo == 2) {
-			// catalyst
-			if (systemNo == 1) {
-				if (table.equals("8")) {
-					System.out.println("Table 8 in the wrong KV-store");
-					return "1";
-				}
-				else if (getIDfromParam(key, "w") == 1)
-					return "1";
-				else
-					return "0";
-			}
-			// schism
-			else {
-				if (table.equals("8")) {
-					System.out.println("Table 8 in the wrong KV-store");
-					return "1";
-				}
-				else if (key.contains("w")) {
-					if (getIDfromParam(key, "w") == 1)
-						return "1";
-					else
-						return "0";
-				}
-				else {
-					// no features in key from weka, run random hashing
-					int part = (int) (key.toString().hashCode() % 2);
-					return String.valueOf(part);
-				}
-			}
-		}
-		else if (experimentNo == 3) {
-			// catalyst
-			if (systemNo == 1) {
-				if (table.equals("8")) {
-					System.out.println("Table 8 in the wrong KV-store");
-					return "0";
-				}
-				else if (table.equals("1")) {
-					return "0";
-				}
-				else if (!table.equals("9")) {
-					if (getIDfromParam(key, "d") <= 2)
-						return "0";
-					else if (getIDfromParam(key, "d") <= 4)
-						return "1";
-					else if (getIDfromParam(key, "d") <= 6)
-						return "2";
-					else if (getIDfromParam(key, "d") <= 8)
-						return "3";
-					else if (getIDfromParam(key, "d") <= 10)
-						return "4";
-					else {
-						System.out.println("Invalid key being asked for!");
-						return "0";
-					}
-				}
-				// table 9 is a table split
-				else {
-					return "0";
-				}
-			}
-			// Schism
-			else {
-				// table 8 is replicated
-				if (table.equals("8")) {
-					System.out.println("Table 8 in the wrong KV-store");
-					return "0";
-				}				
-				else if (key.contains("d")) {
-					if (getIDfromParam(key, "d") <= 2)
-						return "0";
-					else if (getIDfromParam(key, "d") <= 4)
-						return "1";
-					else if (getIDfromParam(key, "d") <= 6)
-						return "2";
-					else if (getIDfromParam(key, "d") <= 9)
-						return "3";
-					else if (getIDfromParam(key, "d") <= 10)
-						return "4";
-					else {
-						System.out.println("Invalid key being asked for!");
-						return "0";
-					}
-				}
-				// everything else is randomly hashed
-				else {
-					// no features in key from weka, run random hashing
-					int part = (int) (key.toString().hashCode() % 5);
-					return String.valueOf(part);
-				}
-			}
-		}
 		
-		else {
-			return "1";
-		}
-    }
-	
-	// aux function to get integer until new char
-	private static int getIDfromParam(String key, String param) {
-		// String to store results
-		String result = "";
-		// String to read integer from
-		String intValue = key.substring(key.indexOf(param) + 1);
-		// Remove extra
-		for (int i = 0; i < intValue.length(); i++) {
-			if (Character.isDigit(intValue.charAt(i))) {
-				result += intValue.charAt(i);
-			}
-			else {
-				break;
-			}
-		}
-		return Integer.parseInt(result);
-	}
-	
-	// partitioning is based on the key
-	// key format must be "table,key"
-	// based on this format we can apply table splits or input based splits
-	
-	public static class KeyGrouper implements Grouper<String> {
-	
-		 @Override
-	     public Object computeGroup(String key, Object group) {
-			// Get the table identifier from the key
-			String table = key.split(",")[0];
-			// Get the keyID from the key
-			String keyID = key.split(",")[1];
-			// Consult experiment specific partitioning function
-			String partition = computePartition(table, keyID);
-			return Integer.valueOf(partition);
-	     }
-
-	     @Override
-	     public Class<String> getKeyType() {
-	        return String.class;
-	     }   
-	}
-	
 }

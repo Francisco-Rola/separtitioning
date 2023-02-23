@@ -73,7 +73,7 @@ public class Rubis {
 		// builder for non replicated cache
 		ConfigurationBuilder config = new ConfigurationBuilder();
 		config.clustering().cacheMode(CacheMode.DIST_SYNC)
-			.hash().numOwners(1).groups().enabled().addGrouper(new TPCC.KeyGrouper());
+			.hash().numOwners(1).groups().enabled();
 		config.locking()
 		   	.isolationLevel(IsolationLevel.READ_COMMITTED);
 		config.transaction()
