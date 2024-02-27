@@ -96,6 +96,11 @@ public class CustomKeyPartitioner implements KeyPartitioner {
 			}
 		}
 		
+		// Catalyst RUBIS
+		if (experimentNo == 4 && systemNo == 1) {
+			
+		}
+		
 		// Schism TPCC 1w2p
 		if (experimentNo == 1 && systemNo == 2) {
 			if (keyString.startsWith("8")) {
@@ -103,15 +108,15 @@ public class CustomKeyPartitioner implements KeyPartitioner {
 				return 0;
 			}				
 			else if (keyString.contains("d")) {
-				if (getIDfromParam(keyString, "d") <= 6)
+				if (getIDfromParam(keyString, "d") <= 5)
 					return 0;
 				else 
 					return 1;
 			}
 			else {
 				// no features in key from weka, run random hashing
-				int part = (int) (key.toString().hashCode() % 2);
-				return part;
+				int part = Math.abs((int) (key.toString().hashCode()));
+				return part % 2;
 			}
 		}
 		
@@ -129,8 +134,8 @@ public class CustomKeyPartitioner implements KeyPartitioner {
 			}
 			else {
 				// no features in key from weka, run random hashing
-				int part = (int) (key.toString().hashCode() % 2);
-				return part;
+				int part = Math.abs((int) (key.toString().hashCode()));
+				return part % 2;
 			}
 		}
 		
@@ -158,10 +163,12 @@ public class CustomKeyPartitioner implements KeyPartitioner {
 			}
 			else {
 				// no features in key from weka, run random hashing
-				int part = (int) (key.toString().hashCode() % 2);
-				return part;
+				int part = Math.abs((int) (key.toString().hashCode()));
+				return part % 5;
 			}
 		}
+		
+		
 		
 		
 		

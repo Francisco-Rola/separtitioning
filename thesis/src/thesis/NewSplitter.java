@@ -573,6 +573,8 @@ public class NewSplitter {
 		for (VertexSigma newSigma : newSigmas) {
 			// associate new sigma to a new vertex
 			GraphVertex gv = new GraphVertex(newSigma, txProfile, true);
+			// adding new vertex to graph
+			System.out.println("Adding new subvertex");
 			// other sub vertices need to be disjoint from previously existing ones
 			addVertexSMT(gv, splitGraph);
 		}
@@ -789,8 +791,11 @@ public class NewSplitter {
 								|| entryGV.getKey().isRemote()) {
 							continue;
 						}
+						
 						//compute intersection between rhos given the phis, compute weight of intersection
+						System.out.println("Computing rho intersection!");
 						int result = rhoIntersection(entryV.getKey(), entryGV.getKey(), entryV.getValue(), entryGV.getValue());
+						System.out.println("RHo intersection done!");
 						// check the intersection results
 						if (result == 0) {
 							// no overlap so no subtraction needed

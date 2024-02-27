@@ -1,0 +1,19 @@
+<infinispan>
+  <cache-container statistics="true">
+      <jmx enabled="true"/>
+    <distributed-cache statistics="true"/>
+    <replicated-cache statistics="true"/>
+  </cache-container>
+  <distributed-hash-mapping-strategy>
+  <mapping-strategy>
+    <group-name>group1</group-name>
+    <node-name>node1</node-name>
+  </mapping-strategy>
+  <mapping-strategy>
+    <group-name>group2</group-name>
+    <node-name>node2</node-name>
+  </mapping-strategy>
+</distributed-hash-mapping-strategy>
+
+</infinispan>
+

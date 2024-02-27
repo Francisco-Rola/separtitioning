@@ -556,7 +556,8 @@ public class Schism {
 	
 	// Schism constructor for RUBIS workloads
 	public Schism(int noP) {
-		RubisWorkloadGenerator.buildSchismTrace(1000);
+		RubisWorkloadGenerator rubisWLtrain = new RubisWorkloadGenerator();
+		rubisWLtrain.buildSchismTrace(1000);
 		parseTraceRubis("metistrain.txt", noP, "schismtrain.arff");
 		try {
 			DataSource source = new DataSource("schismtrain.arff");
@@ -565,6 +566,7 @@ public class Schism {
 			J48 tree = new J48();
 			tree.buildClassifier(train);
 			System.out.println(tree);
+			rubisWLtrain.evaluateSchismRubis(1000000, noP, tree);
 		} catch (Exception e) {
 			System.out.println("Error during Weka model building");
 			e.printStackTrace();

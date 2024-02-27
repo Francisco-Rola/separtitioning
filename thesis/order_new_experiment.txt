@@ -1,0 +1,124 @@
+symbolic.min_int=-2147483648
+symbolic.min_long=-9223372036854775808
+symbolic.min_short=-32768
+symbolic.min_byte=-128
+symbolic.min_char=0
+symbolic.max_int=2147483647
+symbolic.max_long=9223372036854775807
+symbolic.max_short=32767
+symbolic.max_byte=127
+symbolic.max_char=65535
+symbolic.min_double=4.9E-324
+symbolic.max_double=1.7976931348623157E308
+Begin of execution
+JavaPathfinder core system v8.0 - (C) 2005-2014 United States Government. All rights reserved.
+
+
+====================================================== system under test
+tpcc.MainNewOrder.main("15")
+
+====================================================== search started: 19-07-2021 14:37
+[PC_1_2521314] ROOT
+  --> [RWSET_1799014102] 
+  --> [PC_2_-2039318873] 
+  --> [PC_5_1204817650] 
+  <== [PC_0_2521314] 
+
+[PC_5_1204817650] GET-0@Tpcc:122 != 0
+  --> [PC_7_-785837869] 
+  --> [RWSET_843235449] 
+  --> [PC_6_-1410016172] 
+  <== [PC_1_2521314] 
+
+[PC_6_-1410016172] GET-1@Tpcc:128 = 0 
+  --> [RWSET_-381049374] 
+  <== [PC_5_1204817650] 
+
+[RWSET_-381049374] 
+R: 9->((ol_supply_w_id[2] * 100000) + ol_i_id[2]), 9->((ol_supply_w_id[10] * 100000) + ol_i_id[10]), 9->((ol_supply_w_id[7] * 100000) + ol_i_id[7]), 8->ol_i_id[13], 8->ol_i_id[11], 9->((ol_supply_w_id[12] * 100000) + ol_i_id[12]), 8->ol_i_id[1], 9->((ol_supply_w_id[6] * 100000) + ol_i_id[6]), 8->ol_i_id[3], 9->((ol_supply_w_id[8] * 100000) + ol_i_id[8]), 9->((ol_supply_w_id[13] * 100000 + ol_i_id[13]), 8->ol_i_id[5], 9->((ol_supply_w_id[1] * 100000 + ol_i_id[1]), 8->ol_i_id[7], 8->ol_i_id[9], 9->((ol_supply_w_id[0] * 100000) + ol_i_id[0]), 8->ol_i_id[14], 8->ol_i_id[12], 9->((ol_supply_w_id[11] * 100000) + ol_i_id[11]), 9->((ol_supply_w_id[5] * 100000) + ol_i_id[5]), 8->ol_i_id[10], 9->((ol_supply_w_id[9] * 100000) + ol_i_id[9]), 8->ol_i_id[0], 8->ol_i_id[2], 8->ol_i_id[4], 9->((ol_supply_w_id[3] * 100000) + ol_i_id[3]), 8->ol_i_id[6], 9->((ol_supply_w_id[14] * 100000) + ol_i_id[14]), 8->ol_i_id[8], 9->((ol_supply_w_id[4] * 100000) + ol_i_id[4])
+W: 9->((ol_supply_w_id[2] * 100000) + ol_i_id[2]), 9->((ol_supply_w_id[10] * 100000) + ol_i_id[10]),9->((ol_supply_w_id[7] * 100000) + ol_i_id[7]), 7->(district_id + ((ol_supply_w_id[7] * 100) + ((GET-0@Tpcc:79 * 1000000) + 70000))), 7->(district_id + ((ol_supply_w_id[11] * 100) + ((GET-0@Tpcc:79 * 1000000) + 110000))), 9->((ol_supply_w_id[12] * 100000) + ol_i_id[12]), 7->(district_id + ((ol_supply_w_id[2] * 100) + ((GET-0@Tpcc:79 * 1000000) + 20000))), 7->(district_id + ((ol_supply_w_id[8] * 100) + ((GET-0@Tpcc:79 * 1000000) + 80000))), 7->(district_id + ((ol_supply_w_id[9] * 100) + ((GET-0@Tpcc:79 * 1000000) + 90000))), 7->(district_id + ((ol_supply_w_id[3] * 100) + ((GET-0@Tpcc:79 * 1000000) + 30000))), 9->((ol_supply_w_id[6] * 100000) + ol_i_id[6]), 9->((ol_supply_w_id[8] * 100000) + ol_i_id[8]), 9->((ol_supply_w_id[13] * 100000) + ol_i_id[13]), 7->(district_id + ((ol_supply_w_id[13] * 100) + ((GET-0@Tpcc:79 * 1000000) + 130000))), 9->((ol_supply_w_id[1] * 100000) + ol_i_id[1]), 7->(district_id + ((ol_supply_w_id[12] * 100) + ((GET-0@Tpcc:79 * 1000000) + 120000))), 9->((ol_supply_w_id[0] * 100000) + ol_i_id[0]), 7->(district_id + ((ol_supply_w_id[0] * 100) + (GET-0@Tpcc:79 * 1000000))), 7->(district_id + ((ol_supply_w_id[4] * 100) + ((GET-0@Tpcc:79 * 1000000) + 40000))), 9->((ol_supply_w_id[11] * 100000) + ol_i_id[11]), 9->((ol_supply_w_id[5] * 100000) + ol_i_id[5]), 7->(district_id + ((ol_supply_w_id[14] * 100) + ((GET-0@Tpcc:79 * 1000000) + 140000))), 7->(district_id + ((ol_supply_w_id[5] * 100) + ((GET-0@Tpcc:79 * 1000000) + 50000))), 9->((ol_supply_w_id[9] * 100000) + ol_i_id[9]), 7->(district_id + ((ol_supply_w_id[10] * 100) + ((GET-0@Tpcc:79 * 1000000) + 100000))), 7->(district_id + ((ol_supply_w_id[6] * 100) + ((GET-0@Tpcc:79 * 1000000) + 60000))), 9->((ol_supply_w_id[3] * 100000) + ol_i_id[3]), 9->((ol_supply_w_id[14] * 100000) + ol_i_id[14]), 9->((ol_supply_w_id[4] * 100000) + ol_i_id[4]), 10->(district_id + (warehouse_id * 100)), 7->(district_id + ((ol_supply_w_id[1] * 100) + ((GET-0@Tpcc:79 * 1000000) + 10000))), 13->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:79 * 10000)))
+  <== [PC_3_-1410016172] 
+  <== [PC_6_-1410016172] 
+
+[RWSET_843235449] 
+R: 10->(district_id + (warehouse_id * 100))
+  <== [PC_5_1204817650] 
+
+[PC_7_-785837869] GET-1@Tpcc:128 != 0 
+  --> [RWSET_-1224284823] 
+  <== [PC_5_1204817650] 
+
+[RWSET_-1224284823] 
+R: 9->((ol_supply_w_id[2] * 100000) + ol_i_id[2]), 9->((ol_supply_w_id[10] * 100000) + ol_i_id[10]), 9->(ol_supply_w_id[7] + (ol_i_id[7] * 100)), 8->ol_i_id[13], 8->ol_i_id[11], 9->(ol_supply_w_id[12] + (ol_i_id[12] * 100)), 8->ol_i_id[1], 9->(ol_supply_w_id[6] + (ol_i_id[6] * 100)), 8->ol_i_id[3], 9->(ol_supply_w_id[8] + (ol_i_id[8] * 100)), 9->(ol_supply_w_id[13] + (ol_i_id[13] * 100)), 8->ol_i_id[5], 9->(ol_supply_w_id[1] + (ol_i_id[1] * 100)), 8->ol_i_id[7], 8->ol_i_id[9], 9->(ol_supply_w_id[0] + (ol_i_id[0] * 100)), 8->ol_i_id[14], 8->ol_i_id[12], 9->(ol_supply_w_id[11] + (ol_i_id[11] * 100)), 9->(ol_supply_w_id[5] + (ol_i_id[5] * 100)), 8->ol_i_id[10], 9->(ol_supply_w_id[9] + (ol_i_id[9] * 100)), 8->ol_i_id[0], 8->ol_i_id[2], 8->ol_i_id[4], 9->(ol_supply_w_id[3] + (ol_i_id[3] * 100)), 8->ol_i_id[6], 9->(ol_supply_w_id[14] + (ol_i_id[14] * 100)), 8->ol_i_id[8], 9->(ol_supply_w_id[4] + (ol_i_id[4] * 100))
+W: 9->(ol_supply_w_id[2] + (ol_i_id[2] * 100)), 9->(ol_supply_w_id[10] + (ol_i_id[10] * 100)), 9->(ol_supply_w_id[7] + (ol_i_id[7] * 100)), 7->(district_id + ((ol_supply_w_id[7] * 100) + ((GET-0@Tpcc:79 * 1000000) + 70000))), 7->(district_id + ((ol_supply_w_id[11] * 100) + ((GET-0@Tpcc:79 * 1000000) + 110000))), 9->(ol_supply_w_id[12] + (ol_i_id[12] * 100)), 7->(district_id + ((ol_supply_w_id[2] * 100) + ((GET-0@Tpcc:79 * 1000000) + 20000))), 7->(district_id + ((ol_supply_w_id[8] * 100) + ((GET-0@Tpcc:79 * 1000000) + 80000))), 7->(district_id + ((ol_supply_w_id[9] * 100) + ((GET-0@Tpcc:79 * 1000000) + 90000))), 7->(district_id + ((ol_supply_w_id[3] * 100) + ((GET-0@Tpcc:79 * 1000000) + 30000))), 9->(ol_supply_w_id[6] + (ol_i_id[6] * 100)), 9->(ol_supply_w_id[8] + (ol_i_id[8] * 100)), 9->(ol_supply_w_id[13] + (ol_i_id[13] * 100)), 7->(district_id + ((ol_supply_w_id[13] * 100) + ((GET-0@Tpcc:79 * 1000000) + 130000))), 9->(ol_supply_w_id[1] + (ol_i_id[1] * 100)), 7->(district_id + ((ol_supply_w_id[12] * 100) + ((GET-0@Tpcc:79 * 1000000) + 120000))), 9->(ol_supply_w_id[0] + (ol_i_id[0] * 100)), 7->(district_id + ((ol_supply_w_id[0] * 100) + (GET-0@Tpcc:79 * 1000000))), 7->(district_id + ((ol_supply_w_id[4] * 100) + ((GET-0@Tpcc:79 * 1000000) + 40000))), 9->(ol_supply_w_id[11] + (ol_i_id[11] * 100)), 9->(ol_supply_w_id[5] + (ol_i_id[5] * 100)), 7->(district_id + ((ol_supply_w_id[14] * 100) + ((GET-0@Tpcc:79 * 1000000) + 140000))), 7->(district_id + ((ol_supply_w_id[5] * 100) + ((GET-0@Tpcc:79 * 1000000) + 50000))), 9->(ol_supply_w_id[9] + (ol_i_id[9] * 100)), 7->(district_id + ((ol_supply_w_id[10] * 100) + ((GET-0@Tpcc:79 * 1000000) + 100000))), 7->(district_id + ((ol_supply_w_id[6] * 100) + ((GET-0@Tpcc:79 * 1000000) + 60000))), 9->(ol_supply_w_id[3] + (ol_i_id[3] * 100)), 9->(ol_supply_w_id[14] + (ol_i_id[14] * 100)), 9->(ol_supply_w_id[4] + (ol_i_id[4] * 100)), 7->(district_id + ((ol_supply_w_id[1] * 100) + ((GET-0@Tpcc:79 * 1000000) + 10000))), 13->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:79 * 10000)))
+  <== [PC_4_-785837869] 
+  <== [PC_7_-785837869] 
+
+[PC_2_-2039318873] GET-0@Tpcc:122 = 0
+  --> [PC_3_-1410016172] 
+  --> [PC_4_-785837869] 
+  --> [RWSET_890022743] 
+  <== [PC_1_2521314] 
+
+[RWSET_890022743] 
+R: 10->(district_id + (warehouse_id * 100))
+W: 12->0
+  <== [PC_2_-2039318873] 
+
+[PC_4_-785837869] GET-1@Tpcc:128 != 0 
+  --> [RWSET_-1224284823] 
+  <== [PC_2_-2039318873] 
+
+[PC_3_-1410016172] GET-1@Tpcc:128 = 0 
+  --> [RWSET_-381049374] 
+  <== [PC_2_-2039318873] 
+
+[RWSET_1799014102] 
+R: 3->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 2->(district_id + (warehouse_id * 100)), 1->warehouse_id, 11->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))
+W: 6->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:79(2->(district_id + (warehouse_id * 100))->10) * 10000))), 5->(district_id + ((warehouse_id * 100) + (GET-0@Tpcc:79(2->(district_id + (warehouse_id * 100))->10) * 10000))), 2->(district_id + (warehouse_id * 100)), 11->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 10->(district_id + (warehouse_id * 100))
+  <== [PC_1_2521314] 
+
+Total Number of Merges: 0
+IR=GET-0@Tpcc:79=2->(district_id + (warehouse_id * 100))->10
+Time spent Symbolic Execution: 0.541
+Time spent Pruning: 45789.885
+Number of Different Read and Write-Set: 5
+Number of Leaves Before:2
+Max Depth: 7
+Min Depth: 0
+times 0:	895581
+times 1:	10871065
+times 2:	19841196
+times 3:	36629
+times 4:	6876358
+times 5:	4621867
+times 6:	104732698
+times 7:	174696814
+times 8:	13381134
+times 9:	2237210
+times 10:	562339
+times 11:	539958
+times 12:	16105651
+times 13:	39576
+times 14:	1327757
+times 15:	0
+indirect_variables: 0
+mapStateToNode: 3
+mapStateToRWSet: 0
+mapRWSetToNode: 5
+
+====================================================== results
+no errors detected
+
+====================================================== statistics
+elapsed time:       00:00:00
+states:             new=8,visited=0,backtracked=8,end=4
+search:             maxDepth=4,constraints=0
+choice generators:  thread=1 (signal=0,lock=1,sharedRef=0,threadApi=0,reschedule=0), data=4
+heap:               new=645,released=102,maxLive=643,gcCycles=8
+instructions:       22000
+max memory:         147MB
+loaded code:        classes=64,methods=1323
+
+====================================================== search finished: 19-07-2021 14:37
+

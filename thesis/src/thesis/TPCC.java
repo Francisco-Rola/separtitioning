@@ -118,7 +118,7 @@ public class TPCC {
 		}
 		
 		GlobalConfiguration global = new GlobalConfigurationBuilder()
-				.transport().defaultTransport().distributedSyncTimeout(300000)
+				.transport().defaultTransport().distributedSyncTimeout(150000)
 				.jmx().enable()
 				.build();
 				
@@ -135,7 +135,7 @@ public class TPCC {
 		
 	    // builder for non replicated cache
 		Configuration local = new ConfigurationBuilder()
-				.clustering().cacheMode(CacheMode.DIST_SYNC)
+				.clustering().cacheMode(CacheMode.DIST_SYNC).remoteTimeout(240000)
 				.hash().keyPartitioner(keyPartitioner).numOwners(1).numSegments(numNodes).groups().enabled()
 				.transaction().transactionMode(TransactionMode.TRANSACTIONAL).autoCommit(false)
 				.lockingMode(LockingMode.PESSIMISTIC)
@@ -166,9 +166,18 @@ public class TPCC {
 		
 		
 		// cache initialization
-		if (nodeId == 0)
+		if (nodeId == 0 || (nodeId == 1 && experimentNo == 2))
 			try {
-				initCache();
+				if (experimentNo != 2)
+					initCache(1);
+				else {
+					if (nodeId == 0) {
+						initCache(1);
+					}
+					else {
+						initCache(2);
+					}
+				}
 			} catch (SecurityException | IllegalStateException | NotSupportedException | SystemException
 					| RollbackException | HeuristicMixedException | HeuristicRollbackException e1) {
 				System.out.println("Error on initializing the cache");
@@ -246,6 +255,14 @@ public class TPCC {
 		System.out.println("Misses: " + this.cache.getAdvancedCache().getStats().getMisses());
 		
 		while (true && Duration.between(experimentBegin, current).toMinutes() <= 1) {
+			try {
+				long sleepDuration = randomNumber(1,100);
+				if (sleepDuration <= 1)
+					Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			executeTransaction();
 			cycleTxs++;
 			current = Instant.now();
@@ -1023,7 +1040,7 @@ public class TPCC {
 	}
 	
 	// cache initialize method
-	public void initCache() throws NotSupportedException, SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException, HeuristicRollbackException {
+	public void initCache(int warehouse) throws NotSupportedException, SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException, HeuristicRollbackException {
 		// need to place every table of TPCC in the cache
 		// key structure needs to be: table,key
 		transactionManager.begin();
@@ -1031,7 +1048,7 @@ public class TPCC {
 		initItems();
 		
 		// init warehouse table
-		initWarehouse();
+		initWarehouse(warehouse);
 		transactionManager.commit();
 	}
 	
@@ -1059,10 +1076,10 @@ public class TPCC {
 	}
 	
 	// init warehouse table
-	public void initWarehouse() {
+	public void initWarehouse(int warehouse) {
 		System.out.println("Populating warehouse table");
 		
-		for(int i = 1; i <= NUM_WAREHOUSES; i++) {
+		for(int i = warehouse; i <= warehouse; i++) {
 			String w_id = String.valueOf(i);
 			String w_name = generateAstring(6, 10);
 			String w_street_1 = generateAstring(10, 20);

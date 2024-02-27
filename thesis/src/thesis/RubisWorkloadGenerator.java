@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import weka.classifiers.trees.J48;
+import weka.core.Instance;
+import weka.core.Instances;
 
 public class RubisWorkloadGenerator {
 	
@@ -33,7 +35,7 @@ public class RubisWorkloadGenerator {
 	static long parts = Partitioner.getNoParts();
 	
 	// workload generator for Schism
-	public static void buildSchismTrace(int noTxs) {
+	public void buildSchismTrace(int noTxs) {
 		// number of txs generated
 		int generatedTxs = 0;
 		
@@ -118,7 +120,11 @@ public class RubisWorkloadGenerator {
 	}
 	// method used to evaluate Schism in terms of % of distributed txs given a part logic
 	public void evaluateSchismRubis(int noTxs, int noP, J48 logic) {
-		// generated txs counter
+		// printout test parameters
+		System.out.println("NO users: " + users * region);
+		System.out.println("NO items: " + items * category);
+		System.out.println("NO parts: " + parts);
+		// number of txs generated
 		int generatedTxs = 0;
 		// reset counters
 		local = 0;
@@ -183,6 +189,13 @@ public class RubisWorkloadGenerator {
 				traceLine += "\n";
 			}	
 		}
+		
+		// Print out the results
+		System.out.println("Number of transactions in experiment: " + noTxs);
+		System.out.println("Remote transactions: " + remote);
+		System.out.println("Local transactions: " + local);
+		double percent =  ( (double) remote/ (double) noTxs);
+		System.out.println("Percentage of remote transactions: " + (percent * 100) + "%");
 	}
 	
 
@@ -329,6 +342,38 @@ public class RubisWorkloadGenerator {
 		double percent =  ( (double) remote/ (double) noTxs);
 		System.out.println("Percentage of remote transactions: " + (percent * 100) + "%");
 	}
+	
+	// method that returns true if an access is local or false if it is remote Schism
+	public boolean checkPart(int table, Instances dataSet, Instance key, J48 logic) {
+		// part the access belongs to
+		int part = -1;
+
+		part = (int) Math.abs((int) (key.toString().hashCode()) % parts);		
+		
+		if (logic != null) {
+			try {
+				part = (int) logic.classifyInstance(key);
+			} catch (Exception e) {
+				System.out.println("Error on classifying instance");
+				e.printStackTrace();
+			}
+		}
+		
+		// check if local or remote
+		if (currentPart == -1) {
+			currentPart = part;
+			return true;
+		}
+		else if (currentPart == part) {
+			return true;
+		}
+		else {
+			remote++;
+			return false;
+		}
+	}
+	
+	
 	// method that returns true if an access is local or false if it is remote
 	public static boolean checkPart(int txProfile, long key, int table, HashMap<String, Integer> features, LinkedHashMap<Integer,LinkedHashMap<Split, Integer>> logic) {
 		// part the access belongs to

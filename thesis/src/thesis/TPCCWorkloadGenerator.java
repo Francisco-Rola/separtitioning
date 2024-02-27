@@ -1003,11 +1003,7 @@ public class TPCCWorkloadGenerator {
 		// part the access belongs to
 		int part = -1;
 
-		
-		if (noW == 0 && key.toString().charAt(2) == '?') {
-			part = (int) (key.toString().charAt(0) % parts);
-		}
-		
+		part = (int) Math.abs((int) (key.toString().hashCode()) % parts);		
 		
 		try {
 			part = (int) logic.classifyInstance(key);
@@ -1016,7 +1012,7 @@ public class TPCCWorkloadGenerator {
 			e.printStackTrace();
 		}
 		
-		// check if logcal or remote
+		// check if local or remote
 		if (currentPart == -1) {
 			currentPart = part;
 			return true;
@@ -1025,7 +1021,7 @@ public class TPCCWorkloadGenerator {
 			return true;
 		}
 		else {
-			if (table == 8 || (table == 1 && w == 1)) {
+			if (table == 8) {
 				return true;
 			}
 			remote++;
@@ -1044,7 +1040,6 @@ public class TPCCWorkloadGenerator {
 		if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
 			part = 1;
 		}
-		
 		
 		else {
 			// given the rules just need to query them in order
