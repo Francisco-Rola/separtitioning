@@ -99,6 +99,11 @@ public class Schism {
 			System.out.println("Couldn't parse trace file!");
 			e.printStackTrace();
 		}		
+		
+		System.out.println("Number of vertices: " + noVertices);
+		System.out.println("Number of keys in id to key map: " + IDToKey.size());
+		System.out.println("Number of keys in key to id map: " + keyToID.size());
+		
 		// create METIS file		
 		File metis = new File(graphFile);
 		try {
