@@ -46,8 +46,8 @@ public class Schism {
 		    	   
 		    	   // check if this key has been seen before, if not generate new unique ID
 		    	   if (!keyToID.containsKey(itemi)) {
-		    		   keyToID.put(itemi, String.valueOf(id));
-		    		   IDToKey.put(String.valueOf(id), itemi);
+		    		   keyToID.put(itemi, String.valueOf(id));  // w0d0 > 1
+		    		   IDToKey.put(String.valueOf(id), itemi); // 1 > w0d0
 		    		   
 		    		   // initialize metis graph entry
 		    		   LinkedHashMap<String, Integer> edges = new LinkedHashMap<>();
@@ -56,7 +56,7 @@ public class Schism {
 		    		   noVertices++;
 		    	   }
 		    	   
-		    	   String itemIDi = keyToID.get(itemi);
+		    	   String itemIDi = keyToID.get(itemi); // 1
 	
 		    	   for (int j = 0; j < items.length; j++) {
 		    		   if (i == j) continue;
@@ -203,6 +203,11 @@ public class Schism {
 			dataFileW.append("@attribute class " + partClass + "\n");
 			
 			dataFileW.append("@data\n");			
+			
+			System.out.println("Number of keys in partition map: " + partitionMap.size());
+			System.out.println("Number of keys in id to key map: " + IDToKey.size());
+			System.out.println("Number of keys in key to id map: " + keyToID.size());
+
 			
 			for (Map.Entry<Integer, Integer> entry: partitionMap.entrySet()) {
 				// obtained formatted key
@@ -545,7 +550,7 @@ public class Schism {
 			J48 tree = new J48();
 			tree.buildClassifier(train);
 			System.out.println(tree);
-			tpccWLtrain.evaluateSchismTPCC(1000000, noW, noP, tree);
+			tpccWLtrain.evaluateSchismTPCC(10000000, noW, noP, tree);
 		} catch (Exception e) {
 			System.out.println("Error during Weka model building");
 			e.printStackTrace();
