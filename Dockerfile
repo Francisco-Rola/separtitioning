@@ -18,10 +18,17 @@ RUN apt-get install -y build-essential
 RUN wget -qO- "https://cmake.org/files/v3.17/cmake-3.17.0-Linux-x86_64.tar.gz" | tar --strip-components=1 -xz -C /usr/local
 RUN apt-get install -y git
 RUN apt-get install -y maven
+RUN curl -L -o cryptominisat-5.8.0.tar.gz https://github.com/msoos/cryptominisat/archive/refs/tags/5.8.0.tar.gz \
+ && tar -xzf cryptominisat-5.8.0.tar.gz \
+ && rm cryptominisat-5.8.0.tar.gz \
+ && cd cryptominisat-5.8.0 \
+ && mkdir build \
+ && cd build \
+ && cmake .. \
+ && make -j4 \
+ && sudo make install
 RUN git clone https://github.com/Francisco-Rola/separtitioning.git \
  && cd separtitioning \
- && cp -r cryptominisat5/* /usr/local/lib/cmake/cryptominisat5/ \
- && cp -r includelibs/*  /usr/local/include/cryptominisat5/ \
- && cp -r cmakeconfigs/* ~/.cmake/packages/cryptominisat5/ \
  && cp resources/* /usr/local/bin \
+ # Run Maven build
  && mvn clean install
