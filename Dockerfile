@@ -19,8 +19,9 @@ RUN wget -qO- "https://cmake.org/files/v3.17/cmake-3.17.0-Linux-x86_64.tar.gz" |
 RUN apt-get install -y git
 RUN apt-get install -y maven
 RUN git clone https://github.com/Francisco-Rola/separtitioning.git \
- && cd separtitioning/thesis \
- && cp -r cryptominisat5 /usr/local/lib/cmake/ \
+ && cd separtitioning \
+ && cp -r cryptominisat5/* /usr/local/lib/cmake/cryptominisat5/ \
+ && cp -r includelibs/*  /usr/local/include/cryptominisat5/ \
+ && cp -r cmakeconfigs/* ~/.cmake/packages/cryptominisat5/ \
  && cp resources/* /usr/local/bin \
- && mvn clean install 
-
+ && mvn clean install
