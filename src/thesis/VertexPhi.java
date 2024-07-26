@@ -214,7 +214,7 @@ public class VertexPhi {
 		case 8:
 			return item;
 		case 9:
-			return item + (w * 100);
+			return item + (w * 100000);
 		default:
 			// debug scenario, if needed add more tables
 			System.out.println("\n\nTable range unknown\n\n" + tableNo);

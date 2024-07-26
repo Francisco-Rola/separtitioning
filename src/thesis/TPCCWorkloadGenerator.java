@@ -726,7 +726,7 @@ public class TPCCWorkloadGenerator {
 						break;
 					}
 					// generate a order line warehouse key 9
-					long orderLineWKey = supplyW + (randItem * 100);
+					long orderLineWKey = (supplyW * 100000) + randItem;
 					Pair<String, Integer> supplyWFeature = new Pair<String, Integer>("warehouseid", (int) supplyW);
 					features = new ArrayList<>();
 					features.add(supplyWFeature);
@@ -1013,8 +1013,15 @@ public class TPCCWorkloadGenerator {
 		int part = -1;
 		
 		// 1w workloads, tables 1 8 and 9 don't have a district
-		if (noW == 1 && (table == 8) || (table == 9) || (table == 1)) {
-			part = (int) Math.abs((int) (key.toString().hashCode()) % parts);		
+		if (noW == 1 && ((table == 9) || (table == 1))) {
+			if (table == 1) {
+				part = 0;
+			}
+			else if (table == 9) {
+				// generated a random item
+				long randItem = ThreadLocalRandom.current().nextInt(0, id);
+				part = (int) ((int) randItem % parts);
+			}
 		}
 				
 		else {
