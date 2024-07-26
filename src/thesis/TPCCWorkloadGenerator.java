@@ -1018,16 +1018,14 @@ public class TPCCWorkloadGenerator {
 		int part = -1;
 		
 		System.out.println("Table: " + table + " Key: " + key);
-		System.out.println("W: " + noW);
 		
 		// 1w workloads, tables 1 8 and 9 don't have a district
-		if (noW == 1 && ((table == 9) || (table == 1))) {
+		if (noW == 0 && ((table == 9) || (table == 1))) {
 			if (table == 1) {
 				part = 0;
 			}
 			else if (table == 9) {
 				// generated a random item
-				System.out.println("Generating random item");
 				long randItem = ThreadLocalRandom.current().nextInt(0, id);
 				part = (int) ((int) randItem % parts);
 			}
