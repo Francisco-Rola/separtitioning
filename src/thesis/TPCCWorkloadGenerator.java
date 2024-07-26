@@ -276,7 +276,6 @@ public class TPCCWorkloadGenerator {
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
 			if (randomNum < 44) {
-				System.out.println("Generated a new order");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				// generate supply warehouse 1% remote
@@ -369,8 +368,6 @@ public class TPCCWorkloadGenerator {
 			}
 			// payment txs
 			else if (randomNum < 87) {
-				System.out.println("Generated a payment");
-
 				// 85% of payments the customer belongs to local warehouse
 				int localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
 				if (localCustomer <= 84) {
@@ -473,10 +470,7 @@ public class TPCCWorkloadGenerator {
 				local++;
 			}
 			// delivery txs
-			else if (randomNum < 91) {
-				System.out.println("Generated a delivery");
-
-				
+			else if (randomNum < 91) {				
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				key = new DenseInstance(data.numAttributes());
@@ -666,6 +660,7 @@ public class TPCCWorkloadGenerator {
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
 			if (randomNum < 44) {
+				System.out.println("Generated a new order");
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				long randD = ThreadLocalRandom.current().nextInt(0, d);
 				long randC = ThreadLocalRandom.current().nextInt(0, c);
@@ -758,6 +753,7 @@ public class TPCCWorkloadGenerator {
 			}
 			// payment txs
 			else if (randomNum < 87) {
+				System.out.println("Generated a payment");
 				// 85% of payments the customer belongs to local warehouse
 				long localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
 				if (localCustomer <= 84) {
@@ -847,6 +843,7 @@ public class TPCCWorkloadGenerator {
 			}
 			// delivery txs
 			else if (randomNum < 91) {
+				System.out.println("Generated a delivery");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
@@ -907,6 +904,7 @@ public class TPCCWorkloadGenerator {
 			}
 			// order status tx
 			else if (randomNum < 95) {
+				System.out.println("Generated an order status");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
@@ -950,6 +948,7 @@ public class TPCCWorkloadGenerator {
 			}
 			// stock level tx
 			else {
+				System.out.println("Generated a stock level");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				Pair<String, Integer> warehouseFeature = new Pair<String, Integer>("warehouseid", (int) randW);
@@ -1048,15 +1047,18 @@ public class TPCCWorkloadGenerator {
 		
 		// extra situation for delivery in 1w workload
 		if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
-			part = 1;
+			remote++;
+			return false;
 		}
 		
 		else {
 			// given the rules just need to query them in order
+			System.out.println("Table: " + table + " Key: " + key);
 			for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
 				if (rule.getKey().query(key, table, features))
 					part = rule.getValue();
 			}
+			System.out.println("Part: " + part);
 		}
 		// check if local or remote
 		if (currentPart == -1) {
@@ -1070,7 +1072,7 @@ public class TPCCWorkloadGenerator {
 			if (VertexPhi.checkTableReplicated(table)) {
 				return true;
 			}
-			//System.out.println("Table: " + table + " - Remote key: " + key);
+			System.out.println("Remote");
 			remote++;
 			return false;
 		}
