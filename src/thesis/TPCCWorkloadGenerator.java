@@ -276,6 +276,7 @@ public class TPCCWorkloadGenerator {
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
 			if (randomNum < 44) {
+				System.out.println("Generated a new order");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				// generate supply warehouse 1% remote
@@ -368,6 +369,7 @@ public class TPCCWorkloadGenerator {
 			}
 			// payment txs
 			else if (randomNum < 87) {
+				System.out.println("Generated a payment");
 				// 85% of payments the customer belongs to local warehouse
 				int localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
 				if (localCustomer <= 84) {
@@ -470,7 +472,8 @@ public class TPCCWorkloadGenerator {
 				local++;
 			}
 			// delivery txs
-			else if (randomNum < 91) {				
+			else if (randomNum < 91) {		
+				System.out.println("Generated a delivery");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				key = new DenseInstance(data.numAttributes());
@@ -525,6 +528,7 @@ public class TPCCWorkloadGenerator {
 			}
 			// order status tx
 			else if (randomNum < 95) {
+				System.out.println("Generated an order status");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				// generate random district 2
@@ -562,6 +566,7 @@ public class TPCCWorkloadGenerator {
 			}
 			// stock level tx
 			else {
+				System.out.println("Generated a stock level");
 				// store generated orders to avoid duplicates
 				HashSet <Long> generatedOrders = new HashSet<>();
 				HashSet <Long> generatedItems = new HashSet<>();
@@ -1012,6 +1017,7 @@ public class TPCCWorkloadGenerator {
 		// part the access belongs to
 		int part = -1;
 		
+		System.out.println("Table: " + table + " Key: " + key);
 		// 1w workloads, tables 1 8 and 9 don't have a district
 		if (noW == 1 && ((table == 9) || (table == 1))) {
 			if (table == 1) {
@@ -1033,6 +1039,8 @@ public class TPCCWorkloadGenerator {
 			}
 		}
 		
+		System.out.println("Part: " + part);
+		
 		// check if local or remote
 		if (currentPart == -1) {
 			currentPart = part;
@@ -1045,6 +1053,7 @@ public class TPCCWorkloadGenerator {
 			if (table == 8) {
 				return true;
 			}
+			System.out.println("Remote");
 			remote++;
 			return false;
 		}
@@ -1057,8 +1066,11 @@ public class TPCCWorkloadGenerator {
 		// query the map to get the rules for correct txProfile
 		LinkedHashMap<Split, Integer> rules = logic.get(txProfile);
 		
+		System.out.println("Table: " + table + " Key: " + key);
+		
 		// extra situation for delivery in 1w workload, delivery always remote
 		if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
+			System.out.println("Remote");
 			remote++;
 			return false;
 		}
@@ -1069,13 +1081,14 @@ public class TPCCWorkloadGenerator {
 		}
 		else {
 			// given the rules just need to query them in order
-			System.out.println("Table: " + table + " Key: " + key);
 			for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
 				if (rule.getKey().query(key, table, features))
 					part = rule.getValue();
 			}
-			System.out.println("Part: " + part);
 		}
+		
+		System.out.println("Part: " + part);
+		
 		// check if local or remote
 		if (currentPart == -1) {
 			currentPart = part;
