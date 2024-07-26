@@ -32,6 +32,10 @@ public class TPCCWorkloadGenerator {
 	static int local = 0;
 	// no REMOTE transactions (multi part)
 	static int remote = 0;
+	
+	// TPCC remote map
+	static HashMap<Integer, Integer> remotesTPCC = new HashMap<>();
+	
 	// num parts
 	static long parts = Partitioner.getNoParts();
 	
@@ -272,6 +276,7 @@ public class TPCCWorkloadGenerator {
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
 			if (randomNum < 44) {
+				System.out.println("Generated a new order");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				// generate supply warehouse 1% remote
@@ -364,6 +369,8 @@ public class TPCCWorkloadGenerator {
 			}
 			// payment txs
 			else if (randomNum < 87) {
+				System.out.println("Generated a payment");
+
 				// 85% of payments the customer belongs to local warehouse
 				int localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
 				if (localCustomer <= 84) {
@@ -467,6 +474,9 @@ public class TPCCWorkloadGenerator {
 			}
 			// delivery txs
 			else if (randomNum < 91) {
+				System.out.println("Generated a delivery");
+
+				
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				key = new DenseInstance(data.numAttributes());
@@ -1002,9 +1012,9 @@ public class TPCCWorkloadGenerator {
 	public boolean checkPart(int noW, int table, Instances dataSet, Instance key, J48 logic) {
 		// part the access belongs to
 		int part = -1;
-
-		part = (int) Math.abs((int) (key.toString().hashCode()) % parts);		
 		
+		part = (int) Math.abs((int) (key.toString().hashCode()) % parts);		
+				
 		try {
 			part = (int) logic.classifyInstance(key);
 		} catch (Exception e) {
