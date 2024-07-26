@@ -1045,12 +1045,16 @@ public class TPCCWorkloadGenerator {
 		// query the map to get the rules for correct txProfile
 		LinkedHashMap<Split, Integer> rules = logic.get(txProfile);
 		
-		// extra situation for delivery in 1w workload
+		// extra situation for delivery in 1w workload, delivery always remote
 		if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
 			remote++;
 			return false;
 		}
 		
+		// extra situation for 1w workloads, the warehouse item is always in part 0
+		if (table == 1 && VertexPhi.getScalingFactorW() == 1) {
+			part = 0;
+		}
 		else {
 			// given the rules just need to query them in order
 			System.out.println("Table: " + table + " Key: " + key);

@@ -36,6 +36,9 @@ public class Split {
 	public boolean query(long key, int table, HashMap<String, Integer> features) {
 		// check if this is a table split rule
 		if (this.tableSplit == table) {
+			System.out.println("Lower bound query: " + this.lowerBound);
+			System.out.println("Upper bound query: " + this.upperBound);
+			System.out.println("Key query: " + key);
 			if (this.lowerBound <= key && key <= this.upperBound)
 				return true;
 			else 
