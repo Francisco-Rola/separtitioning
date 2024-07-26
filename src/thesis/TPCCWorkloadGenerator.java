@@ -1025,9 +1025,9 @@ public class TPCCWorkloadGenerator {
 			}
 			else if (table == 9) {
 				// generated a random item
+				System.out.println("Generating random item");
 				long randItem = ThreadLocalRandom.current().nextInt(0, id);
 				part = (int) ((int) randItem % parts);
-				part = ThreadLocalRandom.current().nextInt(0, 1);
 			}
 		}
 				
