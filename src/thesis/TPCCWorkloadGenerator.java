@@ -1027,6 +1027,7 @@ public class TPCCWorkloadGenerator {
 				// generated a random item
 				long randItem = ThreadLocalRandom.current().nextInt(0, id);
 				part = (int) ((int) randItem % parts);
+				part = ThreadLocalRandom.current().nextInt(0, 1);
 			}
 		}
 				
