@@ -39,9 +39,7 @@ public class Split {
 			System.out.println("Lower bound query: " + this.lowerBound);
 			System.out.println("Upper bound query: " + this.upperBound);
 			System.out.println("Key query: " + key);
-			
-			key -= 100000;
-			
+						
 			if (this.lowerBound <= key && key <= this.upperBound)
 				return true;
 			else 
