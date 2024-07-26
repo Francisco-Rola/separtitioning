@@ -1012,13 +1012,18 @@ public class TPCCWorkloadGenerator {
 		// part the access belongs to
 		int part = -1;
 		
-		part = (int) Math.abs((int) (key.toString().hashCode()) % parts);		
+		// 1w workloads, tables 1 8 and 9 don't have a district
+		if (noW == 1 && (table == 8) || (table == 9) || (table == 1)) {
+			part = (int) Math.abs((int) (key.toString().hashCode()) % parts);		
+		}
 				
-		try {
-			part = (int) logic.classifyInstance(key);
-		} catch (Exception e) {
-			System.out.println("Error on classifying instance");
-			e.printStackTrace();
+		else {
+			try {
+				part = (int) logic.classifyInstance(key);
+			} catch (Exception e) {
+				System.out.println("Error on classifying instance");
+				e.printStackTrace();
+			}
 		}
 		
 		// check if local or remote
