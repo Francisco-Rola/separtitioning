@@ -918,7 +918,7 @@ public class TPCCWorkloadGenerator {
 				Pair<String, Integer> districtFeature = new Pair<String, Integer>("districtid", (int) randD);
 				// generate random customer 3
 				long randC = ThreadLocalRandom.current().nextInt(0, c);
-				Pair<String, Integer> customerFeature = new Pair<String, Integer>("districtid", (int) randC);
+				Pair<String, Integer> customerFeature = new Pair<String, Integer>("customerid", (int) randC);
 				long customerKey = randD + (randW * 100) + (randC * 10000);
 				features = new ArrayList<>();
 				features.add(warehouseFeature);
@@ -987,7 +987,7 @@ public class TPCCWorkloadGenerator {
 						long randItem = ThreadLocalRandom.current().nextInt(0, id);
 						Pair<String, Integer> itemFeature = new Pair<String, Integer>("oliid", (int) randItem);
 						// generate a order line warehouse key 9
-						long orderLineWKey = randW + (randItem * 100);
+						long orderLineWKey = (randW * 100000) + randItem;
 						features = new ArrayList<>();
 						features.add(warehouseFeature);
 						features.add(itemFeature);

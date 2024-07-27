@@ -60,9 +60,9 @@ public class GraphBuilder {
 	    
 	    System.out.println("\nTotal execution time: " + elapsedTime); 
 	    
-	    CatalystEvaluation evaluation = new CatalystEvaluation(partitioner);
+	    //CatalystEvaluation evaluation = new CatalystEvaluation(partitioner);
 	    
-	    evaluation.evaluateCatalyst(workload);
+	    //evaluation.evaluateCatalyst(workload);
 
 
 	}
