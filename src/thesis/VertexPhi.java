@@ -9,14 +9,14 @@ public class VertexPhi {
 	// set of variables and its ranges
 	private HashMap<String, Pair<Integer, Integer>> variables = null;
 	// scale factor for TPC -C
-	private static int w;
+	private static int w = -1;
 	private static int item = 99999;
 	private static int customer = 2999;
 	private static int district = 9;
 	
 	// scale factor for RUBIS
 	private static int rubisItems = 99999;
-	private static int rubisCategory = 19;
+	private static int rubisCategory = 9;
 	private static int rubisUsers = 99999;
 	private static int rubisRegion = 59;
 	private static int rubisBid = 9;
@@ -203,7 +203,8 @@ public class VertexPhi {
 		// compute max id of each table
 		switch (tableNo) {
 		case 1:
-			//return (rubisRegion * 100000) + rubisUsers;
+			if (w == -1 )
+				return (rubisRegion * 100000) + rubisUsers;
 			return w;
 		case 5:
 			return w * 100 + customer * 10000 + district;
