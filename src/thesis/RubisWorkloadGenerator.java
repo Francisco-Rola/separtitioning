@@ -387,13 +387,7 @@ public class RubisWorkloadGenerator {
 	public static boolean checkPart(int txProfile, long key, int table, HashMap<String, Integer> features, LinkedHashMap<Integer,LinkedHashMap<Split, Integer>> logic) {
 		// part the access belongs to
 		int part = -1;
-		
-		int randPart = ThreadLocalRandom.current().nextInt(0, 2);
-
-		if (randPart == 1)
-			return false;
-		
-		
+				
 		System.out.println("Table: " + table + " Key: " + key);
 
 		if (logic != null) {
@@ -410,6 +404,8 @@ public class RubisWorkloadGenerator {
 			part = (int) (key % parts);
 		}
 		
+		part = (int) Math.abs((int) key % parts);		
+
 		System.out.println("Part: " + part);
 		
 		// check if local or remote
