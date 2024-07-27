@@ -388,6 +388,12 @@ public class RubisWorkloadGenerator {
 		// part the access belongs to
 		int part = -1;
 		
+		int randPart = ThreadLocalRandom.current().nextInt(0, 1);
+
+		if (randPart == 1)
+			return false;
+		
+		
 		System.out.println("Table: " + table + " Key: " + key);
 
 		if (logic != null) {
