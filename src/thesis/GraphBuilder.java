@@ -62,7 +62,7 @@ public class GraphBuilder {
 	    
 	    CatalystEvaluation evaluation = new CatalystEvaluation(partitioner);
 	    
-	    evaluation.evaluateCatalyst(workload);
+	    evaluation.evaluateCatalyst(workload, noP);
 
 
 	}
