@@ -445,7 +445,7 @@ public class NewSplitter {
 			if (entry.getValue() == null) {
 				// table split detected, store it unless 1 key table
 				if (VertexPhi.getTableRange(entry.getKey()) == 0) {
-					System.out.println("Table split not varible, unique key!");
+					System.out.println("Table split, unique key!");
 					continue;
 				}
 				splits.add("#" + entry.getKey().toString());
