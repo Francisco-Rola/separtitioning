@@ -793,9 +793,9 @@ public class NewSplitter {
 						}
 						
 						//compute intersection between rhos given the phis, compute weight of intersection
-						//System.out.println("Computing rho intersection!");
+						System.out.println("Computing rho intersection!");
 						int result = rhoIntersection(entryV.getKey(), entryGV.getKey(), entryV.getValue(), entryGV.getValue());
-						//System.out.println("RHo intersection done!");
+						System.out.println("RHo intersection done!");
 						// check the intersection results
 						if (result == 0) {
 							// no overlap so no subtraction needed
