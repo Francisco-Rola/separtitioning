@@ -25,8 +25,8 @@ tpcc.MainPayment.main()
   <== [PC_0_2521314] 
 
 [RWSET_2059946360] 
-R: 3->(district_id + ((warehouse_id * 10) + (customer_id * 3000))), 2->(district_id + (warehouse_id * 10)), 1->warehouse_id
-W: 3->(district_id + ((warehouse_id * 10) + (customer_id * 3000))), 2->(district_id + (warehouse_id * 10)), 1->warehouse_id, 4->(district_id + ((warehouse_id * 10) + (customer_id * 3000)))
+R: 3->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 2->(district_id + (warehouse_id * 100)), 1->warehouse_id
+W: 3->(district_id + ((warehouse_id * 100) + (customer_id * 10000))), 2->(district_id + (warehouse_id * 100)), 1->warehouse_id, 4->(district_id + ((warehouse_id * 100) + (customer_id * 10000)))
   <== [PC_1_2521314] 
 
 Total Number of Merges: 0
