@@ -223,6 +223,7 @@ public class RubisWorkloadGenerator {
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// store buy txs
 			if (randomNum < 44) {
+				System.out.println("Generated a store buy");
 				// generate a random item
 				long randItem = ThreadLocalRandom.current().nextInt(0, (category * 100000) + items);
 				long itemKey = randItem;
@@ -244,6 +245,7 @@ public class RubisWorkloadGenerator {
 			}
 			// store bid txs
 			else if (randomNum < 87) {
+				System.out.println("Generated a store bid");
 				// generate a random item
 				long randItem = ThreadLocalRandom.current().nextInt(0, (category * 100000) + items);
 				long itemKey = randItem;
@@ -265,6 +267,7 @@ public class RubisWorkloadGenerator {
 			}
 			// store comment tx
 			else if (randomNum < 91) {
+				System.out.println("Generated a store comment");
 				// generate a random from user
 				long randFrom = ThreadLocalRandom.current().nextInt(0, (region * 100000) + users);
 				long fromKey = randFrom;
@@ -294,6 +297,7 @@ public class RubisWorkloadGenerator {
 			}
 			// register user tx
 			else if (randomNum < 95) {
+				System.out.println("Generated a register user");
 				// generate a random region
 				long randRegion = ThreadLocalRandom.current().nextInt(0, region);
 				long regionKey = randRegion;
@@ -315,6 +319,7 @@ public class RubisWorkloadGenerator {
 			}
 			// register item tx
 			else {
+				System.out.println("Generated a register item");
 				// generate a random category
 				long randCategory = ThreadLocalRandom.current().nextInt(0, category);
 				long categoryKey = randCategory;
