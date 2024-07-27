@@ -1080,6 +1080,10 @@ public class TPCCWorkloadGenerator {
 		if (table == 1 && VertexPhi.getScalingFactorW() == 1) {
 			part = 0;
 		}
+		// extra situation for 1w workloads, the table 9 is always mapped to partition 1
+		else if (table == 9 && VertexPhi.getScalingFactorW() == 1) {
+			part = 1;
+		}
 		else {
 			// given the rules just need to query them in order
 			for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
