@@ -418,7 +418,7 @@ public class RubisWorkloadGenerator {
 			if (VertexPhi.checkTableReplicated(table)) {
 				return true;
 			}
-			//System.out.println("Table: " + table + " - Remote key: " + key);
+			System.out.println("Remote");
 			remote++;
 			return false;
 		}
