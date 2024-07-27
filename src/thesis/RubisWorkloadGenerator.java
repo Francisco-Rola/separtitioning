@@ -404,7 +404,6 @@ public class RubisWorkloadGenerator {
 			part = (int) (key % parts);
 		}
 		
-		part = (int) Math.abs((int) key % parts);		
 
 		System.out.println("Part: " + part);
 		
