@@ -347,6 +347,8 @@ public class RubisWorkloadGenerator {
 	public boolean checkPart(int table, Instances dataSet, Instance key, J48 logic) {
 		// part the access belongs to
 		int part = -1;
+		
+		System.out.println("Table: " + table + " Key: " + key);
 
 		part = (int) Math.abs((int) (key.toString().hashCode()) % parts);		
 		
@@ -358,6 +360,8 @@ public class RubisWorkloadGenerator {
 				e.printStackTrace();
 			}
 		}
+		
+		System.out.println("Part: " + part);
 		
 		// check if local or remote
 		if (currentPart == -1) {
@@ -379,6 +383,8 @@ public class RubisWorkloadGenerator {
 		// part the access belongs to
 		int part = -1;
 		
+		System.out.println("Table: " + table + " Key: " + key);
+
 		if (logic != null) {
 			// query the map to get the rules for correct txProfile
 			LinkedHashMap<Split, Integer> rules = logic.get(txProfile);
@@ -392,6 +398,8 @@ public class RubisWorkloadGenerator {
 		else {
 			part = (int) (key % parts);
 		}
+		
+		System.out.println("Part: " + part);
 		
 		// check if local or remote
 		if (currentPart == -1) {
