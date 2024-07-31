@@ -12,7 +12,7 @@ To build the system, follow these steps:
 
    ```bash
    docker build -t artifactimg .
-2. ** Run the Docker image:**
+2. **Run the Docker image:**
    ```bash
    docker run -it artifactimg /bin/bash
 
@@ -21,5 +21,21 @@ Alternatively, the system can be compiled by simply running mvn clean install. H
 ## Running Experiments
 
 ### Experiment 1: Distributed Transactions, Execution Time, Graph Generation
+
+Run the following Maven command to execute Experiment 1:
+
+mvn exec:java -Dexec.args="1 x y"
+
+x specifies the algorithm:
+- 1 for Catalyst
+- 2 for Schism
+
+y specifies the workload:
+- 1 for 1w2p
+- 2 for 2w2p
+- 3 for 1w5p
+- 5 for 10w5p
+- 7 for RUBIS
+
 
 
