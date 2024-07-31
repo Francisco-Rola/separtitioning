@@ -27,6 +27,7 @@ RUN curl -L -o cryptominisat-5.8.0.tar.gz https://github.com/msoos/cryptominisat
  && cmake .. \
  && make -j4 \
  && sudo make install
+RUN apt-get install -y libmetis-dev
 RUN git clone https://github.com/Francisco-Rola/separtitioning.git \
  && cd separtitioning \
  && cp resources/* /usr/local/bin \
