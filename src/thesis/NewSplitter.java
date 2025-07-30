@@ -195,7 +195,7 @@ public class NewSplitter {
 						// check if there is a split variable common amongst all rhos in the table under analysis
 						HashSet<String> commonSplit = checkCommonSplit(entry.getValue());
 						// check if any vars found
-						System.out.println(entry.getKey() + " Common split size:" + commonSplit.size());
+						//System.out.println(entry.getKey() + " Common split size:" + commonSplit.size());
 						if (commonSplit.size() != 0) {							
 							// split found, add it
 							splits.add(commonSplit);
@@ -445,7 +445,7 @@ public class NewSplitter {
 			if (entry.getValue() == null) {
 				// table split detected, store it unless 1 key table
 				if (VertexPhi.getTableRange(entry.getKey()) == 0) {
-					System.out.println("Table split, unique key!");
+					//System.out.println("Table split, unique key!");
 					continue;
 				}
 				splits.add("#" + entry.getKey().toString());
@@ -544,7 +544,7 @@ public class NewSplitter {
 	// method that prints the splitting parameters for a given vertex
 	private void printSplits(int counter, ArrayList<String> splitVars) {
 		splits.put(counter, splitVars);
-		System.out.println("Split parameters for vertex no" + counter + " -> " + splitVars); 
+		//System.out.println("Split parameters for vertex no" + counter + " -> " + splitVars); 
 	}
 	
 	// method that obtains ranges of a given variable for a given rho
@@ -563,7 +563,7 @@ public class NewSplitter {
 		if (txProfile == 3 && splits.size() != 1) {
 			GraphVertex gv = new GraphVertex(sigma, txProfile, true);
 			addVertexSMT(gv, splitGraph);
-			System.out.println("Applying splits - DONE");
+			//System.out.println("Applying splits - DONE");
 			return;
 		}
 		
@@ -607,7 +607,7 @@ public class NewSplitter {
 				}
 				// split factor found, update number of splits
 				noSplits *= splitFactor;
-				System.out.println("Split factor for param: " + split + ": " + splitFactor);
+				//System.out.println("Split factor for param: " + split + ": " + splitFactor);
 				splitsPerParameter.put(split, splitFactor);
 			}
 		}
@@ -659,7 +659,7 @@ public class NewSplitter {
 			// these lists have 1 element
 			sigmas.addAll(entry);
 		}
-		System.out.println("Splitting successful - DONE");
+		//System.out.println("Splitting successful - DONE");
 		return sigmas;
 	}
 	
@@ -715,7 +715,7 @@ public class NewSplitter {
 		}
 		
 		
-		System.out.println("Applied split param: " + splitParam);
+		//System.out.println("Applied split param: " + splitParam);
 		
 		return sigma;
 	}
@@ -750,7 +750,7 @@ public class NewSplitter {
 			sigma.addSplit(split);
 		}
 		
-		System.out.println("Applied table split!");
+		//System.out.println("Applied table split!");
 		
 		return sigma;
 		
@@ -793,16 +793,16 @@ public class NewSplitter {
 						}
 						
 						//compute intersection between rhos given the phis, compute weight of intersection
-						System.out.println("Computing rho intersection!");
+						//System.out.println("Computing rho intersection!");
 						int result = rhoIntersection(entryV.getKey(), entryGV.getKey(), entryV.getValue(), entryGV.getValue());
-						System.out.println("RHo intersection done!");
+						//System.out.println("RHo intersection done!");
 						// check the intersection results
 						if (result == 0) {
 							// no overlap so no subtraction needed
 							continue;
 						}
 						if (result < 0) {
-							System.out.println("Negative rho interesection result");
+							//System.out.println("Negative rho interesection result");
 						}
 						else {
 							// variable to store edge weight
@@ -868,10 +868,10 @@ public class NewSplitter {
 		// iterate over all tables and get their weight
 		for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> table : groupedRhos.entrySet()) {
 			// get the weight of the table
-			System.out.println("Number of rhos to analyze in table " + table.getKey() + " is: " + table.getValue().size());
+			//System.out.println("Number of rhos to analyze in table " + table.getKey() + " is: " + table.getValue().size());
 			int tableWeight = computeTableWeight(table.getValue());
 			// add weight of table to rho weight
-			System.out.println("Table " + table.getKey() + " weight: " + tableWeight);
+			//System.out.println("Table " + table.getKey() + " weight: " + tableWeight);
 			rhosWeight += tableWeight;
 		}
 		// need to remove weight corresponding to the remote items, group edges according to rho table
@@ -906,7 +906,7 @@ public class NewSplitter {
 		int vertexWeight = rhosWeight - remoteWeight;
 		
 		
-		System.out.println("Rhos weight for vertex is " + vertexWeight);
+		//System.out.println("Rhos weight for vertex is " + vertexWeight);
 			
 			
 		// in this stage the new vertex has been compared and updated regarding all previous vertices
@@ -917,7 +917,7 @@ public class NewSplitter {
 		}
 		// compute vertex Weight
 		newVertex.computeVertexWeightSMT(vertexWeight);
-		System.out.println("Subvertex added successfully");
+		//System.out.println("Subvertex added successfully");
 	}
 	
 	// method that computes the weight of a given rho using aproxmc 
