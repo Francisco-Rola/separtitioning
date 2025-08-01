@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the code for Catalyst. It includes the entire codebase. Follow the steps below to build and run the system, and to conduct experiments.
+This repository contains the code for SymbPart. It includes the entire codebase. Follow the steps below to build and run the system, and to conduct experiments.
 
 ## Building the System
 
@@ -27,7 +27,7 @@ Run the following Maven command to execute Experiment 1:
 mvn exec:java -Dexec.args="1 x y"
 
 x specifies the algorithm:
-- 1 for Catalyst
+- 1 for SymbPart
 - 2 for Schism
 
 y specifies the workload:
@@ -47,7 +47,7 @@ Run the following Maven command to execute Experiment 2:
 mvn exec:java -Dexec.args="2 x y z"
 
 x specifies the algorithm:
-- 1 for Catalyst
+- 1 for SymbPart
 - 2 for Schism
 
 y specifies the workload:
