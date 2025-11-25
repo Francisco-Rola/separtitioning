@@ -34,6 +34,8 @@ public class GraphBuilder {
 	    
 		printGraph(graph); 
 		
+		/*
+		
 		System.out.println("Running graph splitter");
 		
 		NewSplitter splitter = new NewSplitter();
@@ -59,6 +61,8 @@ public class GraphBuilder {
 	    elapsedTime = stopTimePartitioning - startTimeTotal;
 	    
 	    System.out.println("\nTotal execution time: " + elapsedTime); 
+	    
+	    */
 	    
 	    //CatalystEvaluation evaluation = new CatalystEvaluation(partitioner);
 	    

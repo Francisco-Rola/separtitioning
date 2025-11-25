@@ -213,7 +213,7 @@ public class VertexPhi {
 		case 7:
 			return w * 100 + customer * 10000 + district + 15000;
 		case 8:
-			return 0;
+			return item;
 		case 9:
 			return item + (w * 100000);
 		default:
