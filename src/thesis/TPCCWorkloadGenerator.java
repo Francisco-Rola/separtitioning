@@ -1076,12 +1076,12 @@ public class TPCCWorkloadGenerator {
 			return false;
 		}
 		
-		// extra situation for 1w workloads, the warehouse item is always in part 0
+		// extra situation for 1w workloads, the warehouse item is always in the part where the items go
 		if (table == 1 && noP == 2 && VertexPhi.getScalingFactorW() == 1) {
-			part = 0;
+			part = -1;
 		}
 		else if (table == 1 && noP == 5 && VertexPhi.getScalingFactorW() == 1) {
-			part = 4;
+			part = -1;
 		}
 		// extra situation for 1w workloads, the table 9 is always mapped to partition 1
 		else if (table == 9 && noP == 2 && VertexPhi.getScalingFactorW() == 1) {
