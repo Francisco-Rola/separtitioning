@@ -664,7 +664,7 @@ public class TPCCWorkloadGenerator {
 			// roll the dice to know which tx to generate
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
-			if (randomNum < 0) {
+			if (randomNum < 100) {
 				System.out.println("Generated a new order");
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				long randD = ThreadLocalRandom.current().nextInt(0, d);
