@@ -869,7 +869,10 @@ public class NewSplitter {
 		for (Map.Entry<Integer, ArrayList<Pair<VertexRho, VertexPhi>>> table : groupedRhos.entrySet()) {
 			// get the weight of the table
 			//System.out.println("Number of rhos to analyze in table " + table.getKey() + " is: " + table.getValue().size());
-			int tableWeight = computeTableWeight(table.getValue());
+			
+			int tableWeight = 0;
+			if (!VertexPhi.checkTableReplicated(table.getKey()))
+				tableWeight = computeTableWeight(table.getValue());
 			// add weight of table to rho weight
 			//System.out.println("Table " + table.getKey() + " weight: " + tableWeight);
 			rhosWeight += tableWeight;
