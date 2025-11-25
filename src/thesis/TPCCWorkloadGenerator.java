@@ -63,7 +63,7 @@ public class TPCCWorkloadGenerator {
 				// roll the dice to know which tx to generate
 				int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 				// new order txs
-				if (randomNum < 44) {
+				if (randomNum < 4) {
 					// generate random warehouse 1
 					long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 					// generate supply warehouse 1% remote
@@ -106,7 +106,7 @@ public class TPCCWorkloadGenerator {
 					schismWriter.append(traceLine);
 				}
 				// payment txs
-				else if (randomNum < 87) {
+				else if (randomNum < 8) {
 					// 85% of payments the customer belongs to local warehouse
 					int localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
 					if (localCustomer <= 84) {
