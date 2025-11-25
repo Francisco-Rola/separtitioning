@@ -847,7 +847,7 @@ public class TPCCWorkloadGenerator {
 				}
 			}
 			// delivery txs
-			else if (randomNum < 91) {
+			else if (randomNum < 12) {
 				System.out.println("Generated a delivery");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
