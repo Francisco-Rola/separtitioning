@@ -108,7 +108,7 @@ public class VertexPhi {
 				this.variables.put(variable, range);
 			}
 			else if (variable.startsWith("oliid")) {
-				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(item));
+				Pair<Integer, Integer> range = new Pair<Integer,Integer>(new Integer(0), new Integer(0));
 				this.variables.put(variable, range);
 			}
 			else if (variable.equals("irorderid")) {
