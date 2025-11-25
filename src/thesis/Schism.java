@@ -545,7 +545,7 @@ public class Schism {
 			J48 tree = new J48();
 			tree.buildClassifier(train);
 			System.out.println(tree);
-			tpccWLtrain.evaluateSchismTPCC(1000000, noW, noP, tree);
+			tpccWLtrain.evaluateSchismTPCC(10000, noW, noP, tree);
 		} catch (Exception e) {
 			System.out.println("Error during Weka model building");
 			e.printStackTrace();
@@ -566,7 +566,7 @@ public class Schism {
 			J48 tree = new J48();
 			tree.buildClassifier(train);
 			System.out.println(tree);
-			rubisWLtrain.evaluateSchismRubis(1000000, noP, tree);
+			rubisWLtrain.evaluateSchismRubis(10000, noP, tree);
 		} catch (Exception e) {
 			System.out.println("Error during Weka model building");
 			e.printStackTrace();
