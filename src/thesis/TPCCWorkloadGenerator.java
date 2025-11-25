@@ -275,7 +275,7 @@ public class TPCCWorkloadGenerator {
 			// roll the dice to know which tx to generate
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
-			if (randomNum < 44) {
+			if (randomNum < 4) {
 				System.out.println("Generated a new order");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
@@ -368,7 +368,7 @@ public class TPCCWorkloadGenerator {
 				
 			}
 			// payment txs
-			else if (randomNum < 87) {
+			else if (randomNum < 8) {
 				System.out.println("Generated a payment");
 				// 85% of payments the customer belongs to local warehouse
 				int localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
@@ -472,7 +472,7 @@ public class TPCCWorkloadGenerator {
 				local++;
 			}
 			// delivery txs
-			else if (randomNum < 91) {		
+			else if (randomNum < 12) {		
 				System.out.println("Generated a delivery");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
@@ -527,7 +527,7 @@ public class TPCCWorkloadGenerator {
 				if (!stop) local++;
 			}
 			// order status tx
-			else if (randomNum < 95) {
+			else if (randomNum < 16) {
 				System.out.println("Generated an order status");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
@@ -664,7 +664,7 @@ public class TPCCWorkloadGenerator {
 			// roll the dice to know which tx to generate
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
-			if (randomNum < 44) {
+			if (randomNum < 4) {
 				System.out.println("Generated a new order");
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
 				long randD = ThreadLocalRandom.current().nextInt(0, d);
@@ -757,7 +757,7 @@ public class TPCCWorkloadGenerator {
 					local++;
 			}
 			// payment txs
-			else if (randomNum < 87) {
+			else if (randomNum < 8) {
 				System.out.println("Generated a payment");
 				// 85% of payments the customer belongs to local warehouse
 				long localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
@@ -847,7 +847,7 @@ public class TPCCWorkloadGenerator {
 				}
 			}
 			// delivery txs
-			else if (randomNum < 91) {
+			else if (randomNum < 12) {
 				System.out.println("Generated a delivery");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
@@ -908,7 +908,7 @@ public class TPCCWorkloadGenerator {
 					local++;
 			}
 			// order status tx
-			else if (randomNum < 95) {
+			else if (randomNum < 16) {
 				System.out.println("Generated an order status");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
