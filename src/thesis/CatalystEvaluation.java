@@ -12,12 +12,12 @@ public class CatalystEvaluation {
 		// TPCC
 		if (workload == 1) {
 			TPCCWorkloadGenerator tpcc = new TPCCWorkloadGenerator(GraphBuilder.noW);
-			tpcc.evaluateCatalystTPCC(1000000, noP, partitioner.getPartLogic());
+			tpcc.evaluateCatalystTPCC(100000, noP, partitioner.getPartLogic());
 		}
 		// RUBIS 
 		else {
 			RubisWorkloadGenerator rubis = new RubisWorkloadGenerator();
-			rubis.evaluateCatalystRubis(1000000, partitioner.getPartLogic());			
+			rubis.evaluateCatalystRubis(100000, partitioner.getPartLogic());			
 		}
 	}
 
