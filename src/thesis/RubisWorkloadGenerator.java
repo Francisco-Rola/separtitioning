@@ -435,7 +435,7 @@ public class RubisWorkloadGenerator {
 				int item_id = features.get("fromId");
 				
 				if (item_id <= 499999)
-					part =1;
+					part = 1;
 				else
 					part = 2;
 			}	
