@@ -53,7 +53,7 @@ public class RubisWorkloadGenerator {
 				// roll the dice to know which tx to generate
 				int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 				// buy now tx
-				if (randomNum < 45) {
+				if (randomNum < 20) {
 					// generate random item id
 					long randItem = ThreadLocalRandom.current().nextInt(0, items * category);
 					traceLine += "i" + randItem;
@@ -64,7 +64,7 @@ public class RubisWorkloadGenerator {
 					schismWriter.append(traceLine);
 				}
 				// bid tx
-				else if (randomNum < 88) {
+				else if (randomNum < 40) {
 					// generate random item id
 					long randItem = ThreadLocalRandom.current().nextInt(0, items * category);
 					traceLine += "i" + randItem;
@@ -75,7 +75,7 @@ public class RubisWorkloadGenerator {
 					schismWriter.append(traceLine);
 				}
 				// comment tx
-				else if (randomNum < 92) {
+				else if (randomNum < 60) {
 					// generate random from id
 					long randFrom = ThreadLocalRandom.current().nextInt(0, users * region);
 					traceLine += "u" + randFrom;
@@ -87,7 +87,7 @@ public class RubisWorkloadGenerator {
 					schismWriter.append(traceLine);
 				}
 				// register user
-				else if (randomNum < 96) {
+				else if (randomNum < 80) {
 					// generate random region
 					long randRegion = ThreadLocalRandom.current().nextInt(0, region);
 					traceLine += "r" + randRegion;
@@ -138,7 +138,7 @@ public class RubisWorkloadGenerator {
 			// roll the dice to know which tx to generate
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// buy now tx
-			if (randomNum < 45) {
+			if (randomNum < 20) {
 				// generate random item id
 				long randItem = ThreadLocalRandom.current().nextInt(0, items * category);
 				traceLine += "i" + randItem;
@@ -148,7 +148,7 @@ public class RubisWorkloadGenerator {
 				traceLine += "\n";
 			}
 			// bid tx
-			else if (randomNum < 88) {
+			else if (randomNum < 40) {
 				// generate random item id
 				long randItem = ThreadLocalRandom.current().nextInt(0, items * category);
 				traceLine += "i" + randItem;
@@ -158,7 +158,7 @@ public class RubisWorkloadGenerator {
 				traceLine += "\n";
 			}
 			// comment tx
-			else if (randomNum < 92) {
+			else if (randomNum < 60) {
 				// generate random from id
 				long randFrom = ThreadLocalRandom.current().nextInt(0, users * region);
 				traceLine += "u" + randFrom;
@@ -169,7 +169,7 @@ public class RubisWorkloadGenerator {
 				traceLine += "\n";
 			}
 			// register user
-			else if (randomNum < 96) {
+			else if (randomNum < 80) {
 				// generate random region
 				long randRegion = ThreadLocalRandom.current().nextInt(0, region);
 				traceLine += "r" + randRegion;
