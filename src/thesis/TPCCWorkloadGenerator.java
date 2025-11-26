@@ -1116,7 +1116,7 @@ public class TPCCWorkloadGenerator {
 			}
 			
 			if (table == 1) {
-				part = 5;
+				part = 1;
 			}
 			
 			else if (table == 2 || table == 3 || table == 4) {
@@ -1156,7 +1156,7 @@ public class TPCCWorkloadGenerator {
 		}
 
 		
-		else {
+		/*else {
 			// extra situation for delivery in 1w workload, delivery always remote
 			if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
 				System.out.println("Remote");
@@ -1185,7 +1185,7 @@ public class TPCCWorkloadGenerator {
 						part = rule.getValue();
 				}
 			}
-		}
+		}*/
 		
 		
 		System.out.println("Part: " + part);
