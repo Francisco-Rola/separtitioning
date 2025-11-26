@@ -39,7 +39,7 @@ public class Partitioner {
 	// method that invokes METIS to partition graph and prints result
 	public void partitionGraph() {
 		// command to run METIS
-		String command = "./resources/gpmetis metis.txt " + noParts;
+		String command = "./resources/gpmetis -ufactor=100 metis.txt " + noParts;
 		// run the command
         try {
 			Runtime.getRuntime().exec(command);

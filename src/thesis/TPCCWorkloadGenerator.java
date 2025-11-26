@@ -1069,34 +1069,54 @@ public class TPCCWorkloadGenerator {
 		
 		System.out.println("Table: " + table + " Key: " + key);
 		
-		// extra situation for delivery in 1w workload, delivery always remote
-		if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
-			System.out.println("Remote");
-			remote++;
-			return false;
-		}
-		
-		// extra situation for 1w workloads, the warehouse item is always in the part where the items go
-		if (table == 1 && noP == 2 && VertexPhi.getScalingFactorW() == 1) {
-			part = -1;
-		}
-		else if (table == 1 && noP == 5 && VertexPhi.getScalingFactorW() == 1) {
-			part = -1;
-		}
-		// extra situation for 1w workloads, the table 9 is always mapped to partition 1
-		else if (table == 9 && noP == 2 && VertexPhi.getScalingFactorW() == 1) {
-			part = 1;
-		}
-		else if (table == 9 && noP == 5 && VertexPhi.getScalingFactorW() == 1) {
-			part = 4;
-		}
-		else {
-			// given the rules just need to query them in order
-			for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
-				if (rule.getKey().query(key, table, features))
-					part = rule.getValue();
+		// 1W2P
+		if (VertexPhi.getScalingFactorW() == 1 && noP == 2) {
+			if (table == 1 || table == 2 || table == 3 || table == 4)
+				part = 1;
+			else if (table == 9)
+				part = 2;
+			// Tables 5,6,7,8 left to deal with
+			else {
+				int district_id = features.get("districtid");
+				
+				if (district_id <= 4)
+					part = 2;
+				else
+					part = 1;
 			}
 		}
+		
+		else {
+			// extra situation for delivery in 1w workload, delivery always remote
+			if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
+				System.out.println("Remote");
+				remote++;
+				return false;
+			}
+			
+			// extra situation for 1w workloads, the warehouse item is always in the part where the items go
+			if (table == 1 && noP == 2 && VertexPhi.getScalingFactorW() == 1) {
+				part = -1;
+			}
+			else if (table == 1 && noP == 5 && VertexPhi.getScalingFactorW() == 1) {
+				part = -1;
+			}
+			// extra situation for 1w workloads, the table 9 is always mapped to partition 1
+			else if (table == 9 && noP == 2 && VertexPhi.getScalingFactorW() == 1) {
+				part = 1;
+			}
+			else if (table == 9 && noP == 5 && VertexPhi.getScalingFactorW() == 1) {
+				part = 4;
+			}
+			else {
+				// given the rules just need to query them in order
+				for (Map.Entry<Split, Integer> rule : rules.entrySet()) {
+					if (rule.getKey().query(key, table, features))
+						part = rule.getValue();
+				}
+			}
+		}
+		
 		
 		System.out.println("Part: " + part);
 		
