@@ -1071,6 +1071,14 @@ public class TPCCWorkloadGenerator {
 		
 		// 1W2P
 		if (VertexPhi.getScalingFactorW() == 1 && noP == 2) {
+			
+			// extra situation for delivery in 1w workload, delivery always remote
+			if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
+				System.out.println("Remote");
+				remote++;
+				return false;
+			}
+		
 			if (table == 1 || table == 2 || table == 3 || table == 4)
 				part = 1;
 			else if (table == 9)
