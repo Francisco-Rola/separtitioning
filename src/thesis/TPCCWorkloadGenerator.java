@@ -275,7 +275,7 @@ public class TPCCWorkloadGenerator {
 			// roll the dice to know which tx to generate
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// new order txs
-			if (randomNum < 4) {
+			if (randomNum < 100) {
 				System.out.println("Generated a new order");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
@@ -368,7 +368,7 @@ public class TPCCWorkloadGenerator {
 				
 			}
 			// payment txs
-			else if (randomNum < 8) {
+			else if (randomNum < 87) {
 				System.out.println("Generated a payment");
 				// 85% of payments the customer belongs to local warehouse
 				int localCustomer = ThreadLocalRandom.current().nextInt(0, 100);
@@ -472,7 +472,7 @@ public class TPCCWorkloadGenerator {
 				local++;
 			}
 			// delivery txs
-			else if (randomNum < 12) {		
+			else if (randomNum < 91) {		
 				System.out.println("Generated a delivery");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
@@ -527,7 +527,7 @@ public class TPCCWorkloadGenerator {
 				if (!stop) local++;
 			}
 			// order status tx
-			else if (randomNum < 16) {
+			else if (randomNum < 95) {
 				System.out.println("Generated an order status");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
@@ -1076,7 +1076,7 @@ public class TPCCWorkloadGenerator {
 			else if (table == 9)
 				part = 2;
 			// Tables 5,6,7,8 left to deal with
-			else {
+			else if (table == 5 || table == 6 || table == 7 || table == 8){
 				int district_id = features.get("districtid");
 				
 				if (district_id <= 4)
