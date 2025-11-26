@@ -389,7 +389,59 @@ public class RubisWorkloadGenerator {
 		int part = -1;
 				
 		System.out.println("Table: " + table + " Key: " + key);
-
+		
+		if (table == 1) {
+			if (key <= 2999999)
+				part = 1;
+			else
+				part = 2;
+		}
+		
+		else if (table == 2) {
+			if (key <= 499999)
+				part = 1;
+			else
+				part = 2;
+		}
+		
+		else if (table == 3) {
+			int category_id = features.get("categoryId");
+			
+			if (category_id <= 4)
+				part = 1;
+			else
+				part = 2;
+		}
+		
+		else if (table == 4) {
+			int region_id = features.get("regionId");
+			
+			if (region_id <= 29)
+				part = 1;
+			else
+				part = 2;
+		}
+		
+		else {
+			if (features.containsKey("itemId")) {
+				int item_id = features.get("itemId");
+				
+				if (item_id <= 499999)
+					part =1;
+				else
+					part = 2;
+			}
+			else {
+				int item_id = features.get("fromId");
+				
+				if (item_id <= 499999)
+					part =1;
+				else
+					part = 2;
+			}	
+		}
+		
+		/*
 		if (logic != null) {
 			// query the map to get the rules for correct txProfile
 			LinkedHashMap<Split, Integer> rules = logic.get(txProfile);
@@ -402,7 +454,7 @@ public class RubisWorkloadGenerator {
 		
 		else {
 			part = (int) (key % parts);
-		}
+		}*/
 		
 
 		System.out.println("Part: " + part);
