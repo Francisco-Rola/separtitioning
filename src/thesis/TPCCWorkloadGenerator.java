@@ -908,7 +908,7 @@ public class TPCCWorkloadGenerator {
 					local++;
 			}
 			// order status tx
-			else if (randomNum < 100) {
+			else if (randomNum < 0) {
 				System.out.println("Generated an order status");
 				// generate random warehouse 1
 				long randW = (w == 1 ? 0 : ThreadLocalRandom.current().nextInt(0, w));
