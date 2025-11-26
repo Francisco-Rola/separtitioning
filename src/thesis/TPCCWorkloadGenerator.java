@@ -1094,6 +1094,68 @@ public class TPCCWorkloadGenerator {
 			}
 		}
 		
+		// 2W2P
+		else if (VertexPhi.getScalingFactorW() == 2 && noP == 2) {
+			if (table != 8) {
+				int warehouse_id = features.get("warehouseid");
+				
+				if (warehouse_id <= 0)
+					part = 1;
+				else
+					part = 2;
+			}
+		}
+		
+		else if (VertexPhi.getScalingFactorW() == 1 && noP == 5) {
+			
+			// extra situation for delivery in 1w workload, delivery always remote
+			if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
+				System.out.println("Remote");
+				remote++;
+				return false;
+			}
+			
+			if (table == 1) {
+				part = 5;
+			}
+			
+			else if (table == 2 || table == 3 || table == 4) {
+				int district_id = features.get("districtid");
+				
+				if (district_id <= 1)
+					part = 5;
+				else if (district_id <= 3 || district_id > 7)
+					part = 1;
+				else if (district_id <= 5)
+					part = 3;
+				else if (district_id <= 7)
+					part = 2;
+			}
+			
+			else if (table == 5 || table == 6 || table == 7) {
+				int district_id = features.get("districtid");
+				
+				if (district_id <= 1)
+					part = 4;
+				else if (district_id <= 3)
+					part = 1;
+				else if (district_id <= 5)
+					part = 3;
+				else if (district_id <= 7)
+					part = 2;
+				else if (district_id <= 9)
+					part = 5;
+			}
+			
+			else if (table == 9) {
+				if (key <= 50000)
+					part = 4;
+				else
+					part = 5;
+			}
+		}
+
+		
 		else {
 			// extra situation for delivery in 1w workload, delivery always remote
 			if (txProfile == 3 && VertexPhi.getScalingFactorW() == 1) {
