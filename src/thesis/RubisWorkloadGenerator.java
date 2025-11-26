@@ -278,7 +278,7 @@ public class RubisWorkloadGenerator {
 				if(!checkPart(5, fromKey, 1, featureMap, logic)) continue;
 				// generate a random to user
 				long randTo = ThreadLocalRandom.current().nextInt(0, (region * 100000) + users);
-				long toKey = randFrom;
+				long toKey = randTo;
 				Pair<String, Integer> toFeature = new Pair<String, Integer>("toId", (int) randTo);
 				features = new ArrayList<>();
 				features.add(toFeature);
