@@ -222,7 +222,7 @@ public class RubisWorkloadGenerator {
 			// roll the dice to know which tx to generate
 			int randomNum = ThreadLocalRandom.current().nextInt(0, 100);
 			// store buy txs
-			if (randomNum < 20) {
+			if (randomNum < 0) {
 				System.out.println("Generated a store buy");
 				// generate a random item
 				long randItem = ThreadLocalRandom.current().nextInt(0, (category * 100000) + items);
@@ -244,7 +244,7 @@ public class RubisWorkloadGenerator {
 				local++;
 			}
 			// store bid txs
-			else if (randomNum < 40) {
+			else if (randomNum < 0) {
 				System.out.println("Generated a store bid");
 				// generate a random item
 				long randItem = ThreadLocalRandom.current().nextInt(0, (category * 100000) + items);
@@ -266,7 +266,7 @@ public class RubisWorkloadGenerator {
 				local++;
 			}
 			// store comment tx
-			else if (randomNum < 60) {
+			else if (randomNum < 100) {
 				System.out.println("Generated a store comment");
 				// generate a random from user
 				long randFrom = ThreadLocalRandom.current().nextInt(0, (region * 100000) + users);
