@@ -54,7 +54,7 @@ public class VertexPhi {
 	}
 	
 	public static int getRubisRegion() {
-		return rubisRegion;
+		return rubisRegion + 1;
 	}
 	
 	public static int getRubisBid() {
