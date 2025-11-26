@@ -34,6 +34,8 @@ public class GraphBuilder {
 	    
 		printGraph(graph); 
 		
+		/*
+		
 		System.out.println("Running graph splitter");
 		
 		NewSplitter splitter = new NewSplitter();
@@ -62,7 +64,7 @@ public class GraphBuilder {
 	    
 	    CatalystEvaluation evaluation = new CatalystEvaluation(partitioner);
 	    
-	    evaluation.evaluateCatalyst(workload, noP);
+	    evaluation.evaluateCatalyst(workload, noP);*/
 
 
 	}
