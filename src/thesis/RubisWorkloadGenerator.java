@@ -426,7 +426,7 @@ public class RubisWorkloadGenerator {
 			if (features.containsKey("itemId")) {
 				int item_id = features.get("itemId");
 				
-				if (item_id <= 299999)
+				if (item_id <= 2999999)
 					part =1;
 				else
 					part = 2;
@@ -434,7 +434,7 @@ public class RubisWorkloadGenerator {
 			else {
 				int item_id = features.get("fromId");
 				
-				if (item_id <= 299999)
+				if (item_id <= 2999999)
 					part = 1;
 				else
 					part = 2;
